@@ -20672,13 +20672,18 @@ var apiErrorSchema = external_exports.object({
 });
 var inferenceRequestSchema = external_exports.object({
   /** The real limits (count, size, allowed paths) are Arch's: see @sketio/arch-inference. */
-  files: external_exports.array(external_exports.object({ path: external_exports.string().min(1).max(300), content: external_exports.string() })).min(1).max(100)
+  files: external_exports.array(external_exports.object({ path: external_exports.string().min(1).max(300), content: external_exports.string() })).min(1).max(100),
+  /**
+   * The commit's date. Only for POST /api/v1/analyses/inference (no Snapshot to name: the static parsers read
+   * nothing, so Arch saved none); the route that names a Snapshot takes the date from it and ignores this.
+   */
+  committedAt: external_exports.string().max(64).optional()
 });
 var inferenceOutcomes = ["created", "duplicate", "unchanged"];
 var inferenceResponseSchema = external_exports.object({
   outcome: external_exports.enum(inferenceOutcomes),
-  /** The Snapshot that now holds the result, or the one given when nothing was added. */
-  snapshotId: external_exports.string(),
+  /** The Snapshot that now holds the result, or the one given when nothing was added (none, if none was given). */
+  snapshotId: external_exports.string().optional(),
   /** Whether that Snapshot is the latest for its ref right now. */
   latest: external_exports.boolean(),
   added: external_exports.object({ nodes: external_exports.number().int().min(0), edges: external_exports.number().int().min(0) }),
@@ -20697,7 +20702,12 @@ var inferenceResponseSchema = external_exports.object({
      * Not read because the payer's credits ran out or could not be checked (docs/credits.md 9). Present only while
      * credits are charged (CREDITS_ENFORCED=on).
      */
-    noCredits: external_exports.number().int().min(0).optional()
+    noCredits: external_exports.number().int().min(0).optional(),
+    /**
+     * Left out before the model: a static parser already drew verified nodes from them (the AI would name the same
+     * things with IDs that do not merge). Not counted in `accepted`. Absent in an answer from an older Arch.
+     */
+    staticCovered: external_exports.number().int().min(0).optional()
   }),
   dropped: external_exports.object({
     /** Model output that did not fit the schema. */
@@ -23682,7 +23692,8 @@ function extractFile(module, honoLocals) {
     exports: /* @__PURE__ */ new Map(),
     gaps: [],
     envPassedLines: [],
-    fetchRefs: []
+    fetchRefs: [],
+    defaultFetches: []
   };
   walk2(module.program, (n) => {
     if (n.type !== "MemberExpression" || n.computed === true) return;
@@ -23694,17 +23705,21 @@ function extractFile(module, honoLocals) {
     model.gaps.push({ code: code2, message, line: module.lines(node2).startLine });
   };
   const functions = /* @__PURE__ */ new Map();
+  const topLevel = /* @__PURE__ */ new Map();
   const declarations = [];
   for (const stmt of module.program.body) {
     const decl = (stmt.type === "ExportNamedDeclaration" || stmt.type === "ExportDefaultDeclaration") && stmt.declaration ? stmt.declaration : stmt;
     declarations.push(decl);
-    if (decl.type === "FunctionDeclaration" && decl.id)
+    if (decl.type === "FunctionDeclaration" && decl.id) {
       functions.set(identName(decl.id), decl);
+      topLevel.set(identName(decl.id), decl);
+    }
     if (decl.type === "VariableDeclaration") {
       for (const d of decl.declarations) {
         const name2 = identName(d.id);
         const init = d.init ? unwrapExpression(d.init) : void 0;
         if (name2 && init && isFunction(init)) functions.set(name2, init);
+        if (name2 && init) topLevel.set(name2, init);
       }
     }
   }
@@ -23833,64 +23848,67 @@ function extractFile(module, honoLocals) {
       const name2 = identName(target);
       if (name2) model.defaultExport = { name: name2, lines: module.lines(stmt) };
       else if (target.type === "ObjectExpression") {
-        const served = fetchTarget(target);
-        if (served) model.defaultFetch = { name: served, lines: module.lines(stmt) };
+        for (const use of fetchUses(target, topLevel)) {
+          model.defaultFetches.push({ name: use.name, lines: module.lines(use.node), via: use.via });
+        }
       }
     }
   }
   return model;
 }
-function unconditionalFetch(fn, isFetchOf) {
-  const callOf = (expr) => {
-    if (!expr) return void 0;
-    let e = unwrapExpression(expr);
-    if (e.type === "AwaitExpression") e = unwrapExpression(e.argument);
-    return e.type === "CallExpression" ? isFetchOf(e.callee) : void 0;
-  };
-  const body = fn.body;
-  let name2;
-  if (body.type !== "BlockStatement") name2 = callOf(body);
-  else {
-    for (const stmt of body.body) {
-      if (stmt.type === "ReturnStatement") {
-        name2 = callOf(stmt.argument);
-        break;
-      }
-      let exits = stmt.type === "IfStatement" || stmt.type === "ThrowStatement";
-      walk2(stmt, (n) => {
-        if (isFunction(n)) return false;
-        if (n.type === "ReturnStatement" || n.type === "ThrowStatement") exits = true;
-      });
-      if (exits) return void 0;
-    }
+function fetchOwner(n) {
+  const m = unwrapExpression(n);
+  if (m.type !== "MemberExpression" || m.computed === true || identName(m.property) !== "fetch") {
+    return void 0;
   }
-  if (!name2) return void 0;
-  const params = /* @__PURE__ */ new Set();
-  for (const p of fn.params) boundNames(p, params);
-  return params.has(name2) || isRebound(body, name2) ? void 0 : name2;
+  return identName(unwrapExpression(m.object));
 }
-function fetchTarget(obj) {
-  const isFetchOf = (n) => {
-    const m = unwrapExpression(n);
-    if (m.type !== "MemberExpression" || m.computed === true || identName(m.property) !== "fetch") {
-      return void 0;
-    }
-    return identName(unwrapExpression(m.object));
+function fetchUses(obj, topLevel) {
+  const out = [];
+  const visited = /* @__PURE__ */ new Set();
+  const scan = (node2) => {
+    if (visited.has(node2)) return;
+    visited.add(node2);
+    const isFn = isFunction(node2) || node2.type === "FunctionDeclaration";
+    const body = isFn ? node2.body : node2;
+    const bound = /* @__PURE__ */ new Set();
+    for (const p of isFn ? node2.params ?? [] : []) boundNames(p, bound);
+    const usable = (name2) => !bound.has(name2) && !isRebound(body, name2);
+    walk2(body, (n, parent) => {
+      if (n.type === "Identifier") {
+        const name2 = n.name;
+        const isKey = parent?.type === "MemberExpression" && parent.property === n && parent.computed !== true || parent?.type === "Property" && parent.key === n && parent.computed !== true;
+        const next = isKey ? void 0 : topLevel.get(name2);
+        if (next && next !== node2 && usable(name2)) scan(next);
+        return;
+      }
+      if (n.type !== "MemberExpression") return;
+      const owner = fetchOwner(n);
+      if (!owner || !usable(owner)) return;
+      const called = parent?.type === "CallExpression" && unwrapExpression(parent.callee) === n;
+      out.push({ name: owner, node: n, via: called ? "wrapped-call" : "wrapped-ref" });
+    });
   };
   for (const prop of obj.properties) {
     if (prop.type !== "Property" || identName(prop.key) !== "fetch") continue;
     const value2 = unwrapExpression(prop.value);
-    const direct = isFetchOf(value2);
-    if (direct) return direct;
+    const direct = fetchOwner(value2);
+    if (direct) {
+      out.push({ name: direct, node: value2, via: "fetch-property" });
+      continue;
+    }
     if (value2.type === "CallExpression") {
       const callee = unwrapExpression(value2.callee);
       if (callee.type === "MemberExpression" && identName(callee.property) === "bind") {
-        return isFetchOf(callee.object);
+        const owner = fetchOwner(callee.object);
+        if (owner) out.push({ name: owner, node: value2, via: "fetch-property" });
       }
+      continue;
     }
-    if (isFunction(value2)) return unconditionalFetch(value2, isFetchOf);
+    const target = isFunction(value2) ? value2 : topLevel.get(identName(value2) ?? "");
+    if (target) scan(target);
   }
-  return void 0;
+  return out;
 }
 function exportName(n) {
   return identName(n) ?? (n?.type === "Literal" ? String(n.value) : void 0);
@@ -23912,7 +23930,7 @@ function onMethods(arg) {
 
 // ../../packages/parsers/hono/src/honoParser.ts
 var HONO_PARSER_ID = "hono";
-var HONO_PARSER_VERSION = "0.1.0";
+var HONO_PARSER_VERSION = "0.2.0";
 var HONO_IMPORT = /["']hono(?:\/[^"']*)?["']/;
 var importsHono = (text2) => HONO_IMPORT.test(text2);
 var messageOf2 = (e) => e instanceof Error ? e.message : String(e);
@@ -24026,13 +24044,16 @@ async function analyzeHono(ctx) {
   const evidenceAt = (file2, lines) => staticEvidence(ctx, file2, lines.startLine, lines.endLine);
   const entries = /* @__PURE__ */ new Map();
   for (const model of project.models.values()) {
-    for (const exported of [model.defaultExport, model.defaultFetch]) {
-      if (!exported) continue;
-      const r = project.resolveName(model.file, exported.name);
+    const exported = [
+      ...model.defaultExport ? [{ ...model.defaultExport, via: "default-export" }] : [],
+      ...model.defaultFetches
+    ];
+    for (const use of exported) {
+      const r = project.resolveName(model.file, use.name);
       if (!r.ok) continue;
       const key = keyOf(r.app, project);
       const list2 = entries.get(key) ?? [];
-      list2.push({ file: model.file, ...exported.lines });
+      list2.push({ file: model.file, ...use.lines, via: use.via });
       entries.set(key, list2);
     }
   }
@@ -24220,6 +24241,7 @@ var honoParser = {
 
 // ../../packages/parsers/hono/src/linker.ts
 var HONO_LINKER_ID = "hono-bindings";
+var VIA_ORDER = ["default-export", "fetch-property", "wrapped-call", "wrapped-ref"];
 var R_READ = /* @__PURE__ */ new Set(["get", "head", "list", "getWithMetadata"]);
 var R_WRITE = /* @__PURE__ */ new Set(["put", "delete", "createMultipartUpload", "resumeMultipartUpload"]);
 function relationOf(type, usage) {
@@ -24304,23 +24326,29 @@ var honoBindingLinker = {
           const refs = locationsOf(s.properties.fetchRefs).filter((l) => l.file === entryPath);
           const hits = proven.length > 0 ? proven : refs;
           if (hits.length === 0) continue;
+          const vias = proven.map((l) => l.via ?? "default-export");
+          const via = VIA_ORDER.find((v) => vias.includes(v));
           owned.set(s.id, {
             why: hits.map((l) => staticEvidence(ctx, l.file, l.startLine, l.endLine)),
-            inferred: proven.length === 0
+            inferred: proven.length === 0,
+            ...via ? { via } : {}
           });
           queue.push(s.id);
         }
         for (let i = 0; i < queue.length; i++) {
           for (const m of mountsOf.get(queue[i]) ?? []) {
             if (owned.has(m.child)) continue;
+            const parent = owned.get(queue[i]);
             owned.set(m.child, {
               why: m.evidence,
-              inferred: owned.get(queue[i])?.inferred ?? false
+              inferred: parent?.inferred ?? false,
+              // A mounted app runs the way its parent is shown to run.
+              ...parent?.via ? { via: parent.via } : {}
             });
             queue.push(m.child);
           }
         }
-        for (const [serviceId, { why, inferred }] of [...owned].sort(([a], [b]) => a < b ? -1 : 1)) {
+        for (const [serviceId, { why, inferred, via }] of [...owned].sort(([a], [b]) => a < b ? -1 : 1)) {
           reached.add(serviceId);
           const service = byId.get(serviceId);
           out.edges.push({
@@ -24328,6 +24356,8 @@ var honoBindingLinker = {
             source: serviceId,
             target: worker.id,
             relation: "DEPLOYED_ON",
+            // How the main module was shown to run the app; absent when it only refers to `<app>.fetch`.
+            ...via ? { properties: { deployedVia: via } } : {},
             evidence: [...why, ...configEvidence],
             verification: inferred ? "inferred" : "verified"
           });
@@ -25651,6 +25681,16 @@ var edgeSchema2 = external_exports.object({
 }).refine((e) => e.id === edgeId(e.source, e.relation, e.target));
 var schema = external_exports.object({ nodes: external_exports.array(nodeSchema2).max(500), edges: external_exports.array(edgeSchema2).max(500) });
 
+// ../../packages/arch-inference/src/covered.ts
+function filesWithVerifiedNodes(graph) {
+  const files = /* @__PURE__ */ new Set();
+  for (const node2 of graph?.nodes ?? []) {
+    if (node2.verification !== "verified") continue;
+    for (const e of node2.evidence) if (e.method !== "ai-inference") files.add(e.file);
+  }
+  return files;
+}
+
 // ../../packages/arch-inference/src/ground.ts
 var MAX_EVIDENCE_LINES = 80;
 
@@ -26035,10 +26075,11 @@ function isCandidate(u) {
 }
 var tier = (path) => path.endsWith(".tf") ? 0 : SCRIPT.test(path) ? 1 : 2;
 var compare2 = (a, b) => a < b ? -1 : a > b ? 1 : 0;
-async function selectInferenceFiles(coverage, read) {
-  const candidates = [...new Set(coverage.unsupported.filter(isCandidate).map((u) => u.file))].sort(
-    (a, b) => tier(a) - tier(b) || compare2(a, b)
-  );
+async function selectInferenceFiles(coverage, read, graph) {
+  const covered = filesWithVerifiedNodes(graph);
+  const all = [...new Set(coverage.unsupported.filter(isCandidate).map((u) => u.file))];
+  const candidates = all.filter((f) => !covered.has(f)).sort((a, b) => tier(a) - tier(b) || compare2(a, b));
+  const staticCovered = all.length - candidates.length;
   const files = [];
   let skipped = 0;
   let masked = 0;
@@ -26070,7 +26111,7 @@ async function selectInferenceFiles(coverage, read) {
     masked += m.count;
     files.push({ path, content: m.text });
   }
-  return { files, skipped, masked };
+  return { files, skipped, masked, staticCovered };
 }
 
 // src/send.ts
@@ -26128,7 +26169,7 @@ async function sendAnalysis(options) {
 
 // src/inference.ts
 var TIMEOUT_MS = 5 * 6e4;
-var inferenceEndpointOf = (apiUrl, snapshotId) => `${audienceOf(apiUrl)}/api/v1/analyses/${encodeURIComponent(snapshotId)}/inference`;
+var inferenceEndpointOf = (apiUrl, snapshotId) => snapshotId === null ? `${audienceOf(apiUrl)}/api/v1/analyses/inference` : `${audienceOf(apiUrl)}/api/v1/analyses/${encodeURIComponent(snapshotId)}/inference`;
 var KNOWN_ERRORS2 = new Set(apiErrorCodes);
 async function sendInference(options) {
   const doFetch = options.fetchFn ?? fetch;
@@ -26137,7 +26178,10 @@ async function sendInference(options) {
     res = await doFetch(inferenceEndpointOf(options.apiUrl, options.snapshotId), {
       method: "POST",
       headers: { authorization: `Bearer ${options.token}`, "content-type": "application/json" },
-      body: JSON.stringify({ files: options.files }),
+      body: JSON.stringify({
+        files: options.files,
+        ...options.snapshotId === null && options.committedAt ? { committedAt: options.committedAt } : {}
+      }),
       redirect: "error",
       signal: AbortSignal.timeout(TIMEOUT_MS)
     });
@@ -26192,16 +26236,23 @@ async function runInference(io, step) {
       );
       return;
     }
-    if (step.artifact.status !== "ok" && step.artifact.status !== "partial") return;
-    const selection = await selectInferenceFiles(step.artifact.coverage, step.read);
+    if (step.artifact.status === "failed") return;
+    if (step.snapshotId !== null && step.artifact.status !== "ok" && step.artifact.status !== "partial")
+      return;
+    const selection = await selectInferenceFiles(
+      step.artifact.coverage,
+      step.read,
+      step.artifact.graph ?? void 0
+    );
     if (selection.files.length === 0) return;
     io.log(
-      `AI completion: sending ${selection.files.length} file(s) the static parsers could not read (${selection.masked} secret-looking value(s) masked, ${selection.skipped} left out)`
+      `AI completion: sending ${selection.files.length} file(s) the static parsers could not read (${selection.masked} secret-looking value(s) masked, ${selection.skipped} left out, ${selection.staticCovered} already read by the static parsers)`
     );
     const result = await sendInference({
       apiUrl: step.apiUrl,
       token: step.token,
       snapshotId: step.snapshotId,
+      ...step.committedAt ? { committedAt: step.committedAt } : {},
       files: selection.files,
       ...io.fetchFn ? { fetchFn: io.fetchFn } : {}
     });
@@ -26225,7 +26276,7 @@ async function runInference(io, step) {
         `${r.files.noCredits} file(s) were not read: not enough credits for AI completion (or they could not be checked).`
       );
     if (r.files.failed > 0) warn(`${r.files.failed} file(s) could not be read by the model.`);
-    if (io.env.GITHUB_OUTPUT && r.outcome !== "unchanged")
+    if (io.env.GITHUB_OUTPUT && r.outcome !== "unchanged" && r.snapshotId)
       appendFileSync(io.env.GITHUB_OUTPUT, `inference-snapshot-id=${oneLine(r.snapshotId)}
 `);
     if (io.env.GITHUB_STEP_SUMMARY) appendFileSync(io.env.GITHUB_STEP_SUMMARY, summaryOf(r));
@@ -26522,7 +26573,7 @@ async function sendToArch(io, inputs, context, artifact) {
       )
     );
   writeResults(io, r, mode);
-  return { code: 0, token, response: r };
+  return { code: 0, token, response: r, committedAt: date5.date };
 }
 
 // src/run.ts
@@ -26597,12 +26648,14 @@ status=${artifact.status}
     ...io.commitDate ? { commitDate: io.commitDate } : {}
   };
   const sent = await sendToArch(syncIo, inputs.inputs, context, artifact);
-  const snapshotId = sent.response?.snapshotId;
-  if (sent.code === 0 && sent.token && snapshotId && inputs.inputs.apiUrl)
+  const snapshotId = sent.response?.snapshotId ?? null;
+  const nothingSaved = snapshotId === null && sent.response?.outcome === "recorded" && artifact.status !== "failed" && !!sent.committedAt;
+  if (sent.code === 0 && sent.token && (snapshotId !== null || nothingSaved) && inputs.inputs.apiUrl)
     await runInference(syncIo, {
       apiUrl: inputs.inputs.apiUrl,
       token: sent.token,
       snapshotId,
+      ...sent.committedAt ? { committedAt: sent.committedAt } : {},
       artifact,
       aiEnabled: resolveConfig(config2.config).ai.enabled,
       read: (path) => fs.readText(path)
