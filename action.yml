@@ -1,0 +1,32 @@
+name: Sketio Architecture
+description: Reads the architecture of this repository (Workers, bindings, routes, CloudFormation, CDK), writes it as a JSON Artifact and, with mode sync or diff, sends it to Sketio Arch.
+author: Sketio
+inputs:
+  mode:
+    description: "analyze reads the repository and writes the Artifact (nothing is sent). sync (push, workflow_dispatch, schedule) sends it to Sketio Arch. diff (pull_request) sends it and summarizes the architecture diff. sync and diff need permissions: id-token: write."
+    required: false
+    default: analyze
+  config:
+    description: Path of the .sketio.yml, relative to the repository root.
+    required: false
+    default: .sketio.yml
+  api-url:
+    description: Base URL of Sketio Arch, e.g. https://arch.sketio.app. Required by sync and diff. Its origin is the OIDC audience.
+    required: false
+    default: ""
+outputs:
+  artifact-path:
+    description: Path of the Architecture Artifact JSON file.
+  status:
+    description: "Result of the analysis: ok, partial, empty, nothing-detected or failed."
+  outcome:
+    description: "sync and diff: what Arch did with it (created, duplicate or recorded)."
+  snapshot-id:
+    description: "sync and diff: the Snapshot Arch stored, when there is one."
+  inference-snapshot-id:
+    description: "sync and diff: the Snapshot Arch saved with the AI completion added, when the completion added something. Files the static parsers could not read are sent to Arch (secrets masked) only when .sketio.yml says ai.enabled true (the default is off)."
+  diff-id:
+    description: "diff: the Architecture Diff Arch made, when there is one."
+runs:
+  using: node24
+  main: dist/index.js
