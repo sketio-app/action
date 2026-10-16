@@ -21,17 +21,19 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 2   # mode: diff reads the pull request's head commit (a parent of the merge commit)
-      - uses: sketio-app/action@v1
+      - uses: sketio-app/action@14d11bf60319a38e8d451f0a57cdc7ecea586ce8 # v1.0.1
         with:
           mode: ${{ github.event_name == 'pull_request' && 'diff' || 'sync' }}
           api-url: https://arch.sketio.app
 ```
 
+Pin the Action to a commit, as above. A tag can be moved, so pinning to the commit means only that code runs. Dependabot (`package-ecosystem: github-actions`) can raise the commit and the version in the comment for you. For a quick try, `sketio-app/action@v1` (the moving major tag) also works.
+
 `analyze` needs no permissions and sends nothing:
 
 ```yaml
       - uses: actions/checkout@v4
-      - uses: sketio-app/action@v1
+      - uses: sketio-app/action@14d11bf60319a38e8d451f0a57cdc7ecea586ce8 # v1.0.1
 ```
 
 ## Modes
@@ -93,7 +95,7 @@ do not send pull requests here.
 Architecture Artifact（JSON）として書き出す Action です。`mode: sync` / `mode: diff` では Artifact を
 [Sketio Arch](https://arch.sketio.app) に送ります。
 
-使い方は上の例のとおりです（`uses: sketio-app/action@v1`）。
+使い方は上の例のとおりです（`uses: sketio-app/action@14d11bf60319a38e8d451f0a57cdc7ecea586ce8 # v1.0.1`）。タグは動かせるので、コミットハッシュで固定すると、同じコードしか動きません。Dependabot（`package-ecosystem: github-actions`）でハッシュとコメントの版を自動で上げられます。手軽に試すだけなら `sketio-app/action@v1`（動くメジャータグ）でも動きます。
 
 | mode | 動く場面 | すること |
 | --- | --- | --- |
