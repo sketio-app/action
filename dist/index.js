@@ -20430,7 +20430,7 @@ var architectureSnapshotSchema = external_exports.object({
   createdAt: external_exports.iso.datetime(),
   graph: architectureGraphSchema
 });
-var viewTypes = ["infrastructure", "application", "deployment", "change"];
+var viewTypes = ["infrastructure", "application", "deployment", "overview", "change"];
 var diagramLayoutSchema = external_exports.object({
   nodes: external_exports.record(external_exports.string(), external_exports.object({ x: external_exports.number().finite(), y: external_exports.number().finite() }))
 });
