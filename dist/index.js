@@ -23966,10 +23966,10 @@ function scanHandler(fn, module, app, envPassed, gap) {
   }
   const bound = /* @__PURE__ */ new Set();
   for (const p of fn.params) boundNames(p, bound);
-  const scan = scanEnv(fn.body, module, { kind: "ctx", name: ctxName }, bound);
-  app.usages.push(...scan.usages);
-  app.envFlows.push(...scan.flows);
-  envPassed.push(...scan.opaque);
+  const scan2 = scanEnv(fn.body, module, { kind: "ctx", name: ctxName }, bound);
+  app.usages.push(...scan2.usages);
+  app.envFlows.push(...scan2.flows);
+  envPassed.push(...scan2.opaque);
 }
 function scanParam(fn, index, module) {
   let param = fn.params[index];
@@ -24216,7 +24216,7 @@ function fetchOwner(n) {
 function fetchUses(obj, topLevel) {
   const out = [];
   const visited = /* @__PURE__ */ new Set();
-  const scan = (node2) => {
+  const scan2 = (node2) => {
     if (visited.has(node2)) return;
     visited.add(node2);
     const isFn = isFunction(node2) || node2.type === "FunctionDeclaration";
@@ -24229,7 +24229,7 @@ function fetchUses(obj, topLevel) {
         const name2 = n.name;
         const isKey = parent?.type === "MemberExpression" && parent.property === n && parent.computed !== true || parent?.type === "Property" && parent.key === n && parent.computed !== true;
         const next = isKey ? void 0 : topLevel.get(name2);
-        if (next && next !== node2 && usable(name2)) scan(next);
+        if (next && next !== node2 && usable(name2)) scan2(next);
         return;
       }
       if (n.type !== "MemberExpression") return;
@@ -24256,7 +24256,7 @@ function fetchUses(obj, topLevel) {
       continue;
     }
     const target = isFunction(value2) ? value2 : topLevel.get(identName(value2) ?? "");
-    if (target) scan(target);
+    if (target) scan2(target);
   }
   return out;
 }
@@ -24373,23 +24373,23 @@ var Project = class {
     }
     const key = `${r.file}\0${r.name}\0${flow2.argIndex}`;
     if (path.has(key)) return;
-    const scan = r.fn.params[flow2.argIndex];
-    if (!scan) {
+    const scan2 = r.fn.params[flow2.argIndex];
+    if (!scan2) {
       out.failures.push(
         `${flow2.callee}() in ${r.file} takes the env in a parameter that is not a plain name or object pattern`
       );
       return;
     }
-    if ("broken" in scan) {
-      out.failures.push(`${flow2.callee}() in ${r.file}: ${scan.broken}`);
+    if ("broken" in scan2) {
+      out.failures.push(`${flow2.callee}() in ${r.file}: ${scan2.broken}`);
       return;
     }
-    for (const line2 of scan.opaque) {
+    for (const line2 of scan2.opaque) {
       out.failures.push(`the env is used in ${r.file} line ${line2} in a way that is not followed`);
     }
-    for (const u of scan.usages) out.usages.push({ ...u, file: r.file, passed: true });
+    for (const u of scan2.usages) out.usages.push({ ...u, file: r.file, passed: true });
     const next = new Set(path).add(key);
-    for (const f of scan.flows) this.traceEnv(r.file, f, depth + 1, next, out);
+    for (const f of scan2.flows) this.traceEnv(r.file, f, depth + 1, next, out);
   }
   resolveExport(file2, name2, depth) {
     if (depth > 8) return { ok: false, why: "import chain is too deep" };
@@ -24889,6 +24889,781 @@ var honoBindingLinker = {
   }
 };
 
+// ../../packages/parsers/mcp/src/linker.ts
+var MCP_LINKER_ID = "mcp-routes";
+var isHandoff = (v) => {
+  const h = v;
+  return typeof h === "object" && h !== null && typeof h.file === "string" && typeof h.startLine === "number" && typeof h.endLine === "number" && typeof h.method === "string" && typeof h.path === "string";
+};
+var mcpRouteLinker = {
+  id: MCP_LINKER_ID,
+  link({ nodes }, ctx) {
+    const edges = [];
+    const routes = nodes.filter((n) => n.type === "route" && n.scope === "application");
+    for (const server of nodes.filter((n) => n.type === "mcp-server" && n.scope === "application")) {
+      const handoffs = Array.isArray(server.properties.routeHandoffs) ? server.properties.routeHandoffs.filter(isHandoff) : [];
+      for (const h of handoffs) {
+        const sameSpot = (e) => e.file === h.file && e.startLine === h.startLine && e.endLine === h.endLine;
+        for (const route of routes) {
+          const path = route.properties.path;
+          if (String(route.properties.method).toUpperCase() !== h.method || typeof path !== "string" || !path.endsWith(h.path))
+            continue;
+          const written = route.evidence.filter(sameSpot);
+          if (written.length === 0) continue;
+          edges.push({
+            id: edgeId(route.id, "EXPOSES", server.id),
+            source: route.id,
+            target: server.id,
+            relation: "EXPOSES",
+            evidence: [staticEvidence(ctx, h.file, h.startLine, h.endLine), ...written],
+            verification: "verified"
+          });
+        }
+      }
+    }
+    return { nodes: [], edges, diagnostics: [], unverified: [] };
+  }
+};
+
+// ../../packages/parsers/mcp/src/project.ts
+var MCP_IMPORT = /["'](?:@modelcontextprotocol\/(?:sdk|server)(?:\/[^"']*)?|agents\/mcp(?:\/[^"']*)?)["']/;
+var importsMcp = (text4) => MCP_IMPORT.test(text4);
+var isFunctionNode = (n) => n.type === "FunctionDeclaration" || n.type === "FunctionExpression" || n.type === "ArrowFunctionExpression";
+var identName2 = (n) => n?.type === "Identifier" ? n.name : void 0;
+var keyName = (key) => key?.type === "Identifier" ? key.name : key?.type === "Literal" ? String(key.value) : void 0;
+var exportName2 = (n) => keyName(n);
+function buildModel(module) {
+  const fns = /* @__PURE__ */ new Map();
+  const vars = /* @__PURE__ */ new Map();
+  const parents = /* @__PURE__ */ new Map();
+  const add = (map2, key, value2) => {
+    map2.set(key, [...map2.get(key) ?? [], value2]);
+  };
+  walk2(module.program, (n, parent) => {
+    if (parent) parents.set(n, parent);
+    if (n.type === "FunctionDeclaration" && n.id) add(fns, identName2(n.id) ?? "", n);
+    if (n.type === "VariableDeclarator") {
+      const name2 = identName2(n.id);
+      if (name2 && n.init) {
+        const init = unwrapExpression(n.init);
+        add(vars, name2, init);
+        if (isFunctionNode(init)) add(fns, name2, init);
+      }
+    }
+    return void 0;
+  });
+  const exports = /* @__PURE__ */ new Map();
+  let defaultExport;
+  for (const stmt of module.program.body) {
+    if (stmt.type === "ExportNamedDeclaration") {
+      const decl = stmt.declaration;
+      if (decl?.type === "FunctionDeclaration" && decl.id) {
+        const name2 = identName2(decl.id);
+        exports.set(name2, { kind: "local", name: name2 });
+      } else if (decl?.type === "VariableDeclaration") {
+        for (const d of decl.declarations) {
+          const name2 = identName2(d.id);
+          if (name2) exports.set(name2, { kind: "local", name: name2 });
+        }
+      } else if (!decl) {
+        const source = stmt.source ? stmt.source.value : void 0;
+        for (const spec of stmt.specifiers ?? []) {
+          const local = exportName2(spec.local);
+          const as = exportName2(spec.exported);
+          if (!local || !as) continue;
+          exports.set(as, source ? { kind: "from", source, imported: local } : { kind: "local", name: local });
+        }
+      }
+    } else if (stmt.type === "ExportDefaultDeclaration") {
+      const d = unwrapExpression(stmt.declaration);
+      defaultExport = identName2(d) ?? (d.type === "FunctionDeclaration" ? identName2(d.id) : void 0);
+    }
+  }
+  return {
+    file: module.file,
+    module,
+    imports: collectImports(module),
+    fns,
+    vars,
+    exports,
+    defaultExport,
+    parents
+  };
+}
+var Project2 = class {
+  constructor(fs, files) {
+    this.fs = fs;
+    this.files = new Set(files);
+  }
+  fs;
+  cache = /* @__PURE__ */ new Map();
+  files;
+  /** The parsed file, or the reason it could not be (unreadable, syntax error). */
+  async load(file2) {
+    const hit = this.cache.get(file2);
+    if (hit) return hit;
+    let result;
+    if (!this.files.has(file2) || !isAnalyzableSource(file2)) result = { error: `${file2} is not a source file` };
+    else {
+      try {
+        const parsed = parseModule(file2, await this.fs.readText(file2));
+        result = parsed.ok ? buildModel(parsed.module) : { error: `syntax error: ${parsed.message}` };
+      } catch (e) {
+        result = { error: `could not read: ${e instanceof Error ? e.message : String(e)}` };
+      }
+    }
+    this.cache.set(file2, result);
+    return result;
+  }
+  /** Loads the file of every relative import of `model`, so the resolving below can stay synchronous. */
+  async loadImports(model, depth = 0) {
+    if (depth > 6) return;
+    for (const imp of model.imports) {
+      if (imp.typeOnly) continue;
+      const target = resolveRelativeImport(model.file, imp.source, this.files);
+      if (!target) continue;
+      const known = this.cache.has(target);
+      const loaded = await this.load(target);
+      if (!known && !("error" in loaded)) await this.loadImports(loaded, depth + 1);
+    }
+    for (const entry of model.exports.values()) {
+      if (entry.kind !== "from") continue;
+      const target = resolveRelativeImport(model.file, entry.source, this.files);
+      if (!target) continue;
+      const known = this.cache.has(target);
+      const loaded = await this.load(target);
+      if (!known && !("error" in loaded)) await this.loadImports(loaded, depth + 1);
+    }
+  }
+  model(file2) {
+    const m = this.cache.get(file2);
+    return m && !("error" in m) ? m : void 0;
+  }
+  /** The error of a file that was loaded and failed, for the reason a trail stops. */
+  errorOf(file2) {
+    const m = this.cache.get(file2);
+    return m && "error" in m ? m.error : void 0;
+  }
+  /** `name` as an export of `file` (following `export … from`), as the file's local name. */
+  exported(file2, name2, depth) {
+    if (depth > 8) return { why: "import chain is too deep" };
+    const model = this.model(file2);
+    if (!model) return { why: this.errorOf(file2) ?? `${file2} was not read` };
+    if (name2 === "default") {
+      return model.defaultExport ? { model, local: model.defaultExport } : { why: `${file2} has no default export` };
+    }
+    const entry = model.exports.get(name2);
+    if (!entry) return { why: `${file2} does not export "${name2}"` };
+    if (entry.kind === "local") return { model, local: entry.name };
+    const target = resolveRelativeImport(file2, entry.source, this.files);
+    if (!target)
+      return {
+        why: `${file2} re-exports "${name2}" from "${entry.source}", which is not a file of this repository`
+      };
+    return this.exported(target, entry.imported, depth + 1);
+  }
+  /**
+   * Where a name used in `model` is declared: here, or in the file it is imported from. Unambiguous only.
+   * `pick` chooses which declarations count (constants, or functions).
+   */
+  resolve(model, name2, own2, depth = 0) {
+    if (depth > 8) return { why: "import chain is too deep" };
+    const here = own2(model, name2);
+    if (here && here.length > 1) return { why: `"${name2}" is declared more than once in ${model.file}` };
+    if (here && here.length === 1) return { model, node: here[0] };
+    const imp = model.imports.find((i) => i.local === name2 && !i.typeOnly);
+    if (!imp) return { why: `"${name2}" is not declared in ${model.file} or imported there` };
+    if (imp.imported === "*") return { why: `"${name2}" is a namespace import` };
+    const target = resolveRelativeImport(model.file, imp.source, this.files);
+    if (!target) {
+      return { why: `"${name2}" comes from "${imp.source}", which is not a file of this repository` };
+    }
+    const ex = this.exported(target, imp.imported, depth + 1);
+    if ("why" in ex) return ex;
+    return this.resolve(ex.model, ex.local, own2, depth + 1);
+  }
+  /** The initializer of the constant `name` (as seen from `model`). */
+  resolveVar(model, name2) {
+    return this.resolve(model, name2, (m, n) => m.vars.get(n));
+  }
+  /** The function `name` (as seen from `model`). */
+  resolveFn(model, name2) {
+    return this.resolve(model, name2, (m, n) => m.fns.get(n));
+  }
+  /** A string constant, or why it is not one. */
+  resolveString(model, node2) {
+    const direct = stringValue(node2);
+    if (direct !== void 0) return { value: direct };
+    const id = identName2(unwrapExpression(node2));
+    if (!id) return { why: "it is not a string literal or a constant" };
+    const r = this.resolveVar(model, id);
+    if ("why" in r) return r;
+    const value2 = stringValue(r.node);
+    return value2 === void 0 ? { why: `"${id}" is not a string literal` } : { value: value2 };
+  }
+};
+function enclosingFn(model, node2) {
+  let cur = model.parents.get(node2);
+  while (cur) {
+    if (isFunctionNode(cur)) return cur;
+    cur = model.parents.get(cur);
+  }
+  return void 0;
+}
+function propertyOf(obj, name2) {
+  if (obj.type !== "ObjectExpression") return void 0;
+  for (const p of obj.properties) {
+    if (p.type === "Property" && keyName(p.key) === name2) return p.value;
+  }
+  return void 0;
+}
+
+// ../../packages/parsers/mcp/src/mcpParser.ts
+var MCP_PARSER_ID = "mcp";
+var MCP_PARSER_VERSION = "0.1.0";
+var HONO_IMPORT2 = /["']hono(?:\/[^"']*)?["']/;
+var TOOL_METHODS = /* @__PURE__ */ new Set(["registerTool", "tool"]);
+var HTTP_METHODS2 = /* @__PURE__ */ new Set(["get", "post", "put", "delete", "patch", "options", "head", "all"]);
+var MAX_DEPTH2 = 8;
+var LOCAL_LOOKING = /^(?:\.|@\/|~\/|#)/;
+var messageOf3 = (e) => e instanceof Error ? e.message : String(e);
+var sanitizeIdPart = (s) => s.replace(/\s+/g, "_");
+var baseName = (file2) => file2.slice(file2.lastIndexOf("/") + 1);
+var isToolMember = (n, receiver) => {
+  const m = unwrapExpression(n);
+  if (m.type !== "MemberExpression" || m.computed === true) return false;
+  if (receiver !== void 0 && identName2(unwrapExpression(m.object)) !== receiver) return false;
+  return TOOL_METHODS.has(identName2(m.property) ?? "");
+};
+function keepsNameArgument(assign) {
+  const fn = unwrapExpression(assign.right);
+  if (!isFunctionNode(fn)) return false;
+  const first = identName2(fn.params[0]);
+  if (!first) return false;
+  let kept = false;
+  walk2(fn.body, (n) => {
+    if (n.type === "CallExpression") {
+      const a0 = n.arguments[0];
+      if (a0 && identName2(unwrapExpression(a0)) === first) kept = true;
+    }
+    return void 0;
+  });
+  return kept;
+}
+function scan(root, receiver) {
+  const events = [];
+  let badWrapper;
+  walk2(root, (n) => {
+    if (n.type === "AssignmentExpression" && isToolMember(n.left, receiver)) {
+      if (!keepsNameArgument(n)) badWrapper = n;
+      return false;
+    }
+    if (n.type === "CallExpression") {
+      if (isToolMember(n.callee, receiver)) {
+        events.push({ kind: "tool", call: n, argIndex: 0 });
+        return void 0;
+      }
+      ;
+      n.arguments.forEach((a, i) => {
+        if (identName2(unwrapExpression(a)) === receiver) events.push({ kind: "call", call: n, argIndex: i });
+      });
+    }
+    return void 0;
+  });
+  events.sort((a, b) => a.call.start - b.call.start);
+  return { events, badWrapper };
+}
+async function analyzeMcp(ctx) {
+  const diagnostics = [];
+  const unverified = [];
+  const noted = /* @__PURE__ */ new Set();
+  const note = (level, code2, file2, message, line2) => {
+    const key = `${code2}\0${file2}\0${line2 ?? ""}\0${message}`;
+    if (noted.has(key)) return;
+    noted.add(key);
+    diagnostics.push({
+      level,
+      code: code2,
+      message: `${file2}: ${message}`,
+      parserId: MCP_PARSER_ID,
+      file: file2,
+      ...line2 !== void 0 ? { line: line2 } : {}
+    });
+    unverified.push({
+      parserId: MCP_PARSER_ID,
+      file: file2,
+      reason: line2 !== void 0 ? `${message} (line ${line2})` : message
+    });
+  };
+  const all = await ctx.fs.listFiles();
+  const project = new Project2(ctx.fs, all);
+  const sources = all.filter(isAnalyzableSource).sort();
+  const targets = [];
+  const honoFiles = [];
+  for (const file2 of sources) {
+    let text4;
+    try {
+      text4 = await ctx.fs.readText(file2);
+    } catch (e) {
+      void e;
+      continue;
+    }
+    const mcp = importsMcp(text4);
+    if (!mcp && !HONO_IMPORT2.test(text4)) continue;
+    const loaded = await project.load(file2);
+    if ("error" in loaded) {
+      if (mcp) {
+        note(
+          "error",
+          loaded.error.startsWith("syntax") ? "syntax-error" : "file-unreadable",
+          file2,
+          loaded.error
+        );
+      }
+      continue;
+    }
+    if (mcp) targets.push(loaded);
+    else honoFiles.push(loaded);
+  }
+  for (const model of [...targets, ...honoFiles]) await project.loadImports(model);
+  const evidenceOf = (p) => staticEvidence(ctx, p.file, p.startLine, p.endLine);
+  const servers = [];
+  const serverByKey = /* @__PURE__ */ new Map();
+  for (const model of targets) {
+    const locals = new Set(
+      model.imports.filter((i) => i.imported === "McpServer" && !i.typeOnly && importsMcp(`"${i.source}"`)).map((i) => i.local)
+    );
+    if (locals.size === 0) continue;
+    walk2(model.module.program, (n) => {
+      if (n.type !== "NewExpression" || !locals.has(identName2(n.callee) ?? "")) return void 0;
+      let holder = model.parents.get(n);
+      while (holder && ["TSAsExpression", "TSSatisfiesExpression", "TSNonNullExpression"].includes(holder.type)) {
+        holder = model.parents.get(holder);
+      }
+      const varName = holder?.type === "VariableDeclarator" ? identName2(holder.id) : void 0;
+      const info = n.arguments[0];
+      let name2;
+      if (info) {
+        const obj = unwrapExpression(info);
+        const resolved = obj.type === "ObjectExpression" ? obj : (() => {
+          const id = identName2(obj);
+          if (!id) return void 0;
+          const r = project.resolveVar(model, id);
+          return "why" in r ? void 0 : r.node;
+        })();
+        const nameNode = resolved ? propertyOf(resolved, "name") : void 0;
+        if (nameNode) {
+          const r = project.resolveString(model, nameNode);
+          if ("value" in r && r.value.trim() !== "") name2 = r.value;
+        }
+      }
+      const server = {
+        key: `${model.file}#${n.start}`,
+        model,
+        node: n,
+        varName,
+        scopeFn: enclosingFn(model, n),
+        name: name2 ?? baseName(model.file),
+        lines: model.module.lines({ start: n.start, end: info?.end ?? n.end }),
+        tools: [],
+        handoffs: []
+      };
+      servers.push(server);
+      serverByKey.set(server.key, server);
+      return void 0;
+    });
+  }
+  const nameOfObject = (m, obj) => {
+    const value2 = propertyOf(obj, "name");
+    if (!value2) return { why: `an element of the array has no "name"` };
+    const s = project.resolveString(m, value2);
+    if ("why" in s) return { why: `the name of an element of the array: ${s.why}` };
+    return { name: s.value, evidence: { file: m.file, ...m.module.lines(value2) } };
+  };
+  const loopArray = (model, from, variable) => {
+    let child = from;
+    let cur = model.parents.get(from);
+    while (cur) {
+      let source;
+      if (cur.type === "ForOfStatement") {
+        const left = cur.left;
+        const d = left.type === "VariableDeclaration" ? left.declarations[0] : void 0;
+        if (d && identName2(d.id) === variable && child === cur.body) source = cur.right;
+      } else if (cur.type === "CallExpression") {
+        const callee = unwrapExpression(cur.callee);
+        const fn = cur.arguments[0];
+        if (callee.type === "MemberExpression" && callee.computed !== true && ["forEach", "map", "flatMap"].includes(identName2(callee.property) ?? "") && fn && fn === child && isFunctionNode(fn) && identName2(fn.params[0]) === variable) {
+          source = callee.object;
+        }
+      }
+      if (source) {
+        const s = unwrapExpression(source);
+        if (s.type === "ArrayExpression") return { array: s, model };
+        const id = identName2(s);
+        if (!id) return { why: "the array looped over is not a name" };
+        const r = project.resolveVar(model, id);
+        if ("why" in r) return { why: r.why };
+        if (r.node.type !== "ArrayExpression")
+          return { why: `"${id}" is not an array written out in ${r.model.file}` };
+        return { array: r.node, model: r.model };
+      }
+      child = cur;
+      cur = model.parents.get(cur);
+    }
+    return void 0;
+  };
+  const toolNames = (model, call, arg) => {
+    const here = { file: model.file, ...model.module.lines(arg) };
+    const s = project.resolveString(model, arg);
+    if ("value" in s) return { names: [{ name: s.value, evidence: [here] }] };
+    const m = unwrapExpression(arg);
+    if (m.type === "MemberExpression" && m.computed !== true && identName2(m.property) === "name" && identName2(unwrapExpression(m.object))) {
+      const variable = identName2(unwrapExpression(m.object));
+      const source = loopArray(model, call, variable);
+      if (source) {
+        if ("why" in source) return { why: source.why };
+        const names = [];
+        for (const el of source.array.elements) {
+          if (!el || el.type === "SpreadElement") return { why: "the array has a hole or a spread element" };
+          const u = unwrapExpression(el);
+          let obj;
+          if (u.type === "ObjectExpression") obj = { model: source.model, node: u };
+          else {
+            const id = identName2(u);
+            if (!id) return { why: "an element of the array is not an object or a name" };
+            const r = project.resolveVar(source.model, id);
+            obj = "why" in r ? r : { model: r.model, node: r.node };
+          }
+          if ("why" in obj) return { why: obj.why };
+          if (obj.node.type !== "ObjectExpression")
+            return { why: "an element of the array is not an object written out" };
+          const n = nameOfObject(obj.model, obj.node);
+          if ("why" in n) return { why: n.why };
+          names.push({ name: n.name, evidence: [here, n.evidence] });
+        }
+        return { names };
+      }
+    }
+    return { why: `the name is not a string literal or a constant of this repository (${s.why})` };
+  };
+  const makes = /* @__PURE__ */ new Map();
+  const making = /* @__PURE__ */ new Set();
+  const serversMadeBy = (fnModel, fn) => {
+    const hit = makes.get(fn);
+    if (hit) return hit;
+    if (making.has(fn)) return [];
+    making.add(fn);
+    const out = new Set(servers.filter((s) => s.scopeFn === fn));
+    walk2(fn.body, (n) => {
+      if (n.type !== "CallExpression") return void 0;
+      const callee = identName2(unwrapExpression(n.callee));
+      if (!callee) return void 0;
+      const r = project.resolveFn(fnModel, callee);
+      if ("why" in r) return void 0;
+      for (const s of serversMadeBy(r.model, r.node)) out.add(s);
+      return void 0;
+    });
+    making.delete(fn);
+    const list2 = [...out];
+    makes.set(fn, list2);
+    return list2;
+  };
+  const topLevelServers = /* @__PURE__ */ new Map();
+  for (const s of servers)
+    if (!s.scopeFn && s.varName) topLevelServers.set(`${s.model.file}\0${s.varName}`, s);
+  const serversIn = (model, root) => {
+    const out = /* @__PURE__ */ new Set();
+    walk2(root, (n, parent) => {
+      if (n.type === "NewExpression") {
+        const s = serverByKey.get(`${model.file}#${n.start}`);
+        if (s) out.add(s);
+      } else if (n.type === "CallExpression") {
+        const callee = identName2(unwrapExpression(n.callee));
+        const r = callee ? project.resolveFn(model, callee) : void 0;
+        if (r && !("why" in r)) for (const s of serversMadeBy(r.model, r.node)) out.add(s);
+      } else if (n.type === "Identifier") {
+        const isProperty = parent?.type === "MemberExpression" && parent.property === n && parent.computed !== true || parent?.type === "Property" && parent.key === n && parent.computed !== true;
+        const s = isProperty ? void 0 : topLevelServers.get(`${model.file}\0${n.name}`);
+        if (s) out.add(s);
+      }
+      return void 0;
+    });
+    return [...out];
+  };
+  const reached = /* @__PURE__ */ new Set();
+  const addTool = (server, name2, evidence) => {
+    const existing = server.tools.find((t) => sanitizeIdPart(t.name) === sanitizeIdPart(name2));
+    if (existing) existing.evidence.push(...evidence);
+    else server.tools.push({ name: name2, evidence: [...evidence] });
+  };
+  const expand = (server, model, root, receiver, depth, path) => {
+    const { events, badWrapper } = scan(root, receiver);
+    for (const ev of events) {
+      const line2 = model.module.lines(ev.call).startLine;
+      if (ev.kind === "tool") {
+        reached.add(`${model.file}#${ev.call.start}`);
+        if (badWrapper) {
+          note(
+            "warning",
+            "tool-wrapped",
+            model.file,
+            `a tool is registered after registerTool was replaced by a function that does not pass the name on as its first argument; its name is not read`,
+            line2
+          );
+          continue;
+        }
+        const arg = ev.call.arguments[0];
+        if (!arg) continue;
+        const r2 = toolNames(model, ev.call, arg);
+        if ("why" in r2) {
+          note(
+            "warning",
+            "tool-name-dynamic",
+            model.file,
+            `a tool's name is decided at run time, so the tool is not recorded: ${r2.why}`,
+            line2
+          );
+          continue;
+        }
+        for (const n of r2.names) addTool(server, n.name, n.evidence);
+        continue;
+      }
+      const calleeName = identName2(unwrapExpression(ev.call.callee));
+      if (!calleeName) continue;
+      const r = project.resolveFn(model, calleeName);
+      if ("why" in r) {
+        const imp = model.imports.find((i) => i.local === calleeName && !i.typeOnly);
+        if (imp && LOCAL_LOOKING.test(imp.source)) {
+          note(
+            "warning",
+            "server-handed-on",
+            model.file,
+            `the server is handed to ${calleeName}(), which cannot be followed (${r.why}); the tools it registers are not recorded`,
+            line2
+          );
+        }
+        continue;
+      }
+      const fn = r.node;
+      const param = fn.params[ev.argIndex];
+      const pname = identName2(param?.type === "AssignmentPattern" ? param.left : param);
+      if (!pname) {
+        note(
+          "warning",
+          "server-handed-on",
+          model.file,
+          `the server is handed to ${calleeName}() in a parameter that is not a plain name; the tools it registers are not recorded`,
+          line2
+        );
+        continue;
+      }
+      const key = `${r.model.file}\0${fn.start}\0${ev.argIndex}`;
+      if (path.has(key)) continue;
+      if (depth >= MAX_DEPTH2) {
+        note(
+          "warning",
+          "server-handed-on",
+          model.file,
+          `${calleeName}() is more than ${MAX_DEPTH2} calls away from the server (too deep); the tools it registers are not recorded`,
+          line2
+        );
+        continue;
+      }
+      expand(server, r.model, fn.body, pname, depth + 1, new Set(path).add(key));
+    }
+  };
+  for (const server of servers) {
+    if (!server.varName) continue;
+    const root = server.scopeFn ? server.scopeFn.body : server.model.module.program;
+    expand(server, server.model, root, server.varName, 0, /* @__PURE__ */ new Set());
+  }
+  for (const model of targets) {
+    walk2(model.module.program, (n) => {
+      if (n.type !== "CallExpression") return void 0;
+      const callee = unwrapExpression(n.callee);
+      if (callee.type === "MemberExpression" && callee.computed !== true && identName2(callee.property) === "registerTool" && !reached.has(`${model.file}#${n.start}`)) {
+        note(
+          "warning",
+          "tool-unattached",
+          model.file,
+          "registerTool is called on something that is not a server created in this repository (a parameter nothing hands a server to, or a property); the tool is not recorded",
+          model.module.lines(n).startLine
+        );
+      }
+      return void 0;
+    });
+  }
+  const routeNodes = /* @__PURE__ */ new Map();
+  const servedRoutes = [];
+  for (const model of [...targets, ...honoFiles]) {
+    const handlerLocals = new Set(
+      model.imports.filter((i) => i.imported === "createMcpHandler" && !i.typeOnly).map((i) => i.local)
+    );
+    walk2(model.module.program, (n) => {
+      if (n.type !== "CallExpression") return void 0;
+      const callee = unwrapExpression(n.callee);
+      const args = n.arguments;
+      if (callee.type === "MemberExpression" && callee.computed !== true) {
+        const method = identName2(callee.property);
+        const path2 = stringValue(args[0]);
+        if (method && HTTP_METHODS2.has(method) && path2 !== void 0 && path2.startsWith("/")) {
+          const handlers = args.slice(1).map(unwrapExpression).filter(isFunctionNode);
+          const at2 = model.module.lines({
+            start: callee.property.start,
+            end: args[0].end
+          });
+          for (const h of handlers) {
+            for (const s of serversIn(model, h)) {
+              const handoff2 = { file: model.file, ...at2, method: method.toUpperCase(), path: path2 };
+              if (!s.handoffs.some((x) => JSON.stringify(x) === JSON.stringify(handoff2)))
+                s.handoffs.push(handoff2);
+            }
+          }
+        }
+        return void 0;
+      }
+      const local = identName2(callee);
+      if (!local || !handlerLocals.has(local) || !args[0]) return void 0;
+      const options = args[1] ? unwrapExpression(args[1]) : void 0;
+      const routeArg = options ? propertyOf(options, "route") : void 0;
+      let path = "/mcp";
+      if (routeArg) {
+        const r = project.resolveString(model, routeArg);
+        if (!("value" in r)) return void 0;
+        path = r.value;
+      }
+      if (!path.startsWith("/")) return void 0;
+      const reachedServers = serversIn(model, args[0]);
+      if (reachedServers.length === 0) return void 0;
+      let id;
+      try {
+        id = routeNodeId("ALL", path);
+      } catch {
+        return void 0;
+      }
+      const at = evidenceOf({ file: model.file, ...model.module.lines(callee) });
+      const route = routeNodes.get(id);
+      if (route) route.evidence.push(at);
+      else {
+        routeNodes.set(id, {
+          id,
+          type: "route",
+          name: `ALL ${path}`,
+          scope: "application",
+          properties: { method: "ALL", path },
+          evidence: [at],
+          verification: "verified"
+        });
+      }
+      for (const s of reachedServers) servedRoutes.push({ routeId: id, server: s, evidence: at });
+      return void 0;
+    });
+  }
+  const nodes = [];
+  const edges = [];
+  const gapAt = (file2, code2, message) => note("error", code2, file2, message);
+  const byName = /* @__PURE__ */ new Map();
+  for (const s of servers) byName.set(s.name, [...byName.get(s.name) ?? [], s]);
+  const serverIds = /* @__PURE__ */ new Map();
+  const serverParts = /* @__PURE__ */ new Map();
+  for (const s of servers) {
+    const clash = (byName.get(s.name)?.length ?? 0) > 1;
+    const part2 = sanitizeIdPart(clash ? `${s.name}@${s.model.file}#${s.lines.startLine}` : s.name);
+    try {
+      serverIds.set(s, nodeId("application", "mcp-server", part2));
+      serverParts.set(s, part2);
+    } catch (e) {
+      gapAt(
+        s.model.file,
+        "identifier-invalid",
+        `MCP server ${s.name} cannot be used as an id: ${messageOf3(e)}`
+      );
+    }
+  }
+  for (const s of servers) {
+    const id = serverIds.get(s);
+    if (!id) continue;
+    const here = { file: s.model.file, ...s.lines };
+    nodes.push({
+      id,
+      type: "mcp-server",
+      name: s.name,
+      scope: "application",
+      properties: {
+        file: s.model.file,
+        declaration: here,
+        ...s.handoffs.length > 0 ? { routeHandoffs: s.handoffs } : {}
+      },
+      evidence: [evidenceOf(here)],
+      verification: "verified"
+    });
+    s.tools.forEach((tool, index) => {
+      let toolId;
+      try {
+        toolId = nodeId("application", "mcp-tool", `${serverParts.get(s)}/${sanitizeIdPart(tool.name)}`);
+      } catch (e) {
+        gapAt(
+          tool.evidence[0]?.file ?? s.model.file,
+          "identifier-invalid",
+          `MCP tool ${tool.name} cannot be used as an id: ${messageOf3(e)}`
+        );
+        return;
+      }
+      const first = tool.evidence[0];
+      nodes.push({
+        id: toolId,
+        type: "mcp-tool",
+        name: tool.name,
+        scope: "application",
+        properties: { server: s.name, index, file: first.file, line: first.startLine },
+        evidence: tool.evidence.map(evidenceOf),
+        verification: "verified"
+      });
+      edges.push({
+        id: edgeId(id, "EXPOSES", toolId),
+        source: id,
+        target: toolId,
+        relation: "EXPOSES",
+        evidence: tool.evidence.map(evidenceOf),
+        verification: "verified"
+      });
+    });
+  }
+  nodes.push(...routeNodes.values());
+  for (const r of servedRoutes) {
+    const target = serverIds.get(r.server);
+    if (!target) continue;
+    const id = edgeId(r.routeId, "EXPOSES", target);
+    const same = edges.find((e) => e.id === id);
+    if (same) same.evidence.push(r.evidence);
+    else {
+      edges.push({
+        id,
+        source: r.routeId,
+        target,
+        relation: "EXPOSES",
+        evidence: [r.evidence],
+        verification: "verified"
+      });
+    }
+  }
+  return { nodes, edges, diagnostics, unverified };
+}
+var mcpParser = {
+  id: MCP_PARSER_ID,
+  version: MCP_PARSER_VERSION,
+  async detect(ctx) {
+    for (const file2 of (await ctx.fs.listFiles()).filter(isAnalyzableSource)) {
+      try {
+        if (importsMcp(await ctx.fs.readText(file2))) return true;
+      } catch {
+      }
+    }
+    return false;
+  },
+  parse: analyzeMcp
+};
+
 // ../../packages/parsers/terraform/src/hcl.ts
 var PUNCT2 = /* @__PURE__ */ new Set(["==", "!=", "<=", ">=", "&&", "||", "=>"]);
 var PUNCT1 = new Set("{}[]().,:?=!<>+-*/%&|^~;".split(""));
@@ -24896,7 +25671,7 @@ var ID_START = /[A-Za-z_]/;
 var ID_PART = /[A-Za-z0-9_-]/;
 var NUMBER3 = /^\d+(?:\.\d+)?(?:[eE][+-]?\d+)?/;
 var HEREDOC = /^<<(-?)([A-Za-z_][A-Za-z0-9_]*)[ \t]*\r?\n/;
-var MAX_DEPTH2 = 200;
+var MAX_DEPTH3 = 200;
 var INDENT = /^[ \t]*/;
 var indentOf = (line2) => INDENT.exec(line2)[0].length;
 var Lexer = class {
@@ -25007,7 +25782,7 @@ var Lexer = class {
   interpDepth = 0;
   /** `${ }` の中を読んで inner に足す。エラーのトークンがあればそれを返す（走査は新しく読んだ分だけ）。 */
   interpolation(inner, line2, col) {
-    if (this.interpDepth >= MAX_DEPTH2) return this.err("\u88DC\u9593\u306E\u5165\u308C\u5B50\u304C\u6DF1\u3059\u304E\u307E\u3059", line2, col);
+    if (this.interpDepth >= MAX_DEPTH3) return this.err("\u88DC\u9593\u306E\u5165\u308C\u5B50\u304C\u6DF1\u3059\u304E\u307E\u3059", line2, col);
     this.interpDepth++;
     const read = this.tokens(true);
     this.interpDepth--;
@@ -25236,7 +26011,7 @@ var Parser = class {
   depth = 0;
   /** 入れ子に入る。深すぎたら読み進めない。 */
   nest(f) {
-    if (this.depth >= MAX_DEPTH2) this.fail("\u5165\u308C\u5B50\u304C\u6DF1\u3059\u304E\u307E\u3059");
+    if (this.depth >= MAX_DEPTH3) this.fail("\u5165\u308C\u5B50\u304C\u6DF1\u3059\u304E\u307E\u3059");
     this.depth++;
     try {
       return f();
@@ -25525,6 +26300,14 @@ var aws = (kind2, nameKeys, describe3, role) => ({
   ...describe3 ? { describe: describe3 } : {},
   ...role ? { role } : {}
 });
+var azure = (kind2, nameKeys = ["name"], describe3, role) => ({
+  namespace: "azure",
+  kind: kind2,
+  nameKeys,
+  identity: "label",
+  ...describe3 ? { describe: describe3 } : {},
+  ...role ? { role } : {}
+});
 var describeWorker = (b) => pick2({ compatibilityDate: text3(b, "compatibility_date"), mainModule: text3(b, "main_module") });
 var describeTable2 = (b) => pick2({ billingMode: text3(b, "billing_mode"), hashKey: text3(b, "hash_key"), rangeKey: text3(b, "range_key") });
 var TYPES3 = {
@@ -25660,7 +26443,53 @@ var TYPES3 = {
   aws_ebs_volume: aws("ebs", []),
   aws_cloudformation_stack: aws("cloudformation", ["name"]),
   aws_elastic_beanstalk_application: aws("elastic-beanstalk", ["name"]),
-  aws_cloudwatch_metric_alarm: aws("cloudwatch", ["alarm_name"])
+  aws_cloudwatch_metric_alarm: aws("cloudwatch", ["alarm_name"]),
+  // --- Azure（azurerm）provider。id は AWS と同じくディレクトリとラベルで決める（`name` は表示名） ---
+  azurerm_resource_group: azure("resource-group", ["name"], (b) => pick2({ location: text3(b, "location") })),
+  azurerm_linux_function_app: azure("azure-functions", ["name"], void 0, "azure-app"),
+  azurerm_windows_function_app: azure("azure-functions", ["name"], void 0, "azure-app"),
+  azurerm_function_app_flex_consumption: azure("azure-functions", ["name"], void 0, "azure-app"),
+  azurerm_function_app: azure("azure-functions", ["name"], void 0, "azure-app"),
+  azurerm_linux_web_app: azure("app-service", ["name"], void 0, "azure-app"),
+  azurerm_windows_web_app: azure("app-service", ["name"], void 0, "azure-app"),
+  azurerm_app_service: azure("app-service", ["name"], void 0, "azure-app"),
+  azurerm_service_plan: azure(
+    "app-service-plan",
+    ["name"],
+    (b) => pick2({ osType: text3(b, "os_type"), skuName: text3(b, "sku_name") })
+  ),
+  azurerm_app_service_plan: azure("app-service-plan", ["name"]),
+  azurerm_static_web_app: azure("static-web-apps", ["name"], void 0, "azure-app"),
+  azurerm_container_app: azure("container-apps", ["name"], void 0, "azure-app"),
+  azurerm_kubernetes_cluster: azure("aks"),
+  azurerm_storage_account: azure(
+    "storage-account",
+    ["name"],
+    (b) => pick2({
+      accountTier: text3(b, "account_tier"),
+      replicationType: text3(b, "account_replication_type"),
+      accountKind: text3(b, "account_kind")
+    })
+  ),
+  azurerm_cosmosdb_account: azure("cosmos-db", ["name"], (b) => pick2({ kind: text3(b, "kind") })),
+  azurerm_mssql_server: azure("sql-server"),
+  azurerm_mssql_database: azure("sql-database", ["name"], (b) => pick2({ skuName: text3(b, "sku_name") })),
+  azurerm_redis_cache: azure("cache-for-redis", ["name"], (b) => pick2({ skuName: text3(b, "sku_name") })),
+  azurerm_managed_redis: azure("managed-redis", ["name"], (b) => pick2({ skuName: text3(b, "sku_name") })),
+  azurerm_key_vault: azure("key-vault", ["name"], (b) => pick2({ skuName: text3(b, "sku_name") })),
+  azurerm_servicebus_namespace: azure("service-bus", ["name"], (b) => pick2({ sku: text3(b, "sku") })),
+  azurerm_eventhub_namespace: azure("event-hubs", ["name"], (b) => pick2({ sku: text3(b, "sku") })),
+  azurerm_api_management: azure("api-management", ["name"], (b) => pick2({ skuName: text3(b, "sku_name") })),
+  azurerm_virtual_network: azure("virtual-network"),
+  azurerm_subnet: azure("subnet"),
+  azurerm_cdn_frontdoor_profile: azure("front-door", ["name"], (b) => pick2({ skuName: text3(b, "sku_name") })),
+  azurerm_frontdoor: azure("front-door"),
+  azurerm_application_insights: azure(
+    "application-insights",
+    ["name"],
+    (b) => pick2({ applicationType: text3(b, "application_type") })
+  ),
+  azurerm_log_analytics_workspace: azure("log-analytics", ["name"], (b) => pick2({ sku: text3(b, "sku") }))
 };
 var SUPPORTING_PREFIXES2 = [
   "aws_iam_",
@@ -25687,9 +26516,45 @@ var SUPPORTING_PREFIXES2 = [
   "aws_dynamodb_",
   "aws_ssm_",
   "aws_kms_",
-  "aws_wafv2_"
+  "aws_wafv2_",
+  // Azure: 子リソース・権限・ネットワークの部品・監視の設定など（要素の構成の一部）
+  "azurerm_storage_",
+  "azurerm_key_vault_",
+  "azurerm_cosmosdb_",
+  "azurerm_mssql_",
+  "azurerm_servicebus_",
+  "azurerm_eventhub",
+  "azurerm_role_",
+  "azurerm_user_assigned_identity",
+  "azurerm_monitor_",
+  "azurerm_network_",
+  "azurerm_private_",
+  "azurerm_subnet_",
+  "azurerm_virtual_network_",
+  "azurerm_app_service_",
+  "azurerm_linux_web_app_",
+  "azurerm_windows_web_app_",
+  "azurerm_linux_function_app_",
+  "azurerm_windows_function_app_",
+  "azurerm_function_app_",
+  "azurerm_static_web_app_",
+  "azurerm_container_app_",
+  "azurerm_kubernetes_cluster_",
+  "azurerm_redis_",
+  "azurerm_api_management_",
+  "azurerm_cdn_frontdoor_",
+  "azurerm_application_insights_",
+  "azurerm_log_analytics_",
+  "azurerm_resource_group_",
+  "azurerm_dns_",
+  "azurerm_public_ip",
+  "azurerm_management_lock"
 ];
-var isSupportingType = (type) => SUPPORTING_PREFIXES2.some((p) => type.startsWith(p)) && !Object.hasOwn(TYPES3, type);
+var NOT_SUPPORTING = /* @__PURE__ */ new Set([
+  "azurerm_mssql_managed_instance",
+  "azurerm_redis_enterprise_cluster"
+]);
+var isSupportingType = (type) => SUPPORTING_PREFIXES2.some((p) => type.startsWith(p)) && !Object.hasOwn(TYPES3, type) && !NOT_SUPPORTING.has(type);
 var GLUE = {
   cloudflare_queue_consumer: {
     source: { attrs: ["script_name", "script_id", "worker"] },
@@ -25722,6 +26587,12 @@ var GLUE = {
     target: { attrs: ["integration_uri"] },
     relation: "CALLS"
   },
+  // 主体（マネージド ID を持つ実行環境）が、スコープのリソースを使えるようにする。リソース グループがスコープなら辺にしない。
+  azurerm_role_assignment: {
+    source: { attrs: ["principal_id"] },
+    target: { attrs: ["scope"] },
+    relation: "BINDS_TO"
+  },
   aws_cloudwatch_event_target: {
     source: { attrs: ["arn"] },
     target: { attrs: ["rule"] },
@@ -25742,7 +26613,7 @@ var UTILITY_PROVIDERS = /* @__PURE__ */ new Set([
   "cloudinit",
   "dns"
 ]);
-var KNOWN_PROVIDERS = /* @__PURE__ */ new Set(["aws", "cloudflare"]);
+var KNOWN_PROVIDERS = /* @__PURE__ */ new Set(["aws", "azurerm", "cloudflare"]);
 var providerOf = (type) => type.split("_")[0];
 var BINDING_KINDS = {
   d1: {},
@@ -25766,7 +26637,7 @@ function bindingKindOf(typeOrBlock) {
 
 // ../../packages/parsers/terraform/src/terraformParser.ts
 var PARSER_ID4 = "terraform";
-var TERRAFORM_PARSER_VERSION = "0.1.1";
+var TERRAFORM_PARSER_VERSION = "0.2.0";
 var isTerraformFile = (path) => path.endsWith(".tf") && !isIgnoredPath(path) && !path.split("/").slice(0, -1).includes(".terraform");
 var compare = (a, b) => a < b ? -1 : a > b ? 1 : 0;
 var dirOf3 = (file2) => {
@@ -26112,11 +26983,13 @@ var Analysis = class {
     if (role === "worker") this.bindingEdges(d, d.id, consumed);
     else if (role === "exposes-worker") this.exposesEdges(d, consumed);
     else if (role === "lambda") this.environmentEdges(d, consumed);
+    else if (role === "azure-app") this.azureAppEdges(d, consumed);
     if (d.def?.kind === "mcp-portal") this.portalEdges(d);
     for (const attr of allAttributes(d.block)) {
       for (const ref of attr.value.refs) {
         if (consumed.has(ref)) continue;
         for (const target of this.nodesOf(this.resolve(ref, d.dir))) {
+          if (isResourceGroup(target)) continue;
           this.addEdge(
             d.id,
             "DEPENDS_ON",
@@ -26264,6 +27137,46 @@ var Analysis = class {
       }
     }
   }
+  // --- Azure ---
+  /**
+   * Function App / Web App / Container App が他のリソースを使う関係は BINDS_TO（Lambda の環境変数と同じ）。
+   * `app_settings` の値、`env { name, value }`、`connection_string { name, value }` は binding 名（キー・name）を残す。
+   * ストレージの指定（`storage_account_name` など）は binding 名のない BINDS_TO。
+   */
+  azureAppEdges(d, consumed) {
+    const bind = (refs, span, binding) => {
+      for (const r of refs) consumed.add(r);
+      const located = this.resolveAll(refs, d.dir);
+      const vaultRefs = located.filter((l) => KEY_VAULT_CHILDREN.has(l.decl.type)).flatMap(
+        (l) => l.decl.block.attributes.filter((a) => a.name === "key_vault_id").flatMap((a) => a.value.refs)
+      );
+      const vaults = this.nodesOf(this.resolveAll(vaultRefs, d.dir)).filter(
+        (v) => v.def?.kind === "key-vault"
+      );
+      for (const t of unique([...this.nodesOf(located), ...vaults])) {
+        if (isResourceGroup(t)) continue;
+        this.addEdge(d.id, "BINDS_TO", t.id, d.file, span, {
+          inferred: this.inferred(d, t),
+          ...binding !== void 0 && binding !== "" ? { binding } : {}
+        });
+      }
+    };
+    const walk3 = (block) => {
+      for (const a of block.attributes) {
+        if (a.name === "app_settings" && a.value.kind === "object") {
+          for (const entry of a.value.entries) bind(entry.value.refs, entry.span, entry.key);
+        } else if (AZURE_STORAGE_ATTRS.has(a.name)) bind(a.value.refs, a.span);
+      }
+      if (block.type === "env" || block.type === "connection_string") {
+        const name2 = block.attributes.find((a) => a.name === "name")?.value;
+        const value2 = block.attributes.find((a) => a.name === "value")?.value;
+        const binding = name2 ? literalValue(name2) : void 0;
+        if (value2) bind(value2.refs, block.span, typeof binding === "string" ? binding : void 0);
+      }
+      for (const b of block.blocks) walk3(b);
+    };
+    walk3(d.block);
+  }
   // --- 要素にならないリソース（接着剤） ---
   select(block, selector) {
     if ("attrs" in selector) {
@@ -26276,7 +27189,9 @@ var Analysis = class {
   }
   glueEdges(d, rule) {
     const sources = this.nodesOf(this.resolveAll(this.select(d.block, rule.source), d.dir));
-    const targets = this.nodesOf(this.resolveAll(this.select(d.block, rule.target), d.dir));
+    const targets = this.nodesOf(this.resolveAll(this.select(d.block, rule.target), d.dir)).filter(
+      (t) => !isResourceGroup(t)
+    );
     const sourceIds = sources.map((s) => s.id);
     if (sources.length === 0 && rule.literalSource && "attrs" in rule.source) {
       for (const attr of d.block.attributes) {
@@ -26303,6 +27218,18 @@ var Analysis = class {
     }
   }
 };
+var isResourceGroup = (d) => d.def?.namespace === "azure" && d.def.kind === "resource-group";
+var KEY_VAULT_CHILDREN = /* @__PURE__ */ new Set([
+  "azurerm_key_vault_secret",
+  "azurerm_key_vault_key",
+  "azurerm_key_vault_certificate"
+]);
+var AZURE_STORAGE_ATTRS = /* @__PURE__ */ new Set([
+  "storage_account_name",
+  "storage_account_access_key",
+  "storage_account_id",
+  "storage_container_endpoint"
+]);
 var byLocation = (a, b) => compare(a.file, b.file) || a.block.span.startLine - b.block.span.startLine;
 var terraformParser = {
   id: PARSER_ID4,
@@ -26577,7 +27504,7 @@ var PLUGIN_PACKAGES = ["@cloudflare/vite-plugin", "@vitejs/plugin-react", "@vite
 var CLOUDFLARE_VITE_PLUGIN = "@cloudflare/vite-plugin";
 var DEPENDENCY_SECTIONS = ["dependencies", "devDependencies", "peerDependencies"];
 var RECORDED_DEPENDENCIES = /* @__PURE__ */ new Set(["vite", "react", ...PLUGIN_PACKAGES]);
-var messageOf3 = (e) => e instanceof Error ? e.message : String(e);
+var messageOf4 = (e) => e instanceof Error ? e.message : String(e);
 var dirOf5 = (path) => path.includes("/") ? path.slice(0, path.lastIndexOf("/")) : "";
 var join2 = (dir, name2) => dir === "" ? name2 : `${dir}/${name2}`;
 async function reactAppCheck(fs, configFile) {
@@ -26663,7 +27590,7 @@ async function readFrontend(ctx, configFile) {
   try {
     configText = await ctx.fs.readText(configFile);
   } catch (e) {
-    return skip(`could not read: ${messageOf3(e)}`, "config-unreadable");
+    return skip(`could not read: ${messageOf4(e)}`, "config-unreadable");
   }
   try {
     packageText = await ctx.fs.readText(packageFile);
@@ -26678,7 +27605,7 @@ async function readFrontend(ctx, configFile) {
     pkg = JSON.parse(packageText);
     if (typeof pkg !== "object" || pkg === null || Array.isArray(pkg)) throw new Error("not an object");
   } catch (e) {
-    return skip(`${packageFile} is not valid JSON: ${messageOf3(e)}`, "package-json-invalid", packageFile);
+    return skip(`${packageFile} is not valid JSON: ${messageOf4(e)}`, "package-json-invalid", packageFile);
   }
   const dependencies = {};
   for (const section of DEPENDENCY_SECTIONS) {
@@ -26737,7 +27664,7 @@ async function readFrontend(ctx, configFile) {
   try {
     id = nodeId("application", "frontend", dir === "" ? "." : dir);
   } catch (e) {
-    return skip(`directory "${dir}" cannot be used as an id: ${messageOf3(e)}`, "identifier-invalid");
+    return skip(`directory "${dir}" cannot be used as an id: ${messageOf4(e)}`, "identifier-invalid");
   }
   out.frontend = {
     dir,
@@ -26784,7 +27711,7 @@ var viteReactParser = {
         try {
           text4 = await ctx.fs.readText(file2);
         } catch (e) {
-          unverified.push({ parserId: VITE_REACT_PARSER_ID, file: file2, reason: `could not read: ${messageOf3(e)}` });
+          unverified.push({ parserId: VITE_REACT_PARSER_ID, file: file2, reason: `could not read: ${messageOf4(e)}` });
           return;
         }
         if (!text4.includes("fetch")) return;
@@ -26826,30 +27753,30 @@ var viteReactParser = {
 
 // ../../packages/parsers/worker-fetch/src/extract.ts
 var HANDLER_NAMES = /* @__PURE__ */ new Set(["fetch", "scheduled", "queue", "email", "tail", "trace", "tailStream"]);
-var MAX_DEPTH3 = 4;
+var MAX_DEPTH4 = 4;
 var isFunction2 = (n) => n.type === "ArrowFunctionExpression" || n.type === "FunctionExpression" || n.type === "FunctionDeclaration";
-var identName2 = (n) => n?.type === "Identifier" ? n.name : void 0;
-function keyName(key, computed) {
+var identName3 = (n) => n?.type === "Identifier" ? n.name : void 0;
+function keyName2(key, computed) {
   if (!key || computed === true) return void 0;
-  return identName2(key) ?? (key.type === "Literal" && typeof key.value === "string" ? key.value : void 0);
+  return identName3(key) ?? (key.type === "Literal" && typeof key.value === "string" ? key.value : void 0);
 }
 function isAppFetch(value2) {
-  const member = (n) => n.type === "MemberExpression" && n.computed !== true && identName2(n.property) === "fetch";
+  const member = (n) => n.type === "MemberExpression" && n.computed !== true && identName3(n.property) === "fetch";
   if (member(value2)) return true;
   if (value2.type !== "CallExpression") return false;
   const callee = unwrapExpression(value2.callee);
-  return callee.type === "MemberExpression" && identName2(callee.property) === "bind" && member(unwrapExpression(callee.object));
+  return callee.type === "MemberExpression" && identName3(callee.property) === "bind" && member(unwrapExpression(callee.object));
 }
 function delegatesToApp(fn) {
   const first = fn.params?.[0];
-  const request = identName2(first);
+  const request = identName3(first);
   if (!request) return false;
   let found = false;
   walk2(fn.body, (n) => {
     if (found) return false;
     if (n.type !== "CallExpression") return;
     const callee = unwrapExpression(n.callee);
-    if (callee.type === "MemberExpression" && callee.computed !== true && identName2(callee.property) === "fetch" && identName2(unwrapExpression(callee.object)) !== void 0 && n.arguments.some((a) => identName2(unwrapExpression(a)) === request)) {
+    if (callee.type === "MemberExpression" && callee.computed !== true && identName3(callee.property) === "fetch" && identName3(unwrapExpression(callee.object)) !== void 0 && n.arguments.some((a) => identName3(unwrapExpression(a)) === request)) {
       found = true;
     }
   });
@@ -26862,11 +27789,11 @@ function extractModule(module) {
   for (const stmt of module.program.body) {
     const decl = (stmt.type === "ExportNamedDeclaration" || stmt.type === "ExportDefaultDeclaration") && stmt.declaration ? stmt.declaration : stmt;
     if ((decl.type === "FunctionDeclaration" || decl.type === "ClassDeclaration") && decl.id) {
-      topLevel.set(identName2(decl.id), decl);
+      topLevel.set(identName3(decl.id), decl);
     }
     if (decl.type === "VariableDeclaration") {
       for (const d of decl.declarations) {
-        const name2 = identName2(d.id);
+        const name2 = identName3(d.id);
         if (!name2 || !d.init) continue;
         const init = unwrapExpression(d.init);
         topLevel.set(name2, init);
@@ -26884,7 +27811,7 @@ function extractModule(module) {
   }
   const declaration = module.lines(exportStmt);
   let target = unwrapExpression(exportStmt.declaration);
-  const viaName = identName2(target);
+  const viaName = identName3(target);
   if (viaName && !topLevel.has(viaName)) return { ok: false };
   if (viaName) target = topLevel.get(viaName) ?? target;
   const isClass = target.type === "ClassDeclaration" || target.type === "ClassExpression";
@@ -26904,20 +27831,20 @@ function extractModule(module) {
   if (target.type === "ObjectExpression") {
     for (const prop of target.properties) {
       if (prop.type !== "Property") continue;
-      const name2 = keyName(prop.key, prop.computed);
+      const name2 = keyName2(prop.key, prop.computed);
       if (!name2 || !HANDLER_NAMES.has(name2)) continue;
       handlers.push(name2);
       if (name2 !== "fetch") continue;
       const value2 = unwrapExpression(prop.value);
       if (isAppFetch(value2)) return { ok: false };
-      const fn = isFunction2(value2) ? value2 : topLevel.get(identName2(value2) ?? "");
+      const fn = isFunction2(value2) ? value2 : topLevel.get(identName3(value2) ?? "");
       if (fn && isFunction2(fn)) fetchFn = fn;
       else fetchNotFollowed = prop;
     }
   } else {
     for (const member of target.body.body) {
       if (member.type !== "MethodDefinition" || member.static === true) continue;
-      const name2 = keyName(member.key, member.computed);
+      const name2 = keyName2(member.key, member.computed);
       if (!name2 || !HANDLER_NAMES.has(name2)) continue;
       handlers.push(name2);
       if (name2 === "fetch") fetchFn = member.value;
@@ -26931,7 +27858,7 @@ function extractModule(module) {
   const resolveString = (n) => {
     if (!n) return void 0;
     const u = unwrapExpression(n);
-    const name2 = identName2(u);
+    const name2 = identName3(u);
     return name2 ? constStrings.get(name2) : stringValue(u);
   };
   const addPath = (value2, match, node2, what) => {
@@ -26947,12 +27874,12 @@ function extractModule(module) {
   };
   const visited = /* @__PURE__ */ new Set();
   const analyze2 = (fn, paramIndex, depth) => {
-    if (visited.has(fn) || depth > MAX_DEPTH3) return;
+    if (visited.has(fn) || depth > MAX_DEPTH4) return;
     visited.add(fn);
     const params = fn.params ?? [];
     const first = params[paramIndex];
     if (!first) return;
-    const request = identName2(first);
+    const request = identName3(first);
     if (!request) {
       gap(
         "request-untraceable",
@@ -26965,7 +27892,7 @@ function extractModule(module) {
     const isRequestMember = (n, prop) => {
       if (!n) return false;
       const m = unwrapExpression(n);
-      return m.type === "MemberExpression" && m.computed !== true && identName2(m.property) === prop && identName2(unwrapExpression(m.object)) === request;
+      return m.type === "MemberExpression" && m.computed !== true && identName3(m.property) === prop && identName3(unwrapExpression(m.object)) === request;
     };
     const urlVars = /* @__PURE__ */ new Set();
     const pathVars = /* @__PURE__ */ new Set();
@@ -26973,18 +27900,18 @@ function extractModule(module) {
       if (!n) return false;
       const u = unwrapExpression(n);
       if (u.type === "NewExpression") {
-        return identName2(u.callee) === "URL" && isRequestMember(u.arguments[0], "url");
+        return identName3(u.callee) === "URL" && isRequestMember(u.arguments[0], "url");
       }
-      const name2 = identName2(u);
+      const name2 = identName3(u);
       return name2 !== void 0 && urlVars.has(name2);
     };
     const isPath = (n) => {
       if (!n) return false;
       const u = unwrapExpression(n);
       if (u.type === "MemberExpression") {
-        return u.computed !== true && identName2(u.property) === "pathname" && isUrl(u.object);
+        return u.computed !== true && identName3(u.property) === "pathname" && isUrl(u.object);
       }
-      const name2 = identName2(u);
+      const name2 = identName3(u);
       return name2 !== void 0 && pathVars.has(name2);
     };
     walk2(body, (n) => {
@@ -26996,8 +27923,8 @@ function extractModule(module) {
         else if (isPath(init)) pathVars.add(id.name);
       } else if (id.type === "ObjectPattern" && isUrl(init)) {
         for (const p of id.properties) {
-          if (p.type === "Property" && keyName(p.key, p.computed) === "pathname") {
-            const local = identName2(p.value);
+          if (p.type === "Property" && keyName2(p.key, p.computed) === "pathname") {
+            const local = identName3(p.value);
             if (local) pathVars.add(local);
           }
         }
@@ -27014,7 +27941,7 @@ function extractModule(module) {
       }
       if (u.type === "CallExpression") {
         const callee = unwrapExpression(u.callee);
-        if (callee.type === "MemberExpression" && identName2(callee.property) === "includes" && isRequestMember(u.arguments[0], "method")) {
+        if (callee.type === "MemberExpression" && identName3(callee.property) === "includes" && isRequestMember(u.arguments[0], "method")) {
           const list2 = literalList(callee.object);
           return list2?.map((m) => m.toUpperCase());
         }
@@ -27060,7 +27987,7 @@ function extractModule(module) {
       } else if (n.type === "CallExpression") {
         const callee = unwrapExpression(n.callee);
         const args = n.arguments;
-        const calleeName = callee.type === "MemberExpression" ? identName2(callee.property) : void 0;
+        const calleeName = callee.type === "MemberExpression" ? identName3(callee.property) : void 0;
         if (callee.type === "MemberExpression" && isPath(callee.object)) {
           if (calleeName === "startsWith")
             addPath(resolveString(args[0]), "prefix", n, "pathname.startsWith()");
@@ -27080,10 +28007,10 @@ function extractModule(module) {
               n
             );
         }
-        const calleeFn = topLevel.get(identName2(callee) ?? "");
+        const calleeFn = topLevel.get(identName3(callee) ?? "");
         if (calleeFn && isFunction2(calleeFn)) {
           args.forEach((a, i) => {
-            if (identName2(unwrapExpression(a)) === request) analyze2(calleeFn, i, depth + 1);
+            if (identName3(unwrapExpression(a)) === request) analyze2(calleeFn, i, depth + 1);
           });
         }
       }
@@ -27178,7 +28105,7 @@ function extractModule(module) {
 // ../../packages/parsers/worker-fetch/src/workerFetchParser.ts
 var WORKER_FETCH_PARSER_ID = "worker-fetch";
 var WORKER_FETCH_PARSER_VERSION = "0.1.1";
-var messageOf4 = (e) => e instanceof Error ? e.message : String(e);
+var messageOf5 = (e) => e instanceof Error ? e.message : String(e);
 async function entryFiles(ctx) {
   const { entries, problems } = await readWorkerEntries(ctx.fs);
   const byFile = /* @__PURE__ */ new Map();
@@ -27199,7 +28126,7 @@ async function entryFiles(ctx) {
         byFile.delete(file2);
       } else texts.set(file2, text4);
     } catch (e) {
-      unreadable.set(file2, messageOf4(e));
+      unreadable.set(file2, messageOf5(e));
     }
   }
   return { byFile, problems, hono, texts, unreadable };
@@ -27252,7 +28179,7 @@ async function analyzeWorkerFetch(ctx) {
         "error",
         "identifier-invalid",
         file2,
-        `service ${file2}#default cannot be used as an id: ${messageOf4(e)}`
+        `service ${file2}#default cannot be used as an id: ${messageOf5(e)}`
       );
       continue;
     }
@@ -27292,7 +28219,7 @@ async function analyzeWorkerFetch(ctx) {
           "error",
           "identifier-invalid",
           file2,
-          `route ${route.method} ${route.path} cannot be used as an id: ${messageOf4(e)}`,
+          `route ${route.method} ${route.path} cannot be used as an id: ${messageOf5(e)}`,
           route.lines.startLine
         );
         continue;
@@ -27412,6 +28339,26 @@ var PARSERS = [
     }
   },
   {
+    id: mcpParser.id,
+    version: mcpParser.version,
+    analysisKey: "mcp",
+    requires: ["typescript"],
+    description: "MCP servers and their tools in TypeScript/JavaScript (`new McpServer`, `registerTool` / `tool`), and the route `createMcpHandler` serves",
+    parser: mcpParser,
+    async targets(fs, files) {
+      const hits = await Promise.all(
+        files.filter(isAnalyzableSource).map(async (f) => {
+          try {
+            return importsMcp(await fs.readText(f)) ? f : void 0;
+          } catch {
+            return void 0;
+          }
+        })
+      );
+      return hits.filter((f) => f !== void 0);
+    }
+  },
+  {
     id: terraformParser.id,
     version: terraformParser.version,
     analysisKey: "terraform",
@@ -27459,6 +28406,14 @@ var LINKERS = [
     requires: ["hono", "cloudflare", "typescript"],
     description: "Connects Hono handlers to the Cloudflare resources they use through c.env bindings",
     linker: honoBindingLinker
+  },
+  {
+    id: mcpRouteLinker.id,
+    // The linker ships in the MCP package: bump MCP_PARSER_VERSION when it changes.
+    version: MCP_PARSER_VERSION,
+    requires: ["mcp", "hono", "typescript"],
+    description: "Connects the Hono route whose handler makes an MCP server to that server",
+    linker: mcpRouteLinker
   },
   {
     id: viteFrontendLinker.id,
@@ -27620,7 +28575,7 @@ function splitKey(text4, no) {
   if (after !== "" && !/^\s/.test(after) && text4[0] !== "'" && text4[0] !== '"') after = ` ${after}`;
   return { key, rest: after.trim() };
 }
-var MAX_DEPTH4 = 32;
+var MAX_DEPTH5 = 32;
 var Reader = class {
   constructor(lines) {
     this.lines = lines;
@@ -27644,7 +28599,7 @@ var Reader = class {
   }
   /** Runs a nested block, refusing to go deeper than MAX_DEPTH (so hostile input cannot overflow the stack). */
   #nested(no, read) {
-    if (++this.#depth > MAX_DEPTH4) throw new YamlSyntaxError(`nesting is deeper than ${MAX_DEPTH4} levels`, no);
+    if (++this.#depth > MAX_DEPTH5) throw new YamlSyntaxError(`nesting is deeper than ${MAX_DEPTH5} levels`, no);
     try {
       return read();
     } finally {
