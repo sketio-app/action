@@ -20595,6 +20595,15 @@ var architectureArtifactSchema = external_exports.object({
     });
   }
 });
+var commentLanguages = ["en", "ja"];
+var commentConfigSchema = external_exports.strictObject({
+  language: external_exports.enum(commentLanguages).optional(),
+  diagram: external_exports.boolean().optional()
+});
+var commentSettingsSchema = external_exports.object({
+  language: external_exports.enum(commentLanguages).optional().catch(void 0),
+  diagram: external_exports.boolean().optional().catch(void 0)
+}).optional().catch(void 0);
 var sketioConfigSchema = external_exports.strictObject({
   version: external_exports.literal(1).optional(),
   architecture: external_exports.strictObject({ infrastructure: external_exports.boolean().optional(), application: external_exports.boolean().optional() }).optional(),
@@ -20602,10 +20611,13 @@ var sketioConfigSchema = external_exports.strictObject({
   exclude: external_exports.array(external_exports.string().min(1)).optional(),
   ai: external_exports.strictObject({ enabled: external_exports.boolean().optional() }).optional(),
   views: external_exports.array(external_exports.enum(viewTypes)).optional(),
-  sync: external_exports.strictObject({ branch: external_exports.string().min(1).optional() }).optional()
+  sync: external_exports.strictObject({ branch: external_exports.string().min(1).optional() }).optional(),
+  comment: commentConfigSchema.optional()
 });
 var parseSketioConfig = (input3) => parseWith(sketioConfigSchema, input3);
 var analysisRequestFields = {
+  /** `comment:` of .sketio.yml (language, diagram), read by the Action. Absent from older Actions: the defaults apply. */
+  comment: commentSettingsSchema,
   /** Commit date (ISO 8601 with an offset) of the analyzed commit. Orders snapshots; the Artifact does not carry it. */
   committedAt: external_exports.string().min(1).max(40),
   /** Present on pull_request runs. Untrusted, used only to refuse fork PRs early. */
@@ -20677,7 +20689,9 @@ var inferenceRequestSchema = external_exports.object({
    * The commit's date. Only for POST /api/v1/analyses/inference (no Snapshot to name: the static parsers read
    * nothing, so Arch saved none); the route that names a Snapshot takes the date from it and ignores this.
    */
-  committedAt: external_exports.string().max(64).optional()
+  committedAt: external_exports.string().max(64).optional(),
+  /** `comment:` of .sketio.yml, as in the sync request: the completed Snapshot writes the PR comment again. */
+  comment: commentSettingsSchema
 });
 var inferenceOutcomes = ["created", "duplicate", "unchanged"];
 var inferenceResponseSchema = external_exports.object({
@@ -22022,7 +22036,7 @@ function finalize2(v) {
 
 // ../../packages/parsers/cloudflare/src/cloudflareParser.ts
 var PARSER_ID3 = "cloudflare";
-var CLOUDFLARE_PARSER_VERSION = "0.3.1";
+var CLOUDFLARE_PARSER_VERSION = "0.3.3";
 var CONFIG_FILE = /(^|\/)wrangler\.(toml|json|jsonc)$/;
 var isConfigFile = (path) => CONFIG_FILE.test(path) && !isIgnoredPath(path);
 var str = (obj, key) => {
@@ -22098,6 +22112,19 @@ function objectsAt(obj, key) {
   if (v?.kind === "object") return [v];
   return elements(obj, key);
 }
+var BINDING_KEYS = /* @__PURE__ */ new Set([
+  "d1_databases",
+  "r2_buckets",
+  "kv_namespaces",
+  "durable_objects",
+  "services",
+  "queues",
+  "ai",
+  "analytics_engine_datasets",
+  "assets",
+  // `unsafe.bindings[].name` is read by collectBindingNames (the rest of `unsafe` has no binding).
+  "unsafe"
+]);
 function declsOf(cfg, workerName, skip) {
   const out = [];
   for (const item of elements(cfg, "d1_databases")) {
@@ -22235,6 +22262,34 @@ function declsOf(cfg, workerName, skip) {
   }
   return out;
 }
+function varKeys(cfg) {
+  const v = getEntry(cfg, "vars")?.value;
+  return v?.kind === "object" ? v.entries.map((e) => e.key) : [];
+}
+var NAME_AS_BINDING = /* @__PURE__ */ new Set(["send_email", "ratelimits"]);
+var KEY_IS_BINDING_NAME = /* @__PURE__ */ new Set(["wasm_modules", "text_blobs", "data_blobs"]);
+var NAME_IN_BINDINGS_OF = /* @__PURE__ */ new Set(["durable_objects", "unsafe", "logfwdr"]);
+function collectBindingNames(v, out, top, key, parent) {
+  if (v.kind === "array") {
+    for (const i of v.items) collectBindingNames(i, out, false, key, parent);
+    return;
+  }
+  if (v.kind !== "object") return;
+  for (const e of v.entries) {
+    if (top && NOT_BINDING_KEYS.has(e.key) && !BINDING_KEYS.has(e.key)) continue;
+    if (top && KEY_IS_BINDING_NAME.has(e.key)) {
+      if (e.value.kind === "object") for (const k of e.value.entries) out.add(k.key);
+      continue;
+    }
+    if (e.value.kind === "scalar") {
+      if (typeof e.value.value !== "string" || e.value.value === "") continue;
+      const asName = e.key === "name" && key === "bindings" && parent !== void 0 && NAME_IN_BINDINGS_OF.has(parent) || e.key === "name" && key !== void 0 && NAME_AS_BINDING.has(key);
+      if (e.key === "binding" || asName) out.add(e.value.value);
+      continue;
+    }
+    collectBindingNames(e.value, out, false, e.key, key);
+  }
+}
 function stringsOf(v, objectKey) {
   if (!v) return [];
   if (v.kind === "scalar") return typeof v.value === "string" ? [v.value] : [];
@@ -22362,6 +22417,17 @@ function analyze(ctx, file2, root) {
   ];
   const crons = stringsOf(getEntry(getEntry(root, "triggers")?.value, "crons")?.value, "");
   const config2 = { bindings };
+  const declared = /* @__PURE__ */ new Set();
+  collectBindingNames(root, declared, true);
+  config2.declaredBindings = [...declared].sort();
+  const envDeclared = /* @__PURE__ */ new Set();
+  const varNames = new Set(varKeys(root));
+  for (const [, block] of envBlocks) {
+    collectBindingNames(block, envDeclared, true);
+    for (const k of varKeys(block)) varNames.add(k);
+  }
+  if (envDeclared.size > 0) config2.envDeclaredBindings = [...envDeclared].sort();
+  if (varNames.size > 0) config2.varNames = [...varNames].sort();
   const main = str(root, "main");
   if (main) config2.main = main;
   const compatibilityDate = str(root, "compatibility_date");
@@ -23721,11 +23787,11 @@ function sqlKind(arg) {
   if (word && SQL_WRITE.has(word)) return "write";
   return "unknown";
 }
-function bindingAccess(node2, ctxName) {
+function bindingAccess(node2, isEnv) {
   const n = unwrapExpression(node2);
   if (n.type !== "MemberExpression") return void 0;
   const envNode = unwrapExpression(n.object);
-  if (!isEnvOf(envNode, ctxName)) return void 0;
+  if (!isEnv(envNode)) return void 0;
   const prop = n.property;
   if (n.computed === true) {
     const s = stringValue(prop);
@@ -23760,44 +23826,60 @@ function boundNames(pattern, out) {
       break;
   }
 }
-function isRebound(body, name2) {
-  let found = false;
+function bindingCount(body, name2) {
+  let count = 0;
   walk2(body, (n) => {
-    if (found) return false;
     const names = /* @__PURE__ */ new Set();
     if (n.type === "VariableDeclarator") boundNames(n.id, names);
     else if (isFunction(n) || n.type === "FunctionDeclaration") {
       for (const p of n.params ?? []) boundNames(p, names);
       if (n.type === "FunctionDeclaration" && n.id) boundNames(n.id, names);
     } else if (n.type === "CatchClause") boundNames(n.param, names);
-    if (names.has(name2)) found = true;
+    if (names.has(name2)) count++;
   });
-  return found;
+  return count;
 }
-function scanHandler(fn, module, usages, envPassed, gap) {
-  const param = fn.params[0];
-  const ctxName = identName(param);
-  if (!ctxName) {
-    if (param?.type === "ObjectPattern") {
-      gap("context-destructured", "handler destructures its context parameter; c.env uses are not traced", fn);
+var isRebound = (body, name2) => bindingCount(body, name2) > 0;
+function scanEnv(body, module, root, outerBound) {
+  const out = { usages: [], flows: [], opaque: [] };
+  const shadowCache = /* @__PURE__ */ new Map();
+  const shadowed = (name2) => {
+    let v = shadowCache.get(name2);
+    if (v === void 0) {
+      v = outerBound.has(name2) || isRebound(body, name2);
+      shadowCache.set(name2, v);
     }
-    return;
-  }
-  if (isRebound(fn.body, ctxName)) {
-    gap("context-rebound", `"${ctxName}" is rebound inside the handler; its c.env uses are not traced`, fn);
-    return;
-  }
+    return v;
+  };
+  const aliases = /* @__PURE__ */ new Set();
+  const isEnv = (n) => {
+    if (root.kind === "ctx" && isEnvOf(n, root.name)) return true;
+    const name2 = identName(n);
+    return name2 !== void 0 && (root.kind === "param" && name2 === root.name || aliases.has(name2));
+  };
   const handled = /* @__PURE__ */ new WeakSet();
   const push = (u, span) => {
     const { startLine, endLine } = module.lines(span);
-    usages.push({ ...u, startLine, endLine });
+    out.usages.push({ ...u, startLine, endLine });
   };
-  walk2(fn.body, (n) => {
+  const bindingsOfPattern = (pattern) => {
+    for (const prop of pattern.properties) {
+      if (prop.type !== "Property") {
+        out.opaque.push(module.lines(prop).startLine);
+        continue;
+      }
+      const key = prop.key;
+      const name2 = prop.computed === true ? stringValue(key) : identName(key) ?? stringValue(key);
+      if (name2) push({ binding: name2 }, prop);
+      else out.opaque.push(module.lines(prop).startLine);
+    }
+  };
+  walk2(body, (n, parent) => {
     if (n.type === "CallExpression") {
       const callee = unwrapExpression(n.callee);
       if (callee.type === "MemberExpression" && callee.computed !== true) {
         const inner = unwrapExpression(callee.object);
-        const access = bindingAccess(inner, ctxName);
+        const access = bindingAccess(inner, isEnv);
         const method = identName(callee.property);
         if (access && method) {
           handled.add(inner);
@@ -23812,33 +23894,112 @@ function scanHandler(fn, module, usages, envPassed, gap) {
           );
         }
       }
+      const name2 = identName(callee);
+      if (name2 && !shadowed(name2)) {
+        const args = n.arguments;
+        for (let i = 0; i < args.length; i++) {
+          const arg = unwrapExpression(args[i]);
+          if (arg.type === "SpreadElement") break;
+          if (!isEnv(arg)) continue;
+          handled.add(arg);
+          const { startLine, endLine } = module.lines(arg);
+          out.flows.push({ callee: name2, argIndex: i, startLine, endLine });
+        }
+      }
       return;
     }
-    if (n.type === "VariableDeclarator" && n.id.type === "ObjectPattern" && n.init) {
+    if (n.type === "VariableDeclarator" && n.init) {
       const init = unwrapExpression(n.init);
-      if (isEnvOf(init, ctxName)) {
+      const id = n.id;
+      if (!isEnv(init)) return;
+      if (id.type === "ObjectPattern") {
         handled.add(init);
-        for (const prop of n.id.properties) {
-          const key = prop.type === "Property" ? prop.key : void 0;
-          const name2 = key && (identName(key) ?? stringValue(key));
-          if (name2) push({ binding: name2 }, prop);
-        }
+        bindingsOfPattern(id);
+        return false;
+      }
+      const alias = identName(id);
+      if (alias && bindingCount(body, alias) === 1) {
+        handled.add(init);
+        aliases.add(alias);
+        return false;
       }
       return;
     }
     if (n.type === "MemberExpression") {
       if (handled.has(n)) return false;
-      const access = bindingAccess(n, ctxName);
+      const access = bindingAccess(n, isEnv);
       if (access) {
         push({ binding: access.name }, n);
         return false;
       }
-      if (isEnvOf(n, ctxName)) {
-        envPassed.push(module.lines(n).startLine);
+      if (root.kind === "ctx" && isEnvOf(n, root.name)) {
+        out.opaque.push(module.lines(n).startLine);
         return false;
       }
+      return;
+    }
+    if (n.type === "Identifier") {
+      const name2 = n.name;
+      if (!(root.kind === "param" && name2 === root.name || aliases.has(name2))) return;
+      if (handled.has(n)) return;
+      if (parent?.type === "MemberExpression" && parent.property === n && parent.computed !== true) return;
+      if (parent?.type === "Property" && parent.key === n && parent.computed !== true && !parent.shorthand)
+        return;
+      if (parent?.type === "VariableDeclarator" && parent.id === n) return;
+      out.opaque.push(module.lines(n).startLine);
     }
   });
+  return out;
+}
+function scanHandler(fn, module, app, envPassed, gap) {
+  const param = fn.params[0];
+  const ctxName = identName(param);
+  if (!ctxName) {
+    if (param?.type === "ObjectPattern") {
+      gap("context-destructured", "handler destructures its context parameter; c.env uses are not traced", fn);
+    }
+    return;
+  }
+  if (isRebound(fn.body, ctxName)) {
+    gap("context-rebound", `"${ctxName}" is rebound inside the handler; its c.env uses are not traced`, fn);
+    return;
+  }
+  const bound = /* @__PURE__ */ new Set();
+  for (const p of fn.params) boundNames(p, bound);
+  const scan = scanEnv(fn.body, module, { kind: "ctx", name: ctxName }, bound);
+  app.usages.push(...scan.usages);
+  app.envFlows.push(...scan.flows);
+  envPassed.push(...scan.opaque);
+}
+function scanParam(fn, index, module) {
+  let param = fn.params[index];
+  if (param?.type === "AssignmentPattern") param = param.left;
+  if (!param) return void 0;
+  const body = fn.body;
+  if (param.type === "ObjectPattern") {
+    const names = /* @__PURE__ */ new Set();
+    boundNames(param, names);
+    for (const name3 of names) {
+      if (isRebound(body, name3)) return { broken: `"${name3}" is rebound inside the function` };
+    }
+    const usages = [];
+    const opaque = [];
+    for (const prop of param.properties) {
+      const key = prop.type === "Property" ? prop.key : void 0;
+      const name3 = prop.type === "Property" && prop.computed !== true ? key && (identName(key) ?? stringValue(key)) : void 0;
+      if (name3) {
+        const { startLine, endLine } = module.lines(prop);
+        usages.push({ binding: name3, startLine, endLine });
+      } else opaque.push(module.lines(prop).startLine);
+    }
+    return { usages, flows: [], opaque };
+  }
+  const name2 = identName(param);
+  if (!name2) return void 0;
+  if (isRebound(body, name2)) return { broken: `"${name2}" is rebound inside the function` };
+  const bound = /* @__PURE__ */ new Set();
+  for (const p of fn.params) boundNames(p, bound);
+  return scanEnv(body, module, { kind: "param", name: name2 }, bound);
 }
 function extractFile(module, honoLocals) {
   const model = {
@@ -23849,6 +24010,8 @@ function extractFile(module, honoLocals) {
     exports: /* @__PURE__ */ new Map(),
     gaps: [],
     envPassedLines: [],
+    helpers: /* @__PURE__ */ new Map(),
+    ambiguous: /* @__PURE__ */ new Set(),
     fetchRefs: [],
     defaultFetches: []
   };
@@ -23864,21 +24027,48 @@ function extractFile(module, honoLocals) {
   const functions = /* @__PURE__ */ new Map();
   const topLevel = /* @__PURE__ */ new Map();
   const declarations = [];
+  const declCount = /* @__PURE__ */ new Map();
+  const declare = (name2) => {
+    declCount.set(name2, (declCount.get(name2) ?? 0) + 1);
+  };
+  for (const imp of model.imports) if (!imp.typeOnly) declare(imp.local);
   for (const stmt of module.program.body) {
     const decl = (stmt.type === "ExportNamedDeclaration" || stmt.type === "ExportDefaultDeclaration") && stmt.declaration ? stmt.declaration : stmt;
     declarations.push(decl);
+    if (decl.type === "ClassDeclaration" && decl.id) declare(identName(decl.id));
     if (decl.type === "FunctionDeclaration" && decl.id) {
+      declare(identName(decl.id));
       functions.set(identName(decl.id), decl);
       topLevel.set(identName(decl.id), decl);
     }
     if (decl.type === "VariableDeclaration") {
       for (const d of decl.declarations) {
+        const declared = /* @__PURE__ */ new Set();
+        boundNames(d.id, declared);
+        for (const n of declared) declare(n);
         const name2 = identName(d.id);
         const init = d.init ? unwrapExpression(d.init) : void 0;
         if (name2 && init && isFunction(init)) functions.set(name2, init);
         if (name2 && init) topLevel.set(name2, init);
       }
     }
+  }
+  const assigned = /* @__PURE__ */ new Set();
+  walk2(module.program, (n) => {
+    if (n.type === "AssignmentExpression") {
+      const target = identName(n.left);
+      if (target) assigned.add(target);
+    }
+  });
+  for (const [name2, fn] of functions) {
+    if ((declCount.get(name2) ?? 0) > 1 || assigned.has(name2)) {
+      model.ambiguous.add(name2);
+      continue;
+    }
+    model.helpers.set(name2, {
+      line: module.lines(fn).startLine,
+      params: fn.params.map((_, i) => scanParam(fn, i, module))
+    });
   }
   const reassigned = /* @__PURE__ */ new Map();
   for (const stmt of module.program.body) {
@@ -23891,7 +24081,7 @@ function extractFile(module, honoLocals) {
     for (const raw of args) {
       const arg = unwrapExpression(raw);
       const fn = isFunction(arg) ? arg : arg.type === "Identifier" ? functions.get(arg.name) : void 0;
-      if (fn) scanHandler(fn, module, app.usages, model.envPassedLines, gap);
+      if (fn) scanHandler(fn, module, app, model.envPassedLines, gap);
     }
   };
   const analyze2 = (expr, declName) => {
@@ -23909,7 +24099,7 @@ function extractFile(module, honoLocals) {
         );
         return;
       }
-      app = { varName: declName, lines: module.lines(root), routes: [], mounts: [], usages: [] };
+      app = { varName: declName, lines: module.lines(root), routes: [], mounts: [], usages: [], envFlows: [] };
       model.apps.push(app);
     } else if (root.type === "Identifier") {
       const known = model.names.get(root.name);
@@ -23989,6 +24179,9 @@ function extractFile(module, honoLocals) {
         analyze2(d.init, name2);
         if (exported) model.exports.set(name2, { kind: "local", name: name2 });
       }
+    } else if (exported && decl.type === "FunctionDeclaration" && decl.id) {
+      const name2 = identName(decl.id);
+      model.exports.set(name2, { kind: "local", name: name2 });
     } else if (exported && stmt.type === "ExportNamedDeclaration" && !stmt.declaration) {
       const source = stmt.source ? stmt.source.value : void 0;
       for (const spec of stmt.specifiers) {
@@ -24087,7 +24280,8 @@ function onMethods(arg) {
 
 // ../../packages/parsers/hono/src/honoParser.ts
 var HONO_PARSER_ID = "hono";
-var HONO_PARSER_VERSION = "0.2.0";
+var HONO_PARSER_VERSION = "0.3.1";
+var MAX_ENV_DEPTH = 4;
 var HONO_IMPORT = /["']hono(?:\/[^"']*)?["']/;
 var importsHono = (text4) => HONO_IMPORT.test(text4);
 var messageOf2 = (e) => e instanceof Error ? e.message : String(e);
@@ -24120,6 +24314,82 @@ var Project = class {
       };
     }
     return this.resolveExport(target, imp.imported, depth + 1);
+  }
+  /** A function declared in `file`, or imported there from another file of the repository. */
+  resolveFunction(file2, name2, depth = 0) {
+    const model = this.models.get(file2);
+    if (!model) return { ok: false, why: `${file2} was not analysed` };
+    if (model.ambiguous.has(name2)) {
+      return { ok: false, why: `"${name2}" is declared more than once or assigned again in ${file2}` };
+    }
+    const local = model.helpers.get(name2);
+    if (local) return { ok: true, file: file2, name: name2, fn: local };
+    const imp = model.imports.find((i) => i.local === name2 && !i.typeOnly);
+    if (!imp) return { ok: false, why: `"${name2}" is not a function declared in ${file2} or imported there` };
+    if (imp.imported === "*") return { ok: false, why: `"${name2}" is a namespace import` };
+    const target = resolveRelativeImport(file2, imp.source, this.files);
+    if (!target) {
+      return {
+        ok: false,
+        why: `"${name2}" comes from "${imp.source}", which is not a file in this repository`
+      };
+    }
+    return this.resolveFunctionExport(target, imp.imported, depth + 1);
+  }
+  resolveFunctionExport(file2, name2, depth) {
+    if (depth > 8) return { ok: false, why: "import chain is too deep" };
+    const model = this.models.get(file2);
+    if (!model) return { ok: false, why: `${file2} was not analysed` };
+    if (name2 === "default") {
+      return model.defaultExport ? this.resolveFunction(file2, model.defaultExport.name, depth + 1) : { ok: false, why: `${file2} has no default export` };
+    }
+    const entry = model.exports.get(name2);
+    if (!entry) return { ok: false, why: `${file2} does not export "${name2}"` };
+    if (entry.kind === "local") return this.resolveFunction(file2, entry.name, depth + 1);
+    const target = resolveRelativeImport(file2, entry.source, this.files);
+    if (!target) {
+      return {
+        ok: false,
+        why: `${file2} re-exports "${name2}" from "${entry.source}", which is not a file in this repository`
+      };
+    }
+    return this.resolveFunctionExport(target, entry.imported, depth + 1);
+  }
+  /**
+   * Follows `callee(.., env, ..)` into the function and on through the functions it hands the env to.
+   * Collects the binding names used there, or says why the trail stops (never guesses).
+   */
+  traceEnv(file2, flow2, depth, path, out) {
+    if (depth > MAX_ENV_DEPTH) {
+      out.failures.push(
+        `${flow2.callee}() is more than ${MAX_ENV_DEPTH} calls away from the handler (too deep)`
+      );
+      return;
+    }
+    const r = this.resolveFunction(file2, flow2.callee);
+    if (!r.ok) {
+      out.failures.push(`${flow2.callee}() cannot be followed: ${r.why}`);
+      return;
+    }
+    const key = `${r.file}\0${r.name}\0${flow2.argIndex}`;
+    if (path.has(key)) return;
+    const scan = r.fn.params[flow2.argIndex];
+    if (!scan) {
+      out.failures.push(
+        `${flow2.callee}() in ${r.file} takes the env in a parameter that is not a plain name or object pattern`
+      );
+      return;
+    }
+    if ("broken" in scan) {
+      out.failures.push(`${flow2.callee}() in ${r.file}: ${scan.broken}`);
+      return;
+    }
+    for (const line2 of scan.opaque) {
+      out.failures.push(`the env is used in ${r.file} line ${line2} in a way that is not followed`);
+    }
+    for (const u of scan.usages) out.usages.push({ ...u, file: r.file, passed: true });
+    const next = new Set(path).add(key);
+    for (const f of scan.flows) this.traceEnv(r.file, f, depth + 1, next, out);
   }
   resolveExport(file2, name2, depth) {
     if (depth > 8) return { ok: false, why: "import chain is too deep" };
@@ -24233,6 +24503,27 @@ async function analyzeHono(ctx) {
     model.apps.forEach((_, index) => {
       refs.push({ file: file2, index });
     });
+  }
+  const envUnfollowed = /* @__PURE__ */ new Map();
+  for (const ref of refs) {
+    const app = project.app(ref);
+    const seen = new Set(app.usages.map((u) => JSON.stringify(u)));
+    for (const flow2 of app.envFlows) {
+      const out = { usages: [], failures: [] };
+      project.traceEnv(ref.file, flow2, 1, /* @__PURE__ */ new Set(), out);
+      for (const u of out.usages) {
+        const k = JSON.stringify(u);
+        if (seen.has(k)) continue;
+        seen.add(k);
+        app.usages.push(u);
+      }
+      if (out.failures.length > 0) {
+        const entry = envUnfollowed.get(ref.file) ?? { lines: [], whys: [] };
+        entry.lines.push(flow2.startLine);
+        entry.whys.push(...out.failures);
+        envUnfollowed.set(ref.file, entry);
+      }
+    }
   }
   for (const parent of refs) {
     const app = project.app(parent);
@@ -24366,9 +24657,11 @@ async function analyzeHono(ctx) {
   }
   for (const model of project.models.values()) {
     for (const g of model.gaps) gap(model.file, g);
-    if (model.envPassedLines.length > 0) {
-      const lines = [...new Set(model.envPassedLines)].sort((a, b) => a - b).join(", ");
-      const reason = `c.env is passed to other code (line ${lines}); the bindings used there are not traced`;
+    const unfollowed = envUnfollowed.get(model.file);
+    if (model.envPassedLines.length > 0 || unfollowed) {
+      const lines = [.../* @__PURE__ */ new Set([...model.envPassedLines, ...unfollowed?.lines ?? []])].sort((a, b) => a - b).join(", ");
+      const why = unfollowed ? ` (${[...new Set(unfollowed.whys)].join("; ")})` : "";
+      const reason = `c.env is passed to other code (line ${lines}); the bindings used there are not traced${why}`;
       diagnostics.push({
         level: "info",
         code: "env-passed",
@@ -24434,6 +24727,7 @@ function joinNormalized2(dir, rel) {
   return out.join("/");
 }
 var isHonoService = (n) => n.type === "service" && n.scope === "application" && n.properties.framework === "hono";
+var strings2 = (v) => Array.isArray(v) ? v.filter((x) => typeof x === "string") : [];
 var locationsOf = (v) => Array.isArray(v) ? v : [];
 var honoBindingLinker = {
   id: HONO_LINKER_ID,
@@ -24476,6 +24770,10 @@ var honoBindingLinker = {
         for (const b of cfg.bindings ?? []) {
           if (typeof b.binding === "string" && !bindings.has(b.binding)) bindings.set(b.binding, b);
         }
+        const declaredNames = /* @__PURE__ */ new Set([
+          ...strings2(cfg.declaredBindings),
+          ...strings2(cfg.envDeclaredBindings)
+        ]);
         const owned = /* @__PURE__ */ new Map();
         const queue = [];
         for (const s of services) {
@@ -24522,16 +24820,18 @@ var honoBindingLinker = {
           const file2 = service.properties.file ?? entryPath;
           const byRelation = /* @__PURE__ */ new Map();
           const unresolved = /* @__PURE__ */ new Set();
+          const unreadable = /* @__PURE__ */ new Set();
           for (const u of usages) {
             const b = bindings.get(u.binding);
             if (!b) {
-              unresolved.add(u.binding);
+              if (!u.passed) unresolved.add(u.binding);
+              else if (declaredNames.has(u.binding)) unreadable.add(u.binding);
               continue;
             }
             const relation = relationOf(b.type, u);
             const key = `${b.resource}\0${relation}`;
             const entry = byRelation.get(key) ?? { resource: b.resource, relation, ev: [] };
-            entry.ev.push(staticEvidence(ctx, file2, u.startLine, u.endLine));
+            entry.ev.push(staticEvidence(ctx, u.file ?? file2, u.startLine, u.endLine));
             byRelation.set(key, entry);
           }
           const specific2 = new Set(
@@ -24553,6 +24853,14 @@ var honoBindingLinker = {
                 ...declared.length > 0 ? declared : configEvidence
               ],
               verification: inferred ? "inferred" : "verified"
+            });
+          }
+          if (unreadable.size > 0) {
+            const names = [...unreadable].sort().join(", c.env.");
+            out.unverified.push({
+              parserId: HONO_LINKER_ID,
+              file: file2,
+              reason: `c.env.${names} used through a function in ${service.name} are declared in ${configFile} but not read as bindings of this Worker (an env block, an unsupported kind or a skipped entry); not linked`
             });
           }
           if (unresolved.size > 0) {
@@ -27445,7 +27753,8 @@ function resolveConfig(config2) {
   return {
     analysis,
     exclude: [...config2?.exclude ?? DEFAULT_EXCLUDES],
-    ai: { enabled: config2?.ai?.enabled ?? false }
+    ai: { enabled: config2?.ai?.enabled ?? false },
+    comment: { language: config2?.comment?.language ?? "en", diagram: config2?.comment?.diagram ?? true }
   };
 }
 function selectEntries(config2, parsers, linkers) {
@@ -28323,7 +28632,8 @@ async function sendInference(options) {
       headers: { authorization: `Bearer ${options.token}`, "content-type": "application/json" },
       body: JSON.stringify({
         files: options.files,
-        ...options.snapshotId === null && options.committedAt ? { committedAt: options.committedAt } : {}
+        ...options.snapshotId === null && options.committedAt ? { committedAt: options.committedAt } : {},
+        ...options.comment ? { comment: options.comment } : {}
       }),
       redirect: "error",
       signal: AbortSignal.timeout(TIMEOUT_MS)
@@ -28397,6 +28707,7 @@ async function runInference(io, step) {
       snapshotId: step.snapshotId,
       ...step.committedAt ? { committedAt: step.committedAt } : {},
       files: selection.files,
+      ...step.comment ? { comment: step.comment } : {},
       ...io.fetchFn ? { fetchFn: io.fetchFn } : {}
     });
     if (!result.ok) {
@@ -28661,7 +28972,7 @@ function writeResults(io, response, mode) {
   if (io.env.GITHUB_STEP_SUMMARY)
     appendFileSync2(io.env.GITHUB_STEP_SUMMARY, renderSyncSummary(response, mode));
 }
-async function sendToArch(io, inputs, context, artifact) {
+async function sendToArch(io, inputs, context, artifact, comment) {
   const { mode, apiUrl } = inputs;
   if (mode === "analyze" || !apiUrl) return { code: 0 };
   const fail = (message) => {
@@ -28688,6 +28999,7 @@ async function sendToArch(io, inputs, context, artifact) {
     body: {
       artifact,
       committedAt: date5.date,
+      ...mode === "diff" && comment ? { comment } : {},
       ...mode === "diff" && context.pullRequest ? {
         pullRequest: {
           number: context.pullRequest.number,
@@ -28790,7 +29102,8 @@ status=${artifact.status}
     ...io.sleep ? { sleep: io.sleep } : {},
     ...io.commitDate ? { commitDate: io.commitDate } : {}
   };
-  const sent = await sendToArch(syncIo, inputs.inputs, context, artifact);
+  const comment = resolveConfig(config2.config).comment;
+  const sent = await sendToArch(syncIo, inputs.inputs, context, artifact, comment);
   const snapshotId = sent.response?.snapshotId ?? null;
   const nothingSaved = snapshotId === null && sent.response?.outcome === "recorded" && artifact.status !== "failed" && !!sent.committedAt;
   if (sent.code === 0 && sent.token && (snapshotId !== null || nothingSaved) && inputs.inputs.apiUrl)
@@ -28801,6 +29114,7 @@ status=${artifact.status}
       ...sent.committedAt ? { committedAt: sent.committedAt } : {},
       artifact,
       aiEnabled: resolveConfig(config2.config).ai.enabled,
+      ...mode === "diff" ? { comment } : {},
       read: (path) => fs.readText(path)
     });
   if (artifact.status === "failed") {

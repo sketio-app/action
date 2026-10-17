@@ -70,6 +70,17 @@ rejected the request; `partial` exits 0 with a warning.
   `pull_request_target` is not accepted by `sync` or `diff`.
 - **The Action never writes to the pull request.** For `diff`, Arch keeps one comment and a Check Run named
   `Sketio Architecture` up to date using the GitHub App's own installation token.
+- **The pull request comment** is written in English with a Mermaid diagram of the change (the changed elements and
+  both ends of the changed relations) unless `.sketio.yml` says otherwise. `mode: diff` sends these settings to Arch;
+  the Check Run summary follows them too:
+
+  ```yaml
+  comment:
+    language: ja   # ja or en (default: en)
+    diagram: true  # add the diagram (default: true); false leaves it out
+  ```
+
+  With more than 30 changed elements the diagram is left out and the comment links to Sketio Arch instead.
 - **`fetch-depth`**: Arch orders Snapshots by commit date. `sync` uses `GITHUB_SHA` (the default checkout is
   enough). `diff` uses the pull request's head commit, so set `fetch-depth: 2`.
 - **AI completion is off by default.** It only runs when `.sketio.yml` says `ai: { enabled: true }`; then the
@@ -114,6 +125,16 @@ Architecture Artifact（JSON）として書き出す Action です。`mode: sync
 
 - fork からの PR は読むだけで、何も送りません（OIDC トークンも要求しません）
 - Action は PR に書き込みません。`diff` では Arch が GitHub App の権限でコメントと Check Run `Sketio Architecture` を更新します
+- PR のコメントは、既定では英語で、変わった要素と変わった関係の両端を描いた Mermaid の図が付きます。`.sketio.yml` で変えられます
+  （`mode: diff` が Arch に伝え、Check Run の要約も同じ設定になります）
+
+  ```yaml
+  comment:
+    language: ja   # ja か en（既定は en）
+    diagram: true  # 図を付ける（既定は true）。false で図なし
+  ```
+
+  変わった要素が 30 を超えるときは図を省き、Sketio Arch で開くリンクだけにします
 - `mode: diff` では PR の head コミットの日付を使うので、`actions/checkout` に `fetch-depth: 2` を付けてください
 - AI による補完は既定で無効です。`.sketio.yml` に `ai: { enabled: true }` と書いたときだけ、静的な解析で読めなかったファイルの
   （秘密をマスクした）テキストを Arch に送ります
