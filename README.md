@@ -21,7 +21,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 2   # mode: diff reads the pull request's head commit (a parent of the merge commit)
-      - uses: sketio-app/action@7cd614afd865f89440d6e6c543bf5df761217bde # v1.2.0
+      - uses: sketio-app/action@d16d1c062f908ced25b0bdf48745574e000c2433 # v1.3.0
         with:
           mode: ${{ github.event_name == 'pull_request' && 'diff' || 'sync' }}
           api-url: https://arch.sketio.app
@@ -33,7 +33,7 @@ Pin the Action to a commit, as above. A tag can be moved, so pinning to the comm
 
 ```yaml
       - uses: actions/checkout@v4
-      - uses: sketio-app/action@7cd614afd865f89440d6e6c543bf5df761217bde # v1.2.0
+      - uses: sketio-app/action@d16d1c062f908ced25b0bdf48745574e000c2433 # v1.3.0
 ```
 
 ## Modes
@@ -106,7 +106,7 @@ do not send pull requests here.
 Architecture Artifact（JSON）として書き出す Action です。`mode: sync` / `mode: diff` では Artifact を
 [Sketio Arch](https://arch.sketio.app) に送ります。
 
-使い方は上の例のとおりです（`uses: sketio-app/action@7cd614afd865f89440d6e6c543bf5df761217bde # v1.2.0`）。タグは動かせるので、コミットハッシュで固定すると、同じコードしか動きません。Dependabot（`package-ecosystem: github-actions`）でハッシュとコメントの版を自動で上げられます。手軽に試すだけなら `sketio-app/action@v1`（動くメジャータグ）でも動きます。
+使い方は上の例のとおりです（`uses: sketio-app/action@d16d1c062f908ced25b0bdf48745574e000c2433 # v1.3.0`）。タグは動かせるので、コミットハッシュで固定すると、同じコードしか動きません。Dependabot（`package-ecosystem: github-actions`）でハッシュとコメントの版を自動で上げられます。手軽に試すだけなら `sketio-app/action@v1`（動くメジャータグ）でも動きます。
 
 | mode | 動く場面 | すること |
 | --- | --- | --- |
