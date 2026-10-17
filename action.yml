@@ -1,5 +1,5 @@
 name: Sketio Architecture
-description: Reads the architecture of this repository (Workers, bindings, routes, CloudFormation, CDK), writes it as a JSON Artifact and, with mode sync or diff, sends it to Sketio Arch.
+description: Reads the architecture of this repository (Workers, bindings, routes, CloudFormation, CDK, Terraform), writes it as a JSON Artifact and, with mode sync or diff, sends it to Sketio Arch.
 author: Sketio
 inputs:
   mode:

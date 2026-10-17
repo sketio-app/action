@@ -13,13 +13,13 @@ function issue(level, message, properties = {}) {
   return `::${level}${props ? ` ${props}` : ""}::${escapeData(message)}`;
 }
 var isControl = (code2) => code2 <= 31 || code2 === 127 || code2 === 133 || code2 === 8232 || code2 === 8233;
-var oneLine = (text2) => {
+var oneLine = (text3) => {
   let out = "";
-  for (const ch of text2) out += isControl(ch.codePointAt(0)) ? " " : ch;
+  for (const ch of text3) out += isControl(ch.codePointAt(0)) ? " " : ch;
   return out.replace(/ {2,}/g, " ").trim();
 };
-function plainLine(text2) {
-  const line2 = oneLine(text2);
+function plainLine(text3) {
+  const line2 = oneLine(text3);
   return line2.startsWith("::") ? ` ${line2}` : line2;
 }
 
@@ -52,23 +52,23 @@ function tokenize(glob) {
   }
   return out;
 }
-function globMatch(tokens, text2, anchored) {
-  const n = text2.length;
+function globMatch(tokens, text3, anchored) {
+  const n = text3.length;
   let reach = new Array(n + 1).fill(false);
   if (anchored) reach[0] = true;
-  else for (let i = 0; i <= n; i++) reach[i] = i === 0 || text2[i - 1] === "/";
+  else for (let i = 0; i <= n; i++) reach[i] = i === 0 || text3[i - 1] === "/";
   for (const t of tokens) {
     const next = new Array(n + 1).fill(false);
     if (t.kind === "char" || t.kind === "any1") {
       for (let i = 0; i < n; i++) {
-        if (reach[i] && (t.kind === "char" ? text2[i] === t.c : text2[i] !== "/")) next[i + 1] = true;
+        if (reach[i] && (t.kind === "char" ? text3[i] === t.c : text3[i] !== "/")) next[i + 1] = true;
       }
     } else if (t.kind === "star") {
       let open2 = false;
       for (let j = 0; j <= n; j++) {
         if (reach[j]) open2 = true;
         next[j] = open2;
-        if (text2[j] === "/") open2 = false;
+        if (text3[j] === "/") open2 = false;
       }
     } else if (t.kind === "globstar") {
       let open2 = false;
@@ -79,7 +79,7 @@ function globMatch(tokens, text2, anchored) {
     } else {
       let seen = false;
       for (let j = 0; j <= n; j++) {
-        next[j] = reach[j] || seen && text2[j - 1] === "/";
+        next[j] = reach[j] || seen && text3[j - 1] === "/";
         if (reach[j]) seen = true;
       }
     }
@@ -113,7 +113,7 @@ function createIgnore(gitignore) {
 }
 
 // ../../packages/parsers/core/src/memoryFileSystem.ts
-var IGNORED_DIRS = /* @__PURE__ */ new Set(["node_modules", ".git", "dist", ".wrangler", ".turbo"]);
+var IGNORED_DIRS = /* @__PURE__ */ new Set(["node_modules", ".git", "dist", ".wrangler", ".turbo", ".terraform"]);
 function isIgnoredPath(path) {
   const segments = path.split("/");
   return segments.slice(0, -1).some((s) => IGNORED_DIRS.has(s));
@@ -213,8 +213,8 @@ var ESCAPES = {
   r: "\r",
   t: "	"
 };
-function parseJsonc(text2) {
-  const src = text2.charCodeAt(0) === 65279 ? text2.slice(1) : text2;
+function parseJsonc(text3) {
+  const src = text3.charCodeAt(0) === 65279 ? text3.slice(1) : text3;
   let pos = 0;
   const lineStarts2 = [0];
   for (let i = 0; i < src.length; i++) if (src[i] === "\n") lineStarts2.push(i + 1);
@@ -10002,8 +10002,8 @@ function ko_default() {
 }
 
 // ../../node_modules/.pnpm/zod@4.6.5/node_modules/zod/v4/locales/lt.js
-var capitalizeFirstCharacter = (text2) => {
-  return text2.charAt(0).toUpperCase() + text2.slice(1);
+var capitalizeFirstCharacter = (text3) => {
+  return text3.charAt(0).toUpperCase() + text3.slice(1);
 };
 function getUnitTypeFromNumber(number4) {
   const abs = Math.abs(number4);
@@ -20858,11 +20858,11 @@ function intrinsic(entry, at, stack, r, out, depth) {
     case "Fn::GetAtt": {
       let name2;
       let attribute;
-      const text2 = stringOf(arg);
-      if (text2 !== void 0) {
-        const dot = text2.indexOf(".");
-        name2 = dot < 0 ? text2 : text2.slice(0, dot);
-        attribute = dot < 0 ? void 0 : text2.slice(dot + 1);
+      const text3 = stringOf(arg);
+      if (text3 !== void 0) {
+        const dot = text3.indexOf(".");
+        name2 = dot < 0 ? text3 : text3.slice(0, dot);
+        attribute = dot < 0 ? void 0 : text3.slice(dot + 1);
       } else if (arg.kind === "array") {
         name2 = stringOf(arg.items[0]);
         attribute = stringOf(arg.items[1]);
@@ -21587,11 +21587,11 @@ function joinPath(dir, rel) {
   return parts.join("/");
 }
 var isRecord = (v) => typeof v === "object" && v !== null && !Array.isArray(v);
-function readAssemblyManifest(manifestFile, text2) {
-  if (!text2.includes('"artifacts"')) return void 0;
+function readAssemblyManifest(manifestFile, text3) {
+  if (!text3.includes('"artifacts"')) return void 0;
   let json3;
   try {
-    json3 = JSON.parse(text2);
+    json3 = JSON.parse(text3);
   } catch {
     return void 0;
   }
@@ -21618,13 +21618,13 @@ async function findCloudAssemblies(fs) {
   );
   const found = [];
   for (const file2 of files) {
-    let text2;
+    let text3;
     try {
-      text2 = await fs.readText(file2);
+      text3 = await fs.readText(file2);
     } catch {
       continue;
     }
-    const assembly = readAssemblyManifest(file2, text2);
+    const assembly = readAssemblyManifest(file2, text3);
     if (assembly) found.push(assembly);
   }
   return found;
@@ -21638,19 +21638,19 @@ var PARSER_ID = "cloudformation";
 var CLOUDFORMATION_PARSER_VERSION = "0.1.0";
 var TEMPLATE_FILE = /(^|\/)(template|[^/]+\.template)\.json$/;
 var stackKeyOf = (file2) => file2.replace(/\.template\.json$/, "").replace(/\.json$/, "");
-var looksLikeTemplate = (text2) => /"Resources"\s*:/.test(text2);
+var looksLikeTemplate = (text3) => /"Resources"\s*:/.test(text3);
 async function findTemplateSources(ctx) {
   const owned = assemblyOwnedDirs(await findCloudAssemblies(ctx.fs));
   const files = (await ctx.fs.listFiles()).filter((p) => TEMPLATE_FILE.test(p) && !isIgnoredPath(p) && !owned.has(dirname(p))).sort();
   const found = [];
   for (const file2 of files) {
-    let text2;
+    let text3;
     try {
-      text2 = await ctx.fs.readText(file2);
+      text3 = await ctx.fs.readText(file2);
     } catch {
       continue;
     }
-    if (looksLikeTemplate(text2)) found.push({ file: file2, stackKey: stackKeyOf(file2), text: text2 });
+    if (looksLikeTemplate(text3)) found.push({ file: file2, stackKey: stackKeyOf(file2), text: text3 });
   }
   return found;
 }
@@ -21747,8 +21747,8 @@ function isControl2(c, multiline = false) {
   if (multiline && (c === "\n" || c === "\r")) return false;
   return code2 < 32 || code2 === 127;
 }
-function parseToml(text2) {
-  const src = text2.charCodeAt(0) === 65279 ? text2.slice(1) : text2;
+function parseToml(text3) {
+  const src = text3.charCodeAt(0) === 65279 ? text3.slice(1) : text3;
   let pos = 0;
   let line2 = 1;
   const fail = (message) => {
@@ -22334,8 +22334,8 @@ async function parseFile(ctx, file2) {
     unverified: [{ parserId: PARSER_ID3, file: file2, reason: message }]
   });
   try {
-    const text2 = await ctx.fs.readText(file2);
-    const tree = file2.endsWith(".toml") ? parseToml(text2) : parseJsonc(text2);
+    const text3 = await ctx.fs.readText(file2);
+    const tree = file2.endsWith(".toml") ? parseToml(text3) : parseJsonc(text3);
     return analyze(ctx, file2, tree);
   } catch (e) {
     if (e instanceof ConfigSyntaxError) return fail(`${e.message} (line ${e.line})`, e.line);
@@ -23357,9 +23357,9 @@ var TEST_DIR = /(?:^|\/)__tests__\//;
 function isAnalyzableSource(path) {
   return SOURCE.test(path) && !path.endsWith(".d.ts") && !TEST_FILE.test(path) && !TEST_DIR.test(path);
 }
-function lineStarts(text2) {
+function lineStarts(text3) {
   const starts = [0];
-  for (let i = 0; i < text2.length; i++) if (text2.charCodeAt(i) === 10) starts.push(i + 1);
+  for (let i = 0; i < text3.length; i++) if (text3.charCodeAt(i) === 10) starts.push(i + 1);
   return starts;
 }
 function lineAt(starts, offset) {
@@ -23372,21 +23372,21 @@ function lineAt(starts, offset) {
   }
   return lo + 1;
 }
-function parseModule(file2, text2) {
+function parseModule(file2, text3) {
   let result;
   try {
-    result = parseSync2(file2, text2, { preserveParens: false });
+    result = parseSync2(file2, text3, { preserveParens: false });
   } catch (e) {
     return { ok: false, message: e instanceof Error ? e.message : String(e) };
   }
   const error62 = result.errors.find((e) => e.severity === "Error");
   if (error62) return { ok: false, message: error62.message };
-  const starts = lineStarts(text2);
+  const starts = lineStarts(text3);
   return {
     ok: true,
     module: {
       file: file2,
-      text: text2,
+      text: text3,
       program: result.program,
       lines: (node2) => ({
         startLine: lineAt(starts, node2.start),
@@ -23557,9 +23557,9 @@ function hasSecondStatement(sql) {
   return i >= 0 && bare.slice(i + 1).replace(/[\s;]+/g, "") !== "";
 }
 function sqlKind(arg) {
-  const text2 = leadingText(arg);
-  if (text2 !== void 0 && hasSecondStatement(text2)) return "unknown";
-  const word = text2?.trimStart().split(/[\s(]/, 1)[0]?.toLowerCase();
+  const text3 = leadingText(arg);
+  if (text3 !== void 0 && hasSecondStatement(text3)) return "unknown";
+  const word = text3?.trimStart().split(/[\s(]/, 1)[0]?.toLowerCase();
   if (word && SQL_READ.has(word)) return "read";
   if (word && SQL_WRITE.has(word)) return "write";
   return "unknown";
@@ -23932,7 +23932,7 @@ function onMethods(arg) {
 var HONO_PARSER_ID = "hono";
 var HONO_PARSER_VERSION = "0.2.0";
 var HONO_IMPORT = /["']hono(?:\/[^"']*)?["']/;
-var importsHono = (text2) => HONO_IMPORT.test(text2);
+var importsHono = (text3) => HONO_IMPORT.test(text3);
 var messageOf2 = (e) => e instanceof Error ? e.message : String(e);
 var Project = class {
   constructor(files) {
@@ -24026,10 +24026,10 @@ async function analyzeHono(ctx) {
   );
   for (const item of texts) {
     if (!item) continue;
-    const [file2, text2] = item;
-    const parsed = parseModule(file2, text2);
+    const [file2, text3] = item;
+    const parsed = parseModule(file2, text3);
     if (!parsed.ok) {
-      if (!HONO_IMPORT.test(text2)) continue;
+      if (!HONO_IMPORT.test(text3)) continue;
       failFile(file2, "syntax-error", `syntax error: ${parsed.message}`);
       continue;
     }
@@ -24424,6 +24424,1443 @@ var honoBindingLinker = {
   }
 };
 
+// ../../packages/parsers/terraform/src/hcl.ts
+var PUNCT2 = /* @__PURE__ */ new Set(["==", "!=", "<=", ">=", "&&", "||", "=>"]);
+var PUNCT1 = new Set("{}[]().,:?=!<>+-*/%&|^~;".split(""));
+var ID_START = /[A-Za-z_]/;
+var ID_PART = /[A-Za-z0-9_-]/;
+var NUMBER3 = /^\d+(?:\.\d+)?(?:[eE][+-]?\d+)?/;
+var HEREDOC = /^<<(-?)([A-Za-z_][A-Za-z0-9_]*)[ \t]*\r?\n/;
+var MAX_DEPTH2 = 200;
+var INDENT = /^[ \t]*/;
+var indentOf = (line2) => INDENT.exec(line2)[0].length;
+var Lexer = class {
+  constructor(src) {
+    this.src = src;
+  }
+  src;
+  pos = 0;
+  line = 1;
+  lineStart = 0;
+  err(message, line2, col) {
+    return { t: "err", v: message, line: line2, endLine: line2, col };
+  }
+  /** `stopAtBrace`: `${ ... }` の中身。対応する `}` で止まり、それを読み終えた位置に pos を置く。 */
+  tokens(stopAtBrace) {
+    const out = [];
+    const src = this.src;
+    let depth = 0;
+    for (; ; ) {
+      while (this.pos < src.length) {
+        const ch = src[this.pos];
+        if (ch === " " || ch === "	" || ch === "\r") this.pos++;
+        else break;
+      }
+      if (this.pos >= src.length) {
+        if (stopAtBrace) {
+          out.push(this.err("\u9589\u3058\u3066\u3044\u306A\u3044 ${ \u304C\u3042\u308A\u307E\u3059", this.line, this.pos - this.lineStart + 1));
+        }
+        return out;
+      }
+      const c = src[this.pos];
+      const line2 = this.line;
+      const col = this.pos - this.lineStart + 1;
+      if (c === "\n") {
+        out.push({ t: "nl", v: "\n", line: line2, endLine: line2, col });
+        this.pos++;
+        this.line++;
+        this.lineStart = this.pos;
+        continue;
+      }
+      if (c === "#" || c === "/" && src[this.pos + 1] === "/") {
+        while (this.pos < src.length && src[this.pos] !== "\n") this.pos++;
+        continue;
+      }
+      if (c === "/" && src[this.pos + 1] === "*") {
+        const end = src.indexOf("*/", this.pos + 2);
+        const stop = end < 0 ? src.length : end + 2;
+        for (let i = this.pos; i < stop; i++) {
+          if (src[i] === "\n") {
+            this.line++;
+            this.lineStart = i + 1;
+          }
+        }
+        this.pos = stop;
+        if (end < 0) out.push(this.err("\u9589\u3058\u3066\u3044\u306A\u3044\u30B3\u30E1\u30F3\u30C8 /* \u304C\u3042\u308A\u307E\u3059", line2, col));
+        continue;
+      }
+      if (c === '"') {
+        out.push(this.string());
+        continue;
+      }
+      if (c === "<" && src[this.pos + 1] === "<") {
+        const h = this.heredoc();
+        if (h) {
+          out.push(h);
+          continue;
+        }
+      }
+      if (c >= "0" && c <= "9") {
+        const m = NUMBER3.exec(src.slice(this.pos, this.pos + 64));
+        const text3 = m?.[0] ?? c;
+        out.push({ t: "num", v: text3, line: line2, endLine: line2, col });
+        this.pos += text3.length;
+        continue;
+      }
+      if (ID_START.test(c)) {
+        let end = this.pos + 1;
+        while (end < src.length && ID_PART.test(src[end])) end++;
+        out.push({ t: "id", v: src.slice(this.pos, end), line: line2, endLine: line2, col });
+        this.pos = end;
+        continue;
+      }
+      const two = src.slice(this.pos, this.pos + 2);
+      if (PUNCT2.has(two)) {
+        out.push({ t: "p", v: two, line: line2, endLine: line2, col });
+        this.pos += 2;
+        continue;
+      }
+      if (PUNCT1.has(c)) {
+        if (stopAtBrace) {
+          if (c === "{") depth++;
+          else if (c === "}") {
+            if (depth === 0) {
+              this.pos++;
+              return out;
+            }
+            depth--;
+          }
+        }
+        out.push({ t: "p", v: c, line: line2, endLine: line2, col });
+        this.pos++;
+        continue;
+      }
+      out.push(this.err("\u8AAD\u3081\u306A\u3044\u6587\u5B57\u3067\u3059", line2, col));
+      this.pos++;
+    }
+  }
+  interpDepth = 0;
+  /** `${ }` の中を読んで inner に足す。エラーのトークンがあればそれを返す（走査は新しく読んだ分だけ）。 */
+  interpolation(inner, line2, col) {
+    if (this.interpDepth >= MAX_DEPTH2) return this.err("\u88DC\u9593\u306E\u5165\u308C\u5B50\u304C\u6DF1\u3059\u304E\u307E\u3059", line2, col);
+    this.interpDepth++;
+    const read = this.tokens(true);
+    this.interpDepth--;
+    let bad;
+    for (const t of read) {
+      if (!bad && t.t === "err") bad = t;
+      inner.push(t);
+    }
+    return bad;
+  }
+  /** 文字列リテラル。補間 `${ }` と `%{ }` は中のトークンを `inner` に残す。 */
+  string() {
+    const src = this.src;
+    const line2 = this.line;
+    const col = this.pos - this.lineStart + 1;
+    this.pos++;
+    let buf = "";
+    let interpolated = false;
+    const inner = [];
+    for (; ; ) {
+      if (this.pos >= src.length || src[this.pos] === "\n") {
+        return this.err("\u9589\u3058\u3066\u3044\u306A\u3044\u6587\u5B57\u5217\u3067\u3059", line2, col);
+      }
+      const c = src[this.pos];
+      if (c === '"') {
+        this.pos++;
+        break;
+      }
+      if (c === "\\") {
+        const n = src[this.pos + 1];
+        const hex3 = n === "u" ? 4 : n === "U" ? 8 : 0;
+        if (hex3 > 0) {
+          const digits = src.slice(this.pos + 2, this.pos + 2 + hex3);
+          if (digits.length === hex3 && /^[0-9a-fA-F]+$/.test(digits)) {
+            try {
+              buf += String.fromCodePoint(Number.parseInt(digits, 16));
+            } catch {
+              buf += "\uFFFD";
+            }
+            this.pos += 2 + hex3;
+            continue;
+          }
+        }
+        buf += n === "n" ? "\n" : n === "t" ? "	" : n === "r" ? "\r" : n ?? "";
+        this.pos += 2;
+        continue;
+      }
+      if ((c === "$" || c === "%") && src[this.pos + 1] === c && src[this.pos + 2] === "{") {
+        buf += `${c}{`;
+        this.pos += 3;
+        continue;
+      }
+      if ((c === "$" || c === "%") && src[this.pos + 1] === "{") {
+        interpolated = true;
+        this.pos += 2;
+        const bad = this.interpolation(inner, line2, col);
+        if (bad) return bad;
+        continue;
+      }
+      buf += c;
+      this.pos++;
+    }
+    const tok = {
+      t: "str",
+      v: buf,
+      line: line2,
+      endLine: this.line,
+      col,
+      sval: interpolated ? void 0 : buf
+    };
+    if (inner.length > 0) tok.inner = inner;
+    return tok;
+  }
+  /** `<<EOF` / `<<-EOF`。ヒアドキュメントでなければ undefined（`<<` を記号として読む）。 */
+  heredoc() {
+    const src = this.src;
+    const m = HEREDOC.exec(src.slice(this.pos, this.pos + 256));
+    if (!m) return void 0;
+    const indented = m[1] === "-";
+    const marker = m[2];
+    const line2 = this.line;
+    const col = this.pos - this.lineStart + 1;
+    this.pos += m[0].length;
+    this.line++;
+    this.lineStart = this.pos;
+    const inner = [];
+    const lines = [];
+    let current = "";
+    let interpolated = false;
+    for (; ; ) {
+      if (this.pos >= src.length) return this.err("\u9589\u3058\u3066\u3044\u306A\u3044\u30D2\u30A2\u30C9\u30AD\u30E5\u30E1\u30F3\u30C8\u3067\u3059", line2, col);
+      let lineEnd = src.indexOf("\n", this.pos);
+      if (lineEnd < 0) lineEnd = src.length;
+      if (src.slice(this.pos, lineEnd).trim() === marker) {
+        this.pos = lineEnd;
+        break;
+      }
+      while (this.pos < src.length && src[this.pos] !== "\n") {
+        const c = src[this.pos];
+        if ((c === "$" || c === "%") && src[this.pos + 1] === c && src[this.pos + 2] === "{") {
+          current += `${c}{`;
+          this.pos += 3;
+        } else if ((c === "$" || c === "%") && src[this.pos + 1] === "{") {
+          interpolated = true;
+          this.pos += 2;
+          const bad = this.interpolation(inner, line2, col);
+          if (bad) return bad;
+        } else {
+          current += c;
+          this.pos++;
+        }
+      }
+      if (this.pos >= src.length) return this.err("\u9589\u3058\u3066\u3044\u306A\u3044\u30D2\u30A2\u30C9\u30AD\u30E5\u30E1\u30F3\u30C8\u3067\u3059", line2, col);
+      lines.push(current.replace(/\r$/, ""));
+      current = "";
+      this.pos++;
+      this.line++;
+      this.lineStart = this.pos;
+    }
+    let body = lines;
+    if (indented) {
+      const indents = lines.filter((l) => l.trim() !== "").map(indentOf);
+      const strip = indents.length > 0 ? Math.min(...indents) : 0;
+      body = lines.map((l) => l.slice(Math.min(strip, indentOf(l))));
+    }
+    const value2 = body.map((l) => `${l}
+`).join("");
+    const tok = {
+      t: "str",
+      v: value2,
+      line: line2,
+      endLine: this.line,
+      col,
+      sval: interpolated ? void 0 : value2
+    };
+    if (inner.length > 0) tok.inner = inner;
+    return tok;
+  }
+};
+var HclParseError = class extends Error {
+  constructor(message, line2, atEof = false) {
+    super(message);
+    this.line = line2;
+    this.atEof = atEof;
+  }
+  line;
+  atEof;
+};
+var TOP_LEVEL = /* @__PURE__ */ new Set([
+  "resource",
+  "data",
+  "module",
+  "variable",
+  "locals",
+  "output",
+  "provider",
+  "terraform",
+  "moved",
+  "import",
+  "removed",
+  "check"
+]);
+var KEYWORDS = /* @__PURE__ */ new Set(["for", "in", "if", "else", "endif", "endfor", "true", "false", "null"]);
+function describeTok(t) {
+  switch (t.t) {
+    case "id":
+      return "\u8B58\u5225\u5B50";
+    case "str":
+      return "\u6587\u5B57\u5217";
+    case "num":
+      return "\u6570\u5024";
+    case "nl":
+      return "\u6539\u884C";
+    case "eof":
+      return "\u30D5\u30A1\u30A4\u30EB\u306E\u7D42\u308F\u308A";
+    case "err":
+      return "\u8AAD\u3081\u306A\u3044\u90E8\u5206";
+    default:
+      return t.v;
+  }
+}
+var isP = (t, v) => t?.t === "p" && t.v === v;
+var isTerminator = (t) => t.t === "nl" || t.t === "eof" || t.t === "p" && (t.v === "}" || t.v === "]" || t.v === ")" || t.v === ",");
+function refsOfTokens(tokens) {
+  const refs = [];
+  for (let i = 0; i < tokens.length; i++) {
+    const t = tokens[i];
+    if (t.t === "str" && t.inner) {
+      refs.push(...refsOfTokens(t.inner));
+      continue;
+    }
+    if (t.t !== "id" || KEYWORDS.has(t.v)) continue;
+    if (isP(tokens[i - 1], ".")) continue;
+    if (isP(tokens[i + 1], "(")) continue;
+    if (!isP(tokens[i + 1], ".")) continue;
+    const parts = [t.v];
+    let j = i + 1;
+    while (isP(tokens[j], ".") && tokens[j + 1]?.t === "id") {
+      parts.push(tokens[j + 1].v);
+      j += 2;
+    }
+    refs.push({ parts, line: t.line });
+    i = j - 1;
+  }
+  return refs;
+}
+function isTraversal(toks) {
+  if (toks[0]?.t !== "id") return false;
+  let depth = 0;
+  for (const t of toks) {
+    if (t.t === "p" && t.v === "[") depth++;
+    else if (t.t === "p" && t.v === "]") depth--;
+    else if (depth > 0) continue;
+    else if (t.t === "id" || t.t === "num") continue;
+    else if (t.t === "p" && (t.v === "." || t.v === "*")) continue;
+    else return false;
+  }
+  return depth === 0;
+}
+var Parser = class {
+  constructor(toks) {
+    this.toks = toks;
+  }
+  toks;
+  pos = 0;
+  depth = 0;
+  /** 入れ子に入る。深すぎたら読み進めない。 */
+  nest(f) {
+    if (this.depth >= MAX_DEPTH2) this.fail("\u5165\u308C\u5B50\u304C\u6DF1\u3059\u304E\u307E\u3059");
+    this.depth++;
+    try {
+      return f();
+    } finally {
+      this.depth--;
+    }
+  }
+  get cur() {
+    return this.toks[this.pos];
+  }
+  atEof() {
+    return this.cur.t === "eof";
+  }
+  peek(n = 0) {
+    return this.toks[Math.min(this.pos + n, this.toks.length - 1)] ?? this.cur;
+  }
+  fail(message, tok = this.cur) {
+    if (tok.t === "err") throw new HclParseError(tok.v, tok.line);
+    throw new HclParseError(message, tok.line, tok.t === "eof");
+  }
+  skipNewlines() {
+    while (this.cur.t === "nl") this.pos++;
+  }
+  /** ブロックか属性を 1 つ読む。属性は行の終わりまで確かめる。ブロックの後ろは呼び出し側が `expectEnd` する。 */
+  parseItem() {
+    const head = this.cur;
+    if (head.t === "err") this.fail("");
+    if (head.t !== "id") this.fail(`\u3053\u3053\u306B\u306F\u66F8\u3051\u307E\u305B\u3093: ${describeTok(head)}`);
+    if (isP(this.peek(1), "=")) {
+      this.pos += 2;
+      const value2 = this.parseExpr();
+      this.expectEnd();
+      return {
+        attribute: { name: head.v, value: value2, span: { startLine: head.line, endLine: value2.span.endLine } }
+      };
+    }
+    this.pos++;
+    const labels = [];
+    for (; ; ) {
+      const t = this.cur;
+      if (t.t === "str" && t.sval !== void 0) labels.push(t.sval);
+      else if (t.t === "id") labels.push(t.v);
+      else break;
+      this.pos++;
+    }
+    if (!isP(this.cur, "{")) this.fail("\u30D6\u30ED\u30C3\u30AF\u306E { \u304C\u3042\u308A\u307E\u305B\u3093");
+    this.pos++;
+    const body = this.nest(() => this.parseBody(head.line));
+    return {
+      block: { type: head.v, labels, span: { startLine: head.line, endLine: body.endLine }, ...body.content }
+    };
+  }
+  /** 属性や入れ子のブロックを `}` まで読む（`{` は読み済み）。 */
+  parseBody(openLine) {
+    const attributes = [];
+    const blocks = [];
+    for (; ; ) {
+      this.skipNewlines();
+      const t = this.cur;
+      if (t.t === "eof") throw new HclParseError("\u9589\u3058\u3066\u3044\u306A\u3044\u30D6\u30ED\u30C3\u30AF\u3067\u3059", openLine, true);
+      if (isP(t, "}")) {
+        this.pos++;
+        return { content: { attributes, blocks }, endLine: t.endLine };
+      }
+      const item = this.parseItem();
+      if (item.block) {
+        this.expectEnd();
+        blocks.push(item.block);
+      }
+      if (item.attribute) attributes.push(item.attribute);
+    }
+  }
+  /** 属性・ブロックの後ろは改行、`}`（1 行ブロック）、ファイルの終わりのどれか。 */
+  expectEnd() {
+    const t = this.cur;
+    if (t.t === "nl" || t.t === "eof" || isP(t, "}")) return;
+    this.fail(`\u3053\u3053\u3067\u884C\u304C\u7D42\u308F\u308B\u306F\u305A\u3067\u3059: ${describeTok(t)}`);
+  }
+  // --- 式 ---
+  parseExpr() {
+    const start = this.pos;
+    const first = this.cur;
+    if (first.t === "err") this.fail("");
+    const next = this.peek(1);
+    const isFor = next.t === "id" && next.v === "for";
+    if ((isP(first, "{") || isP(first, "[")) && !isFor) {
+      try {
+        const e = this.nest(() => isP(first, "[") ? this.parseArray() : this.parseObject());
+        if (isTerminator(this.cur)) return e;
+      } catch (e) {
+        if (!(e instanceof HclParseError)) throw e;
+      }
+      this.pos = start;
+    }
+    return this.parseGeneric();
+  }
+  parseArray() {
+    const open2 = this.cur;
+    this.pos++;
+    const items2 = [];
+    for (; ; ) {
+      while (this.cur.t === "nl" || isP(this.cur, ",")) this.pos++;
+      const t = this.cur;
+      if (t.t === "eof") throw new HclParseError("\u9589\u3058\u3066\u3044\u306A\u3044 [ \u304C\u3042\u308A\u307E\u3059", open2.line, true);
+      if (isP(t, "]")) {
+        this.pos++;
+        break;
+      }
+      items2.push(this.parseExpr());
+      const n = this.cur;
+      if (!(n.t === "nl" || isP(n, ",") || isP(n, "]")))
+        this.fail(`\u914D\u5217\u306E\u8981\u7D20\u306E\u5F8C\u308D\u306B ${describeTok(n)} \u306F\u66F8\u3051\u307E\u305B\u3093`);
+    }
+    return {
+      kind: "array",
+      items: items2,
+      span: { startLine: open2.line, endLine: this.toks[this.pos - 1]?.endLine ?? open2.line },
+      refs: items2.flatMap((i) => i.refs)
+    };
+  }
+  parseObject() {
+    const open2 = this.cur;
+    this.pos++;
+    const entries = [];
+    const keyRefs = [];
+    for (; ; ) {
+      while (this.cur.t === "nl" || isP(this.cur, ",")) this.pos++;
+      const t = this.cur;
+      if (t.t === "eof") throw new HclParseError("\u9589\u3058\u3066\u3044\u306A\u3044 { \u304C\u3042\u308A\u307E\u3059", open2.line, true);
+      if (isP(t, "}")) {
+        this.pos++;
+        break;
+      }
+      const sep2 = isP(this.peek(1), "=") || isP(this.peek(1), ":");
+      let key;
+      if ((t.t === "id" || t.t === "num") && sep2) {
+        key = t.v;
+        this.pos++;
+      } else if (t.t === "str" && t.sval !== void 0 && sep2) {
+        key = t.sval;
+        this.pos++;
+      } else if (isP(t, "(")) {
+        const from = this.pos;
+        this.skipBalanced();
+        keyRefs.push(...refsOfTokens(this.toks.slice(from, this.pos)));
+        key = "";
+        if (!(isP(this.cur, "=") || isP(this.cur, ":")))
+          this.fail("\u30AA\u30D6\u30B8\u30A7\u30AF\u30C8\u306E\u30AD\u30FC\u306E\u5F8C\u308D\u306B = \u304C\u3042\u308A\u307E\u305B\u3093");
+      } else {
+        return this.fail(`\u30AA\u30D6\u30B8\u30A7\u30AF\u30C8\u306E\u30AD\u30FC\u3068\u3057\u3066\u8AAD\u3081\u307E\u305B\u3093: ${describeTok(t)}`);
+      }
+      this.pos++;
+      const value2 = this.parseExpr();
+      entries.push({ key, value: value2, span: { startLine: t.line, endLine: value2.span.endLine } });
+      const n = this.cur;
+      if (!(n.t === "nl" || isP(n, ",") || isP(n, "}")))
+        this.fail(`\u30AA\u30D6\u30B8\u30A7\u30AF\u30C8\u306E\u5024\u306E\u5F8C\u308D\u306B ${describeTok(n)} \u306F\u66F8\u3051\u307E\u305B\u3093`);
+    }
+    return {
+      kind: "object",
+      entries,
+      span: { startLine: open2.line, endLine: this.toks[this.pos - 1]?.endLine ?? open2.line },
+      refs: [...keyRefs, ...entries.flatMap((e) => e.value.refs)]
+    };
+  }
+  /** 開き括弧の位置から、対応する閉じ括弧の次まで進む。 */
+  skipBalanced() {
+    let depth = 0;
+    for (; ; ) {
+      const t = this.cur;
+      if (t.t === "eof" || t.t === "err") this.fail("\u62EC\u5F27\u304C\u9589\u3058\u3066\u3044\u307E\u305B\u3093");
+      if (t.t === "p" && (t.v === "(" || t.v === "[" || t.v === "{")) depth++;
+      if (t.t === "p" && (t.v === ")" || t.v === "]" || t.v === "}")) depth--;
+      this.pos++;
+      if (depth === 0) return;
+    }
+  }
+  /** 構造を持たない式。括弧の外の改行・`,`・閉じ括弧までを 1 つの式として、書かれた参照だけを拾う。 */
+  parseGeneric() {
+    const from = this.pos;
+    const open2 = [];
+    for (; ; ) {
+      const t = this.cur;
+      if (t.t === "err") this.fail("");
+      if (t.t === "eof") {
+        if (open2.length > 0) this.fail("\u62EC\u5F27\u304C\u9589\u3058\u3066\u3044\u307E\u305B\u3093");
+        break;
+      }
+      if (open2.length === 0 && isTerminator(t)) break;
+      if (t.t === "p") {
+        if (t.v === "(" || t.v === "[" || t.v === "{") open2.push(t.v);
+        else if (t.v === ")" || t.v === "]" || t.v === "}") open2.pop();
+        else if (t.v === "=" && open2[open2.length - 1] !== "{") this.fail("\u5F0F\u306E\u4E2D\u306B = \u306F\u66F8\u3051\u307E\u305B\u3093");
+      }
+      this.pos++;
+    }
+    const toks = this.toks.slice(from, this.pos);
+    const firstTok = toks[0];
+    const lastTok = toks[toks.length - 1];
+    if (!firstTok || !lastTok) return this.fail("\u5F0F\u304C\u3042\u308A\u307E\u305B\u3093");
+    const span = { startLine: firstTok.line, endLine: lastTok.endLine };
+    const refs = refsOfTokens(toks);
+    if (toks.length === 1) {
+      if (firstTok.t === "str") return { kind: "string", value: firstTok.sval, span, refs };
+      if (firstTok.t === "num") return { kind: "number", value: Number(firstTok.v), span, refs };
+      if (firstTok.t === "id" && (firstTok.v === "true" || firstTok.v === "false")) {
+        return { kind: "bool", value: firstTok.v === "true", span, refs };
+      }
+      if (firstTok.t === "id" && firstTok.v === "null") return { kind: "null", span, refs };
+    }
+    return { kind: isTraversal(toks) && refs.length === 1 ? "ref" : "expr", span, refs };
+  }
+};
+function resync(parser, startIndex) {
+  parser.pos = startIndex + 1;
+  while (!parser.atEof()) {
+    const t = parser.cur;
+    if (t.t === "id" && t.col === 1 && TOP_LEVEL.has(t.v) && parser.toks[parser.pos - 1]?.t === "nl") break;
+    parser.pos++;
+  }
+}
+function parseHcl(text3) {
+  const lexer = new Lexer(text3);
+  const toks = lexer.tokens(false);
+  toks.push({ t: "eof", v: "", line: lexer.line, endLine: lexer.line, col: lexer.pos - lexer.lineStart + 1 });
+  const parser = new Parser(toks);
+  const blocks = [];
+  const errors = [];
+  for (; ; ) {
+    parser.skipNewlines();
+    if (parser.atEof()) break;
+    const startIndex = parser.pos;
+    const startLine = parser.cur.line;
+    try {
+      const item = parser.parseItem();
+      if (item.block) {
+        parser.expectEnd();
+        blocks.push(item.block);
+      }
+    } catch (e) {
+      if (!(e instanceof HclParseError)) {
+        errors.push({ line: startLine, message: "\u8AAD\u3081\u307E\u305B\u3093\u3067\u3057\u305F" });
+        resync(parser, startIndex);
+        continue;
+      }
+      errors.push({ line: e.atEof ? startLine : e.line, message: e.message });
+      resync(parser, startIndex);
+    }
+  }
+  return { blocks, errors };
+}
+
+// ../../packages/parsers/terraform/src/resourceTypes.ts
+function literalOf(block, name2) {
+  const e = block.attributes.find((a) => a.name === name2)?.value;
+  return e ? literalValue(e) : void 0;
+}
+function literalValue(e) {
+  if (e.kind === "string") return e.value;
+  if (e.kind === "number" || e.kind === "bool") return e.value;
+  return void 0;
+}
+var text2 = (b, name2) => {
+  const v = literalOf(b, name2);
+  return typeof v === "string" && v !== "" ? v : void 0;
+};
+var num2 = (b, name2) => {
+  const v = literalOf(b, name2);
+  return typeof v === "number" ? v : void 0;
+};
+var flag2 = (b, name2) => {
+  const v = literalOf(b, name2);
+  return typeof v === "boolean" ? v : void 0;
+};
+function pick2(entries) {
+  const out = {};
+  for (const [k, v] of Object.entries(entries)) if (v !== void 0) out[k] = v;
+  return out;
+}
+var cf = (kind2, nameKeys, identity, extra = {}) => ({ namespace: "cloudflare", kind: kind2, nameKeys, identity, ...extra });
+var aws = (kind2, nameKeys, describe3, role) => ({
+  namespace: "aws",
+  kind: kind2,
+  nameKeys,
+  identity: "label",
+  ...describe3 ? { describe: describe3 } : {},
+  ...role ? { role } : {}
+});
+var describeWorker = (b) => pick2({ compatibilityDate: text2(b, "compatibility_date"), mainModule: text2(b, "main_module") });
+var describeTable2 = (b) => pick2({ billingMode: text2(b, "billing_mode"), hashKey: text2(b, "hash_key"), rangeKey: text2(b, "range_key") });
+var TYPES3 = {
+  // --- Cloudflare provider（v4 と v5 の両方の名前） ---
+  cloudflare_workers_script: cf("worker", ["script_name", "name"], "name", {
+    role: "worker",
+    describe: describeWorker
+  }),
+  cloudflare_worker_script: cf("worker", ["name", "script_name"], "name", {
+    role: "worker",
+    describe: describeWorker
+  }),
+  cloudflare_worker: cf("worker", ["name", "script_name"], "name", {
+    role: "worker",
+    describe: describeWorker
+  }),
+  cloudflare_worker_version: cf("worker", [], "name", { role: "worker-version" }),
+  cloudflare_workers_route: cf("worker-route", ["pattern"], "label", {
+    role: "exposes-worker",
+    describe: (b) => pick2({ pattern: text2(b, "pattern") })
+  }),
+  cloudflare_worker_route: cf("worker-route", ["pattern"], "label", {
+    role: "exposes-worker",
+    describe: (b) => pick2({ pattern: text2(b, "pattern") })
+  }),
+  cloudflare_workers_custom_domain: cf("custom-domain", ["hostname"], "label", {
+    role: "exposes-worker",
+    describe: (b) => pick2({ hostname: text2(b, "hostname") })
+  }),
+  cloudflare_worker_domain: cf("custom-domain", ["hostname"], "label", {
+    role: "exposes-worker",
+    describe: (b) => pick2({ hostname: text2(b, "hostname") })
+  }),
+  cloudflare_d1_database: cf("d1", ["name"], "name"),
+  cloudflare_r2_bucket: cf("r2", ["name"], "name"),
+  cloudflare_workers_kv_namespace: cf("kv", ["title"], "name"),
+  cloudflare_queue: cf("queue", ["queue_name", "name"], "name"),
+  cloudflare_zone: cf("zone", ["name", "zone"], "name"),
+  cloudflare_dns_record: cf("dns-record", ["name"], "label", {
+    describe: (b) => pick2({ recordType: text2(b, "type"), recordName: text2(b, "name") })
+  }),
+  cloudflare_record: cf("dns-record", ["name"], "label", {
+    describe: (b) => pick2({ recordType: text2(b, "type"), recordName: text2(b, "name") })
+  }),
+  cloudflare_zero_trust_access_application: cf("access-application", ["name"], "label", {
+    describe: (b) => pick2({ domain: text2(b, "domain"), applicationType: text2(b, "type") })
+  }),
+  cloudflare_access_application: cf("access-application", ["name"], "label", {
+    describe: (b) => pick2({ domain: text2(b, "domain"), applicationType: text2(b, "type") })
+  }),
+  cloudflare_zero_trust_access_policy: cf("access-policy", ["name"], "label"),
+  cloudflare_access_policy: cf("access-policy", ["name"], "label"),
+  cloudflare_zero_trust_access_ai_controls_mcp_server: cf("mcp-server", ["name"], "label", {
+    describe: (b) => pick2({ hostname: text2(b, "hostname") })
+  }),
+  cloudflare_zero_trust_access_ai_controls_mcp_portal: cf("mcp-portal", ["name"], "label", {
+    describe: (b) => pick2({ hostname: text2(b, "hostname") })
+  }),
+  cloudflare_pages_project: cf("pages-project", ["name"], "name"),
+  cloudflare_zero_trust_tunnel_cloudflared: cf("tunnel", ["name"], "label"),
+  cloudflare_tunnel: cf("tunnel", ["name"], "label"),
+  cloudflare_hyperdrive_config: cf("hyperdrive", ["name"], "label"),
+  cloudflare_vectorize_index: cf("vectorize", ["name"], "label"),
+  // --- AWS provider ---
+  aws_lambda_function: aws(
+    "lambda",
+    ["function_name"],
+    (b) => pick2({
+      runtime: text2(b, "runtime"),
+      handler: text2(b, "handler"),
+      memorySize: num2(b, "memory_size"),
+      timeout: num2(b, "timeout"),
+      packageType: text2(b, "package_type")
+    }),
+    "lambda"
+  ),
+  aws_s3_bucket: aws("s3", ["bucket"]),
+  aws_dynamodb_table: aws("dynamodb", ["name"], describeTable2),
+  aws_sqs_queue: aws("sqs", ["name"], (b) => pick2({ fifo: flag2(b, "fifo_queue") })),
+  aws_sns_topic: aws("sns", ["name"], (b) => pick2({ fifo: flag2(b, "fifo_topic") })),
+  aws_cloudwatch_event_rule: aws(
+    "eventbridge",
+    ["name"],
+    (b) => pick2({ scheduleExpression: text2(b, "schedule_expression") })
+  ),
+  aws_apigatewayv2_api: aws(
+    "api-gateway",
+    ["name"],
+    (b) => pick2({ apiVersion: "v2", protocolType: text2(b, "protocol_type") })
+  ),
+  aws_api_gateway_rest_api: aws("api-gateway", ["name"], () => ({ apiVersion: "v1" })),
+  aws_db_instance: aws(
+    "rds",
+    ["identifier"],
+    (b) => pick2({ engine: text2(b, "engine"), instanceClass: text2(b, "instance_class") })
+  ),
+  aws_rds_cluster: aws("aurora", ["cluster_identifier"], (b) => pick2({ engine: text2(b, "engine") })),
+  aws_ecs_cluster: aws("ecs", ["name"]),
+  aws_ecs_service: aws("ecs", ["name"], (b) => pick2({ launchType: text2(b, "launch_type") })),
+  aws_eks_cluster: aws("eks", ["name"]),
+  aws_ecr_repository: aws("ecr", ["name"]),
+  aws_instance: aws("ec2", [], (b) => pick2({ instanceType: text2(b, "instance_type") })),
+  aws_cloudfront_distribution: aws("cloudfront", ["comment"]),
+  aws_route53_zone: aws("route53", ["name"]),
+  aws_lb: aws("elb", ["name"], (b) => pick2({ loadBalancerType: text2(b, "load_balancer_type") })),
+  aws_alb: aws("elb", ["name"], (b) => pick2({ loadBalancerType: text2(b, "load_balancer_type") })),
+  aws_sfn_state_machine: aws("step-functions", ["name"]),
+  aws_kinesis_stream: aws("kinesis", ["name"]),
+  aws_appsync_graphql_api: aws("appsync", ["name"]),
+  aws_cognito_user_pool: aws("cognito", ["name"]),
+  aws_elasticache_cluster: aws("elasticache", ["cluster_id"]),
+  aws_elasticache_replication_group: aws("elasticache", ["replication_group_id"]),
+  aws_opensearch_domain: aws("opensearch", ["domain_name"]),
+  aws_secretsmanager_secret: aws("secrets-manager", ["name"]),
+  aws_kms_key: aws("kms", []),
+  aws_efs_file_system: aws("efs", []),
+  aws_apprunner_service: aws("app-runner", ["service_name"]),
+  aws_amplify_app: aws("amplify", ["name"]),
+  aws_iam_role: aws("iam", ["name"]),
+  aws_vpc: aws("vpc", []),
+  aws_redshift_cluster: aws("redshift", ["cluster_identifier"]),
+  aws_docdb_cluster: aws("documentdb", ["cluster_identifier"]),
+  aws_neptune_cluster: aws("neptune", ["cluster_identifier"]),
+  aws_msk_cluster: aws("msk", ["cluster_name"]),
+  aws_mq_broker: aws("mq", ["broker_name"]),
+  aws_athena_workgroup: aws("athena", ["name"]),
+  aws_glue_job: aws("glue", ["name"]),
+  aws_wafv2_web_acl: aws("waf", ["name"]),
+  aws_codepipeline: aws("codepipeline", ["name"]),
+  aws_codebuild_project: aws("codebuild", ["name"]),
+  aws_batch_job_queue: aws("batch", ["name"]),
+  aws_sagemaker_endpoint: aws("sagemaker", ["name"]),
+  aws_ebs_volume: aws("ebs", []),
+  aws_cloudformation_stack: aws("cloudformation", ["name"]),
+  aws_elastic_beanstalk_application: aws("elastic-beanstalk", ["name"]),
+  aws_cloudwatch_metric_alarm: aws("cloudwatch", ["alarm_name"])
+};
+var SUPPORTING_PREFIXES2 = [
+  "aws_iam_",
+  "aws_lambda_",
+  "aws_api_gateway_",
+  "aws_apigatewayv2_",
+  "aws_cloudwatch_log_",
+  "aws_sqs_queue_",
+  "aws_sns_topic_",
+  "aws_s3_bucket_",
+  "aws_s3_object",
+  "aws_security_group",
+  "aws_vpc_",
+  "aws_subnet",
+  "aws_route_table",
+  "aws_route53_record",
+  "aws_internet_gateway",
+  "aws_nat_gateway",
+  "aws_eip",
+  "aws_ecs_task_definition",
+  "aws_lb_",
+  "aws_alb_",
+  "aws_cloudfront_",
+  "aws_dynamodb_",
+  "aws_ssm_",
+  "aws_kms_",
+  "aws_wafv2_"
+];
+var isSupportingType = (type) => SUPPORTING_PREFIXES2.some((p) => type.startsWith(p)) && !Object.hasOwn(TYPES3, type);
+var GLUE = {
+  cloudflare_queue_consumer: {
+    source: { attrs: ["script_name", "script_id", "worker"] },
+    target: { attrs: ["queue_id", "queue_name", "queue"] },
+    relation: "CONSUMES_FROM",
+    literalSource: { namespace: "cloudflare", kind: "worker" }
+  },
+  aws_lambda_event_source_mapping: {
+    source: { attrs: ["function_name"] },
+    target: { attrs: ["event_source_arn"] },
+    relation: "CONSUMES_FROM"
+  },
+  aws_sns_topic_subscription: {
+    source: { attrs: ["endpoint"] },
+    target: { attrs: ["topic_arn"] },
+    relation: "CONSUMES_FROM"
+  },
+  aws_s3_bucket_notification: {
+    source: { except: ["bucket"] },
+    target: { attrs: ["bucket"] },
+    relation: "CONSUMES_FROM"
+  },
+  aws_api_gateway_integration: {
+    source: { attrs: ["rest_api_id"] },
+    target: { attrs: ["uri"] },
+    relation: "CALLS"
+  },
+  aws_apigatewayv2_integration: {
+    source: { attrs: ["api_id"] },
+    target: { attrs: ["integration_uri"] },
+    relation: "CALLS"
+  },
+  aws_cloudwatch_event_target: {
+    source: { attrs: ["arn"] },
+    target: { attrs: ["rule"] },
+    relation: "CONSUMES_FROM"
+  }
+};
+var UTILITY_PROVIDERS = /* @__PURE__ */ new Set([
+  "random",
+  "null",
+  "local",
+  "tls",
+  "time",
+  "archive",
+  "external",
+  "http",
+  "template",
+  "terraform",
+  "cloudinit",
+  "dns"
+]);
+var KNOWN_PROVIDERS = /* @__PURE__ */ new Set(["aws", "cloudflare"]);
+var providerOf = (type) => type.split("_")[0];
+var BINDING_KINDS = {
+  d1: {},
+  kv: {},
+  r2: { literal: { attrs: ["bucket_name"], namespace: "cloudflare", kind: "r2" } },
+  service: { literal: { attrs: ["service"], namespace: "cloudflare", kind: "worker" } },
+  queue: { literal: { attrs: ["queue_name", "queue"], namespace: "cloudflare", kind: "queue" } }
+};
+var BINDING_ALIASES = {
+  d1: "d1",
+  d1_database: "d1",
+  kv_namespace: "kv",
+  r2_bucket: "r2",
+  service: "service",
+  queue: "queue"
+};
+function bindingKindOf(typeOrBlock) {
+  if (!typeOrBlock) return void 0;
+  return BINDING_ALIASES[typeOrBlock.replace(/_binding$/, "")];
+}
+
+// ../../packages/parsers/terraform/src/terraformParser.ts
+var PARSER_ID4 = "terraform";
+var TERRAFORM_PARSER_VERSION = "0.1.0";
+var isTerraformFile = (path) => path.endsWith(".tf") && !isIgnoredPath(path) && !path.split("/").slice(0, -1).includes(".terraform");
+var compare = (a, b) => a < b ? -1 : a > b ? 1 : 0;
+var dirOf2 = (file2) => {
+  const i = file2.lastIndexOf("/");
+  return i < 0 ? "." : file2.slice(0, i);
+};
+var NON_RESOURCE_ROOTS = /* @__PURE__ */ new Set(["var", "each", "count", "path", "terraform", "self"]);
+var unique = (list2) => [...new Set(list2)];
+function allAttributes(block) {
+  return [...block.attributes, ...block.blocks.flatMap(allAttributes)];
+}
+var sameSpan = (a, b) => a.file === b.file && a.startLine === b.startLine && a.endLine === b.endLine;
+var cleanSource = (s) => s.replace(/[?#].*$/s, "").replace(/\/\/[^/@\s]*@/g, "//");
+var Analysis = class {
+  constructor(ctx) {
+    this.ctx = ctx;
+  }
+  ctx;
+  nodes = /* @__PURE__ */ new Map();
+  edges = /* @__PURE__ */ new Map();
+  diagnostics = [];
+  unverified = [];
+  /** ディレクトリ → アドレス → 宣言。 */
+  decls = /* @__PURE__ */ new Map();
+  /** ディレクトリ → local の名前 → 式。 */
+  locals = /* @__PURE__ */ new Map();
+  /** 型の対応がなかったリソース（ファイル → 型 → 数）。 */
+  unmapped = /* @__PURE__ */ new Map();
+  unknownProvider = /* @__PURE__ */ new Map();
+  diag(level, code2, file2, message, line2) {
+    this.diagnostics.push({
+      level,
+      code: code2,
+      message: `${file2}: ${message}`,
+      parserId: PARSER_ID4,
+      file: file2,
+      ...line2 !== void 0 ? { line: line2 } : {}
+    });
+  }
+  /** 一部が読めなかった・要素にできなかった: 診断（warning/error）と unverified に残す。 */
+  gap(level, code2, file2, message, line2) {
+    this.diag(level, code2, file2, message, line2);
+    this.unverified.push({ parserId: PARSER_ID4, file: file2, reason: message });
+  }
+  evidence(file2, span) {
+    return staticEvidence(this.ctx, file2, span.startLine, span.endLine);
+  }
+  // --- 読み込み ---
+  async load(files) {
+    const parsed = await Promise.all(
+      files.map(async (file2) => {
+        try {
+          return { file: file2, hcl: parseHcl(await this.ctx.fs.readText(file2)) };
+        } catch (e) {
+          return { file: file2, failure: e instanceof Error ? e.message : String(e) };
+        }
+      })
+    );
+    for (const p of parsed) {
+      if ("failure" in p) {
+        this.gap("error", "file-unreadable", p.file, `could not read: ${p.failure}`);
+        continue;
+      }
+      for (const err of p.hcl.errors) {
+        this.gap("error", "hcl-syntax", p.file, `${err.message} (line ${err.line})`, err.line);
+      }
+      for (const block of p.hcl.blocks) this.collect(p.file, block);
+    }
+  }
+  collect(file2, block) {
+    const dir = dirOf2(file2);
+    if (block.type === "locals") {
+      const map2 = this.locals.get(dir) ?? /* @__PURE__ */ new Map();
+      this.locals.set(dir, map2);
+      for (const a of block.attributes) map2.set(a.name, a.value);
+      return;
+    }
+    let mode;
+    let type;
+    let label;
+    let address;
+    if (block.type === "resource" || block.type === "data") {
+      if (block.labels.length !== 2) {
+        this.gap(
+          "warning",
+          "block-labels",
+          file2,
+          `${block.type} needs a type and a name; skipped`,
+          block.span.startLine
+        );
+        return;
+      }
+      mode = block.type;
+      type = block.labels[0];
+      label = block.labels[1];
+      address = mode === "data" ? `data.${type}.${label}` : `${type}.${label}`;
+    } else if (block.type === "module") {
+      if (block.labels.length !== 1) {
+        this.gap("warning", "block-labels", file2, "module needs a name; skipped", block.span.startLine);
+        return;
+      }
+      mode = "module";
+      type = "module";
+      label = block.labels[0];
+      address = `module.${label}`;
+    } else return;
+    const count = block.attributes.find((a) => a.name === "count")?.value;
+    if (count?.kind === "number" && count.value === 0) return;
+    const decl = {
+      mode,
+      type,
+      label,
+      address,
+      file: file2,
+      dir,
+      block,
+      conditional: count !== void 0 && count.kind !== "number"
+    };
+    if (mode === "module") {
+    } else if (GLUE[type] && mode === "resource") decl.glue = GLUE[type];
+    else if (TYPES3[type]) decl.def = TYPES3[type];
+    else if (mode === "resource") this.countUnmapped(file2, type);
+    const byAddress = this.decls.get(dir) ?? /* @__PURE__ */ new Map();
+    this.decls.set(dir, byAddress);
+    if (!byAddress.has(address)) byAddress.set(address, decl);
+  }
+  countUnmapped(file2, type) {
+    const provider = providerOf(type);
+    if (UTILITY_PROVIDERS.has(provider) || isSupportingType(type)) return;
+    const target = KNOWN_PROVIDERS.has(provider) ? this.unmapped : this.unknownProvider;
+    const m = target.get(file2) ?? /* @__PURE__ */ new Map();
+    target.set(file2, m);
+    m.set(type, (m.get(type) ?? 0) + 1);
+  }
+  /** 要素にできなかった型の報告。未知のプロバイダは読めなかったこと（unverified）、AWS/Cloudflare の表にない型は読み飛ばし（info）。 */
+  reportUnmapped() {
+    const list2 = (m) => [...m.entries()].sort(([a], [b]) => compare(a, b)).map(([type, n]) => `${type} (${n})`).join(", ");
+    for (const file2 of [...this.unknownProvider.keys()].sort(compare)) {
+      const m = this.unknownProvider.get(file2);
+      this.gap("warning", "resource-provider-unsupported", file2, `resource types not supported: ${list2(m)}`);
+    }
+    for (const file2 of [...this.unmapped.keys()].sort(compare)) {
+      const m = this.unmapped.get(file2);
+      this.diag(
+        "info",
+        "resource-type-unsupported",
+        file2,
+        `resource types not interpreted, left out of the graph: ${list2(m)}`
+      );
+    }
+  }
+  // --- 要素 ---
+  /** 文字列リテラル。`local.x` で、x が文字列リテラルの local のときはその値。 */
+  stringOf(expr, dir, seen = /* @__PURE__ */ new Set()) {
+    if (!expr) return void 0;
+    const v = literalValue(expr);
+    if (typeof v === "string") return v === "" ? void 0 : v;
+    const ref = expr.kind === "ref" ? expr.refs[0] : void 0;
+    if (ref?.parts[0] !== "local" || ref.parts.length !== 2) return void 0;
+    const name2 = ref.parts[1];
+    if (seen.has(name2)) return void 0;
+    return this.stringOf(this.locals.get(dir)?.get(name2), dir, /* @__PURE__ */ new Set([...seen, name2]));
+  }
+  literalName(decl) {
+    for (const key of decl.def?.nameKeys ?? []) {
+      const v = this.stringOf(decl.block.attributes.find((a) => a.name === key)?.value, decl.dir);
+      if (v !== void 0) return v;
+    }
+    return void 0;
+  }
+  /** 名前の要素の元になる id の name 部分。 */
+  baseName(decl, literal2) {
+    if (decl.def?.identity === "name" && literal2 !== void 0) return literal2;
+    return `${decl.dir}/${decl.mode === "data" ? "data." : ""}${decl.label}`;
+  }
+  buildNodes() {
+    const all = [...this.decls.values()].flatMap((m) => [...m.values()]).sort(byLocation);
+    const targets = all.filter(
+      (d) => d.mode === "module" || d.def !== void 0 && d.def.role !== "worker-version"
+    );
+    const groupSize = /* @__PURE__ */ new Map();
+    const baseOf2 = /* @__PURE__ */ new Map();
+    for (const d of targets) {
+      const base = this.baseName(d, d.mode === "module" ? void 0 : this.literalName(d));
+      baseOf2.set(d, base);
+      const key = `${d.def?.namespace ?? "terraform"}:${d.def?.kind ?? "module"}:${base}`;
+      groupSize.set(key, (groupSize.get(key) ?? 0) + 1);
+    }
+    for (const d of targets) {
+      const literal2 = d.mode === "module" ? void 0 : this.literalName(d);
+      const named = d.def?.identity === "name" && literal2 !== void 0;
+      let name2 = baseOf2.get(d);
+      const key = `${d.def?.namespace ?? "terraform"}:${d.def?.kind ?? "module"}:${name2}`;
+      if (!named && (groupSize.get(key) ?? 0) > 1) name2 = `${name2}.${d.type}`;
+      const namespace = d.def?.namespace ?? "terraform";
+      const kind2 = d.def?.kind ?? "module";
+      let id;
+      try {
+        id = nodeId(namespace, kind2, name2);
+      } catch (e) {
+        this.gap(
+          "error",
+          "identifier-invalid",
+          d.file,
+          `${d.address} cannot be used as an id: ${e.message}`,
+          d.block.span.startLine
+        );
+        continue;
+      }
+      d.id = id;
+      this.addNode(d, id, kind2, literal2 ?? d.label);
+    }
+  }
+  addNode(d, id, kind2, name2) {
+    const entry = { address: d.address, resourceType: d.type, module: d.dir };
+    const evidence = this.evidence(d.file, d.block.span);
+    const prev = this.nodes.get(id);
+    if (prev) {
+      prev.evidence.push(evidence);
+      prev.properties.terraform.push(entry);
+      if (d.mode !== "data") delete prev.properties.dataSource;
+      if (!d.conditional) prev.verification = "verified";
+      return;
+    }
+    const properties = {};
+    if (d.mode === "module") {
+      const source = literalOf(d.block, "source");
+      if (typeof source === "string") properties.source = cleanSource(source);
+      const version2 = literalOf(d.block, "version");
+      if (typeof version2 === "string") properties.version = version2;
+    } else {
+      Object.assign(properties, d.def?.describe?.(d.block));
+    }
+    properties.terraform = [entry];
+    if (d.mode === "data") properties.dataSource = true;
+    this.nodes.set(id, {
+      id,
+      type: kind2,
+      name: name2,
+      scope: "infrastructure",
+      properties,
+      evidence: [evidence],
+      verification: d.conditional ? "inferred" : "verified"
+    });
+  }
+  /** 名前だけで指されたもの（別の場所で定義されているかもしれない）。宣言された要素があればそれを使う。 */
+  reference(namespace, kind2, name2, file2, span) {
+    let id;
+    try {
+      id = nodeId(namespace, kind2, name2);
+    } catch (e) {
+      this.gap(
+        "error",
+        "identifier-invalid",
+        file2,
+        `${kind2} "${name2}" cannot be used as an id: ${e.message}`,
+        span.startLine
+      );
+      return void 0;
+    }
+    if (!this.nodes.has(id)) {
+      this.nodes.set(id, {
+        id,
+        type: kind2,
+        name: name2,
+        scope: "infrastructure",
+        properties: {},
+        evidence: [this.evidence(file2, span)],
+        verification: "inferred"
+      });
+    }
+    return id;
+  }
+  // --- 参照 ---
+  /** 参照の指す宣言。`local.x` は local の式の参照へ辿る（1 つの参照だけの local。複数を束ねたものは辿れない）。 */
+  resolve(ref, dir, seen = /* @__PURE__ */ new Set()) {
+    const [root, first, second] = ref.parts;
+    if (root === void 0 || first === void 0 || NON_RESOURCE_ROOTS.has(root)) return [];
+    if (root === "local") {
+      if (seen.has(first)) return [];
+      const expr = this.locals.get(dir)?.get(first);
+      const only = expr?.refs;
+      if (only?.length !== 1) return [];
+      return only.flatMap((r) => this.resolve(r, dir, /* @__PURE__ */ new Set([...seen, first]))).map((l) => ({ ...l, line: ref.line }));
+    }
+    let address;
+    if (root === "data") {
+      if (second === void 0) return [];
+      address = `data.${first}.${second}`;
+    } else if (root === "module") address = `module.${first}`;
+    else address = `${root}.${first}`;
+    const decl = this.decls.get(dir)?.get(address);
+    return decl ? [{ decl, line: ref.line }] : [];
+  }
+  resolveAll(refs, dir) {
+    return refs.flatMap((r) => this.resolve(r, dir));
+  }
+  /** ノードになった宣言だけ。 */
+  nodesOf(located) {
+    return unique(located.map((l) => l.decl).filter((d) => d.id !== void 0 && this.nodes.has(d.id)));
+  }
+  addEdge(source, relation, target, file2, span, options = {}) {
+    if (source === target) return;
+    const id = edgeId(source, relation, target);
+    const evidence = this.evidence(file2, span);
+    const prev = this.edges.get(id);
+    if (prev) {
+      if (!prev.evidence.some((e) => sameSpan(e, evidence))) prev.evidence.push(evidence);
+      if (!options.inferred) prev.verification = "verified";
+      if (options.binding !== void 0) {
+        const properties = prev.properties ?? {};
+        const list2 = properties.bindings ?? [];
+        if (!list2.includes(options.binding)) list2.push(options.binding);
+        properties.bindings = list2;
+        prev.properties = properties;
+      }
+      return;
+    }
+    this.edges.set(id, {
+      id,
+      source,
+      target,
+      relation,
+      ...options.binding !== void 0 ? { properties: { bindings: [options.binding] } } : {},
+      evidence: [evidence],
+      verification: options.inferred ? "inferred" : "verified"
+    });
+  }
+  inferred(a, b) {
+    return a.conditional || (b?.conditional ?? false);
+  }
+  buildEdges() {
+    const all = [...this.decls.values()].flatMap((m) => [...m.values()]).sort(byLocation);
+    for (const d of all) {
+      if (d.glue) this.glueEdges(d, d.glue);
+      else if (d.def?.role === "worker-version") this.workerVersionEdges(d);
+      else if (d.id !== void 0 && this.nodes.has(d.id)) this.declEdges(d);
+    }
+  }
+  declEdges(d) {
+    const consumed = /* @__PURE__ */ new Set();
+    const role = d.def?.role;
+    if (role === "worker") this.bindingEdges(d, d.id, consumed);
+    else if (role === "exposes-worker") this.exposesEdges(d, consumed);
+    else if (role === "lambda") this.environmentEdges(d, consumed);
+    if (d.def?.kind === "mcp-portal") this.portalEdges(d);
+    for (const attr of allAttributes(d.block)) {
+      for (const ref of attr.value.refs) {
+        if (consumed.has(ref)) continue;
+        for (const target of this.nodesOf(this.resolve(ref, d.dir))) {
+          this.addEdge(
+            d.id,
+            "DEPENDS_ON",
+            target.id,
+            d.file,
+            { startLine: ref.line, endLine: ref.line },
+            {
+              inferred: this.inferred(d, target)
+            }
+          );
+        }
+      }
+    }
+  }
+  /**
+   * MCP portal の `servers[].server_id` が、server の `id`（文字列）で書かれているとき。Terraform の参照ではなく、
+   * 同じディレクトリの server の `id` との一致で結ぶので inferred。
+   */
+  portalEdges(d) {
+    const servers = [...this.decls.get(d.dir)?.values() ?? []].filter(
+      (x) => x.def?.kind === "mcp-server" && x.id !== void 0 && this.nodes.has(x.id)
+    );
+    for (const attr of d.block.attributes) {
+      if (attr.name !== "servers" || attr.value.kind !== "array") continue;
+      for (const item of attr.value.items) {
+        if (item.kind !== "object") continue;
+        const serverId = item.entries.find((e) => e.key === "server_id")?.value;
+        const value2 = serverId ? literalValue(serverId) : void 0;
+        if (typeof value2 !== "string") continue;
+        for (const server of servers.filter((x) => literalOf(x.block, "id") === value2)) {
+          this.addEdge(d.id, "DEPENDS_ON", server.id, d.file, item.span, {
+            inferred: true
+          });
+        }
+      }
+    }
+  }
+  // --- Cloudflare: Worker のバインディング ---
+  workerVersionEdges(d) {
+    const attr = d.block.attributes.find((a) => a.name === "worker_id");
+    if (!attr) return;
+    const worker = this.nodesOf(this.resolveAll(attr.value.refs, d.dir)).find((x) => x.def?.role === "worker");
+    if (worker?.id) this.bindingEdges(d, worker.id, /* @__PURE__ */ new Set());
+  }
+  /** `bindings = [{ name, type, ... }]`（v5）と `d1_database_binding { ... }` などのブロック（v4）。 */
+  bindingItems(block) {
+    const items2 = [];
+    for (const a of block.attributes) {
+      if (a.name !== "bindings" || a.value.kind !== "array") continue;
+      for (const item of a.value.items) {
+        if (item.kind !== "object") continue;
+        const fields = new Map(item.entries.map((e) => [e.key, e.value]));
+        const type = fields.get("type");
+        items2.push({
+          kind: bindingKindOf(type ? literalValue(type) : void 0),
+          fields,
+          span: item.span,
+          refs: item.refs
+        });
+      }
+    }
+    for (const b of block.blocks) {
+      if (b.type !== "bindings" && b.type !== "binding" && !b.type.endsWith("_binding")) continue;
+      const fields = new Map(b.attributes.map((a) => [a.name, a.value]));
+      const type = fields.get("type");
+      const typeName = type ? literalValue(type) : b.type;
+      items2.push({
+        kind: bindingKindOf(typeName),
+        fields,
+        span: b.span,
+        refs: b.attributes.flatMap((a) => a.value.refs)
+      });
+    }
+    return items2;
+  }
+  bindingEdges(d, workerId, consumed) {
+    for (const item of this.bindingItems(d.block)) {
+      for (const r of item.refs) consumed.add(r);
+      const nameExpr = item.fields.get("name") ?? item.fields.get("binding");
+      const rawName = nameExpr ? literalValue(nameExpr) : void 0;
+      const binding = typeof rawName === "string" && rawName !== "" ? rawName : void 0;
+      const opts = (inferred) => ({ inferred, ...binding !== void 0 ? { binding } : {} });
+      const targets = this.nodesOf(this.resolveAll(item.refs, d.dir));
+      for (const t of targets) {
+        const relation = t.def?.kind === "queue" ? "PUBLISHES_TO" : "BINDS_TO";
+        this.addEdge(workerId, relation, t.id, d.file, item.span, opts(this.inferred(d, t)));
+      }
+      if (targets.length > 0 || !item.kind) continue;
+      const lit = BINDING_KINDS[item.kind]?.literal;
+      if (!lit) continue;
+      for (const attr of lit.attrs) {
+        const expr = item.fields.get(attr);
+        const value2 = expr ? literalValue(expr) : void 0;
+        if (typeof value2 !== "string" || value2 === "") continue;
+        const id = this.reference(lit.namespace, lit.kind, value2, d.file, item.span);
+        if (id) {
+          this.addEdge(
+            workerId,
+            lit.kind === "queue" ? "PUBLISHES_TO" : "BINDS_TO",
+            id,
+            d.file,
+            item.span,
+            opts(this.inferred(d))
+          );
+        }
+        break;
+      }
+    }
+  }
+  /** route / custom domain: それを公開する Worker（`script` `script_name` `service`）から EXPOSES する。 */
+  exposesEdges(d, consumed) {
+    for (const attr of d.block.attributes) {
+      if (!["script", "script_name", "service", "worker", "worker_id"].includes(attr.name)) continue;
+      for (const r of attr.value.refs) consumed.add(r);
+      const workers = this.nodesOf(this.resolveAll(attr.value.refs, d.dir)).filter(
+        (x) => x.def?.role === "worker"
+      );
+      for (const w of workers) {
+        this.addEdge(w.id, "EXPOSES", d.id, d.file, attr.span, {
+          inferred: this.inferred(d, w)
+        });
+      }
+      if (workers.length > 0) continue;
+      const value2 = literalValue(attr.value);
+      if (typeof value2 === "string" && value2 !== "") {
+        const id = this.reference("cloudflare", "worker", value2, d.file, attr.span);
+        if (id) this.addEdge(id, "EXPOSES", d.id, d.file, attr.span, { inferred: this.inferred(d) });
+      }
+    }
+  }
+  // --- AWS ---
+  /** Lambda の環境変数が他のリソースを指すのは BINDS_TO（CloudFormation と同じ）。 */
+  environmentEdges(d, consumed) {
+    for (const env of d.block.blocks.filter((b) => b.type === "environment")) {
+      const vars = env.attributes.find((a) => a.name === "variables")?.value;
+      if (vars?.kind !== "object") continue;
+      for (const entry of vars.entries) {
+        for (const r of entry.value.refs) consumed.add(r);
+        for (const t of this.nodesOf(this.resolveAll(entry.value.refs, d.dir))) {
+          this.addEdge(d.id, "BINDS_TO", t.id, d.file, entry.span, {
+            inferred: this.inferred(d, t),
+            ...entry.key !== "" ? { binding: entry.key } : {}
+          });
+        }
+      }
+    }
+  }
+  // --- 要素にならないリソース（接着剤） ---
+  select(block, selector) {
+    if ("attrs" in selector) {
+      return block.attributes.filter((a) => selector.attrs.includes(a.name)).flatMap((a) => a.value.refs);
+    }
+    const skip = new Set(
+      block.attributes.filter((a) => selector.except.includes(a.name)).flatMap((a) => a.value.refs)
+    );
+    return allAttributes(block).flatMap((a) => a.value.refs).filter((r) => !skip.has(r));
+  }
+  glueEdges(d, rule) {
+    const sources = this.nodesOf(this.resolveAll(this.select(d.block, rule.source), d.dir));
+    const targets = this.nodesOf(this.resolveAll(this.select(d.block, rule.target), d.dir));
+    const sourceIds = sources.map((s) => s.id);
+    if (sources.length === 0 && rule.literalSource && "attrs" in rule.source) {
+      for (const attr of d.block.attributes) {
+        if (!rule.source.attrs.includes(attr.name)) continue;
+        const value2 = literalValue(attr.value);
+        if (typeof value2 !== "string" || value2 === "") continue;
+        const id = this.reference(
+          rule.literalSource.namespace,
+          rule.literalSource.kind,
+          value2,
+          d.file,
+          attr.span
+        );
+        if (id) sourceIds.push(id);
+      }
+    }
+    for (const s of sourceIds) {
+      for (const t of targets) {
+        const src = sources.find((x) => x.id === s);
+        this.addEdge(s, rule.relation, t.id, d.file, d.block.span, {
+          inferred: this.inferred(d, t) || (src?.conditional ?? false)
+        });
+      }
+    }
+  }
+};
+var byLocation = (a, b) => compare(a.file, b.file) || a.block.span.startLine - b.block.span.startLine;
+var terraformParser = {
+  id: PARSER_ID4,
+  version: TERRAFORM_PARSER_VERSION,
+  async detect(ctx) {
+    return (await ctx.fs.listFiles()).some(isTerraformFile);
+  },
+  async parse(ctx) {
+    const files = (await ctx.fs.listFiles()).filter(isTerraformFile).sort(compare);
+    const a = new Analysis(ctx);
+    await a.load(files);
+    a.buildNodes();
+    a.buildEdges();
+    a.reportUnmapped();
+    return {
+      nodes: [...a.nodes.values()].sort((x, y) => compare(x.id, y.id)),
+      edges: [...a.edges.values()].sort((x, y) => compare(x.id, y.id)),
+      diagnostics: a.diagnostics,
+      unverified: a.unverified
+    };
+  }
+};
+
 // ../../packages/parsers/vite-react/src/fetchCalls.ts
 var PLACEHOLDER = "{}";
 var isNode2 = (v) => typeof v === "object" && v !== null && typeof v.type === "string";
@@ -24443,19 +25880,19 @@ function urlOf(arg) {
   if (n.type !== "TemplateLiteral") return { kind: "ignore" };
   const quasis = n.quasis.map((q) => q.value.cooked ?? "");
   if (!(quasis[0] ?? "").startsWith("/") || (quasis[0] ?? "").startsWith("//")) return { kind: "ignore" };
-  let text2 = "";
+  let text3 = "";
   for (let i = 0; i < quasis.length; i++) {
     const quasi = quasis[i];
-    text2 += quasi;
+    text3 += quasi;
     if (i === quasis.length - 1) break;
-    const before = text2 === "" || text2.endsWith("/");
+    const before = text3 === "" || text3.endsWith("/");
     const next = quasis[i + 1];
     const after = next === "" ? i + 1 === quasis.length - 1 : /^[/?#]/.test(next);
-    if (text2.includes("?") || text2.includes("#")) break;
+    if (text3.includes("?") || text3.includes("#")) break;
     if (!before || !after) return { kind: "gap", reason: "the path is built inside a segment" };
-    text2 += PLACEHOLDER;
+    text3 += PLACEHOLDER;
   }
-  return fromPath(text2);
+  return fromPath(text3);
 }
 function fromPath(raw) {
   if (!raw.startsWith("/") || raw.startsWith("//")) return { kind: "ignore" };
@@ -24518,7 +25955,7 @@ function extractFetchCalls(module) {
 
 // ../../packages/parsers/vite-react/src/linker.ts
 var VITE_LINKER_ID = "vite-frontend";
-var dirOf2 = (path) => path.includes("/") ? path.slice(0, path.lastIndexOf("/")) : "";
+var dirOf3 = (path) => path.includes("/") ? path.slice(0, path.lastIndexOf("/")) : "";
 var baseOf = (path) => path.slice(path.lastIndexOf("/") + 1);
 function joinNormalized2(dir, rel) {
   const out = [];
@@ -24586,7 +26023,7 @@ var viteFrontendLinker = {
       const calls = fe.properties.apiCalls ?? [];
       const configFile = fe.properties.configFile;
       if (!plugin) continue;
-      const dir = dirOf2(configFile);
+      const dir = dirOf3(configFile);
       let wranglerFile;
       if (plugin.configPath === null) {
         unverified(
@@ -24599,7 +26036,7 @@ var viteFrontendLinker = {
       const candidates = workers.filter((w) => {
         const configs = Object.keys(w.properties.configs ?? {});
         return configs.some(
-          (f) => wranglerFile !== void 0 ? f === wranglerFile : dirOf2(f) === dir && /^wrangler\./.test(baseOf(f))
+          (f) => wranglerFile !== void 0 ? f === wranglerFile : dirOf3(f) === dir && /^wrangler\./.test(baseOf(f))
         );
       });
       if (candidates.length !== 1) {
@@ -24611,7 +26048,7 @@ var viteFrontendLinker = {
       }
       const worker = candidates[0];
       const configEvidence = worker.evidence.filter(
-        (e) => wranglerFile !== void 0 ? e.file === wranglerFile : dirOf2(e.file) === dir && /^wrangler\./.test(baseOf(e.file))
+        (e) => wranglerFile !== void 0 ? e.file === wranglerFile : dirOf3(e.file) === dir && /^wrangler\./.test(baseOf(e.file))
       );
       const pluginEvidence = staticEvidence(ctx, plugin.file, plugin.startLine, plugin.endLine);
       out.edges.push({
@@ -24676,10 +26113,10 @@ var CLOUDFLARE_VITE_PLUGIN = "@cloudflare/vite-plugin";
 var DEPENDENCY_SECTIONS = ["dependencies", "devDependencies", "peerDependencies"];
 var RECORDED_DEPENDENCIES = /* @__PURE__ */ new Set(["vite", "react", ...PLUGIN_PACKAGES]);
 var messageOf3 = (e) => e instanceof Error ? e.message : String(e);
-var dirOf3 = (path) => path.includes("/") ? path.slice(0, path.lastIndexOf("/")) : "";
+var dirOf4 = (path) => path.includes("/") ? path.slice(0, path.lastIndexOf("/")) : "";
 var join2 = (dir, name2) => dir === "" ? name2 : `${dir}/${name2}`;
 async function reactAppCheck(fs, configFile) {
-  const packageFile = join2(dirOf3(configFile), "package.json");
+  const packageFile = join2(dirOf4(configFile), "package.json");
   let pkg;
   try {
     pkg = JSON.parse(await fs.readText(packageFile));
@@ -24725,9 +26162,9 @@ function pluginUses(module) {
   });
   return out;
 }
-function lineOfKey(text2, name2) {
+function lineOfKey(text3, name2) {
   const re = new RegExp(`^\\s*"${name2.replace(/[/\\^$.*+?()[\]{}|-]/g, "\\$&")}"\\s*:`);
-  const i = text2.split("\n").findIndex((l) => re.test(l));
+  const i = text3.split("\n").findIndex((l) => re.test(l));
   return i < 0 ? void 0 : i + 1;
 }
 async function readFrontend(ctx, configFile) {
@@ -24743,7 +26180,7 @@ async function readFrontend(ctx, configFile) {
     out.unverified.push({ parserId: VITE_REACT_PARSER_ID, file: file2, reason });
     return out;
   };
-  const dir = dirOf3(configFile);
+  const dir = dirOf4(configFile);
   const packageFile = join2(dir, "package.json");
   const react = await reactAppCheck(ctx.fs, configFile);
   if (!react.ok) {
@@ -24868,7 +26305,7 @@ var viteReactParser = {
     const diagnostics = outputs.flatMap((o) => o.diagnostics);
     const unverified = outputs.flatMap((o) => o.unverified);
     const frontends = outputs.flatMap((o) => o.frontend ? [o.frontend] : []);
-    const projectDirs = configs.map(dirOf3);
+    const projectDirs = configs.map(dirOf4);
     const owner = (file2) => {
       const dirs = projectDirs.filter((d) => isUnder(file2, d)).sort((a, b) => b.length - a.length);
       return dirs[0] === void 0 ? void 0 : frontends.find((f) => f.dir === dirs[0]);
@@ -24878,15 +26315,15 @@ var viteReactParser = {
       sources.map(async (file2) => {
         const project = owner(file2);
         if (!project) return;
-        let text2;
+        let text3;
         try {
-          text2 = await ctx.fs.readText(file2);
+          text3 = await ctx.fs.readText(file2);
         } catch (e) {
           unverified.push({ parserId: VITE_REACT_PARSER_ID, file: file2, reason: `could not read: ${messageOf3(e)}` });
           return;
         }
-        if (!text2.includes("fetch")) return;
-        const parsed = parseModule(file2, text2);
+        if (!text3.includes("fetch")) return;
+        const parsed = parseModule(file2, text3);
         if (!parsed.ok) {
           const reason = `could not parse: ${parsed.message}; its fetch calls are not read`;
           diagnostics.push({
@@ -24912,8 +26349,8 @@ var viteReactParser = {
     );
     const key = (c) => `${c.file}\0${c.startLine}\0${c.method}\0${c.path}`;
     for (const f of frontends) {
-      const unique = new Map(f.calls.map((c) => [key(c), c]));
-      f.node.properties.apiCalls = [...unique.values()].sort(
+      const unique2 = new Map(f.calls.map((c) => [key(c), c]));
+      f.node.properties.apiCalls = [...unique2.values()].sort(
         (a, b) => (a.file < b.file ? -1 : a.file > b.file ? 1 : 0) || a.startLine - b.startLine || (a.method + a.path < b.method + b.path ? -1 : 1)
       );
     }
@@ -24983,6 +26420,17 @@ var PARSERS = [
         })
       );
       return hits.filter((f) => f !== void 0);
+    }
+  },
+  {
+    id: terraformParser.id,
+    version: terraformParser.version,
+    analysisKey: "terraform",
+    requires: [],
+    description: "Terraform (*.tf): resources and modules of the Cloudflare and AWS providers, and the references between them",
+    parser: terraformParser,
+    async targets(_fs, files) {
+      return files.filter(isTerraformFile);
     }
   },
   {
@@ -25058,9 +26506,9 @@ function stripComment(raw) {
   }
   return raw;
 }
-function toLines(text2) {
+function toLines(text3) {
   const lines = [];
-  text2.split(/\r?\n/).forEach((raw, i) => {
+  text3.split(/\r?\n/).forEach((raw, i) => {
     const no = i + 1;
     const leading = /^[ \t]*/.exec(raw)?.[0] ?? "";
     if (leading.includes("	")) {
@@ -25075,21 +26523,21 @@ function toLines(text2) {
   });
   return lines;
 }
-function readQuoted(text2, no) {
-  const quote = text2[0];
+function readQuoted(text3, no) {
+  const quote = text3[0];
   let out = "";
-  for (let i = 1; i < text2.length; i++) {
-    const ch = text2[i];
+  for (let i = 1; i < text3.length; i++) {
+    const ch = text3[i];
     if (quote === '"' && ch === "\\") {
-      const next = text2[++i];
+      const next = text3[++i];
       if (next === void 0) break;
       out += next === "n" ? "\n" : next === "t" ? "	" : next;
     } else if (ch === quote) {
-      if (quote === "'" && text2[i + 1] === "'") {
+      if (quote === "'" && text3[i + 1] === "'") {
         out += "'";
         i++;
       } else {
-        return { value: out, rest: text2.slice(i + 1) };
+        return { value: out, rest: text3.slice(i + 1) };
       }
     } else {
       out += ch;
@@ -25097,33 +26545,33 @@ function readQuoted(text2, no) {
   }
   throw new YamlSyntaxError("unterminated quoted string", no);
 }
-function plainScalar(text2, no) {
-  if (/^[&*!|>@`%]/.test(text2)) {
-    throw new YamlSyntaxError(`unsupported YAML syntax (${text2[0]}); quote the value if it is plain text`, no);
+function plainScalar(text3, no) {
+  if (/^[&*!|>@`%]/.test(text3)) {
+    throw new YamlSyntaxError(`unsupported YAML syntax (${text3[0]}); quote the value if it is plain text`, no);
   }
-  if (/:(\s|$)/.test(text2)) throw new YamlSyntaxError("unexpected ':' in a value", no);
-  if (/^(true|True|TRUE)$/.test(text2)) return true;
-  if (/^(false|False|FALSE)$/.test(text2)) return false;
-  if (/^(null|Null|NULL|~)$/.test(text2)) return null;
-  if (/^-?\d+$/.test(text2)) return Number(text2);
-  if (/^-?\d+\.\d+$/.test(text2)) return Number(text2);
-  return text2;
+  if (/:(\s|$)/.test(text3)) throw new YamlSyntaxError("unexpected ':' in a value", no);
+  if (/^(true|True|TRUE)$/.test(text3)) return true;
+  if (/^(false|False|FALSE)$/.test(text3)) return false;
+  if (/^(null|Null|NULL|~)$/.test(text3)) return null;
+  if (/^-?\d+$/.test(text3)) return Number(text3);
+  if (/^-?\d+\.\d+$/.test(text3)) return Number(text3);
+  return text3;
 }
 function scalar2(raw, no) {
-  const text2 = raw.trim();
-  if (text2[0] === "'" || text2[0] === '"') {
-    const { value: value2, rest } = readQuoted(text2, no);
+  const text3 = raw.trim();
+  if (text3[0] === "'" || text3[0] === '"') {
+    const { value: value2, rest } = readQuoted(text3, no);
     if (rest.trim() !== "") throw new YamlSyntaxError("unexpected text after a quoted string", no);
     return value2;
   }
-  return plainScalar(text2, no);
+  return plainScalar(text3, no);
 }
 function flow(raw, no) {
-  const text2 = raw.trim();
-  if (text2 === "{}") return /* @__PURE__ */ Object.create(null);
-  if (text2[0] === "{") throw new YamlSyntaxError("flow mappings are not supported (only {})", no);
-  if (!text2.endsWith("]")) throw new YamlSyntaxError("a flow sequence must close with ] on the same line", no);
-  let rest = text2.slice(1, -1).trim();
+  const text3 = raw.trim();
+  if (text3 === "{}") return /* @__PURE__ */ Object.create(null);
+  if (text3[0] === "{") throw new YamlSyntaxError("flow mappings are not supported (only {})", no);
+  if (!text3.endsWith("]")) throw new YamlSyntaxError("a flow sequence must close with ] on the same line", no);
+  let rest = text3.slice(1, -1).trim();
   const items2 = [];
   while (rest !== "") {
     if (rest[0] === ",") throw new YamlSyntaxError("empty item in a flow sequence", no);
@@ -25149,28 +26597,28 @@ function flow(raw, no) {
   return items2;
 }
 function value(raw, no) {
-  const text2 = raw.trim();
-  return text2[0] === "[" || text2[0] === "{" ? flow(text2, no) : scalar2(text2, no);
+  const text3 = raw.trim();
+  return text3[0] === "[" || text3[0] === "{" ? flow(text3, no) : scalar2(text3, no);
 }
-function splitKey(text2, no) {
+function splitKey(text3, no) {
   let key;
   let after;
-  if (text2[0] === "'" || text2[0] === '"') {
-    const q = readQuoted(text2, no);
+  if (text3[0] === "'" || text3[0] === '"') {
+    const q = readQuoted(text3, no);
     key = q.value;
     after = q.rest.trimStart();
     if (after[0] !== ":") throw new YamlSyntaxError("expected 'key: value'", no);
     after = after.slice(1);
   } else {
-    const m = /^([^:\s][^:]*?)\s*:(\s+|$)/.exec(text2);
+    const m = /^([^:\s][^:]*?)\s*:(\s+|$)/.exec(text3);
     if (!m) throw new YamlSyntaxError("expected 'key: value'", no);
     key = m[1];
-    after = text2.slice(m[0].length);
+    after = text3.slice(m[0].length);
   }
-  if (after !== "" && !/^\s/.test(after) && text2[0] !== "'" && text2[0] !== '"') after = ` ${after}`;
+  if (after !== "" && !/^\s/.test(after) && text3[0] !== "'" && text3[0] !== '"') after = ` ${after}`;
   return { key, rest: after.trim() };
 }
-var MAX_DEPTH2 = 32;
+var MAX_DEPTH3 = 32;
 var Reader = class {
   constructor(lines) {
     this.lines = lines;
@@ -25194,7 +26642,7 @@ var Reader = class {
   }
   /** Runs a nested block, refusing to go deeper than MAX_DEPTH (so hostile input cannot overflow the stack). */
   #nested(no, read) {
-    if (++this.#depth > MAX_DEPTH2) throw new YamlSyntaxError(`nesting is deeper than ${MAX_DEPTH2} levels`, no);
+    if (++this.#depth > MAX_DEPTH3) throw new YamlSyntaxError(`nesting is deeper than ${MAX_DEPTH3} levels`, no);
     try {
       return read();
     } finally {
@@ -25252,16 +26700,16 @@ var Reader = class {
     return out;
   }
 };
-function parseYamlSubset(text2) {
+function parseYamlSubset(text3) {
   try {
-    return parse4(text2);
+    return parse4(text3);
   } catch (e) {
     if (e instanceof YamlSyntaxError) throw e;
     throw new YamlSyntaxError(`cannot be read (${e instanceof Error ? e.message : String(e)})`, 1);
   }
 }
-function parse4(text2) {
-  const lines = toLines(text2);
+function parse4(text3) {
+  const lines = toLines(text3);
   if (lines.length === 0) return /* @__PURE__ */ Object.create(null);
   const reader = new Reader(lines);
   const first = lines[0];
@@ -25276,10 +26724,10 @@ function parse4(text2) {
 
 // ../../packages/parsers/registry/src/config.ts
 var CONFIG_FILE2 = ".sketio.yml";
-function parseSketioYaml(text2) {
+function parseSketioYaml(text3) {
   let raw;
   try {
-    raw = parseYamlSubset(text2);
+    raw = parseYamlSubset(text3);
   } catch (e) {
     return { ok: false, errors: [`${CONFIG_FILE2}: ${e instanceof Error ? e.message : String(e)}`] };
   }
@@ -25336,7 +26784,6 @@ var CODE_EXTENSIONS = /* @__PURE__ */ new Set([
   ".ex",
   ".exs",
   ".tf",
-  ".tfvars",
   ".hcl",
   ".bicep",
   ".sql",
@@ -25354,6 +26801,7 @@ var FILENAME_TYPES = [
   [/^vite\.config\.(?:ts|js|mjs|mts)$/, "vite.config"],
   [/^kustomization\.ya?ml$/, "kustomization.yaml"]
 ];
+var NO_HINT_FILE = /(?:\.tfvars|(?:^|\/)\.terraform\.lock\.hcl|(?:^|\/)\.tflint\.hcl)$/;
 var IMPORT = /(?:\bfrom\s*|\bimport\s*\(?\s*|\brequire\s*\(\s*)["']([^"'\n]+)["']/g;
 function packageOf(specifier) {
   if (specifier.startsWith(".") || specifier.startsWith("/") || specifier.startsWith("node:"))
@@ -25363,8 +26811,9 @@ function packageOf(specifier) {
   return NPM_NAME.test(name2) ? name2 : void 0;
 }
 var NPM_NAME = /^(?:@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*$/i;
-var compare = (a, b) => a < b ? -1 : a > b ? 1 : 0;
+var compare2 = (a, b) => a < b ? -1 : a > b ? 1 : 0;
 async function technologyHints(path, read, ignorePackages = /* @__PURE__ */ new Set()) {
+  if (NO_HINT_FILE.test(path)) return [];
   const base = path.slice(path.lastIndexOf("/") + 1);
   const named = [];
   for (const [pattern, value2] of FILENAME_TYPES) {
@@ -25373,20 +26822,20 @@ async function technologyHints(path, read, ignorePackages = /* @__PURE__ */ new 
   if (named.length > 0 && !SOURCE2.test(path)) return named;
   if (SOURCE2.test(path)) {
     if (path.endsWith(".d.ts") || TEST_FILE2.test(path) || TEST_DIR2.test(path)) return named;
-    let text2;
+    let text3;
     try {
-      text2 = await read();
+      text3 = await read();
     } catch {
       return named;
     }
     const packages = /* @__PURE__ */ new Set();
-    for (const m of text2.matchAll(IMPORT)) {
+    for (const m of text3.matchAll(IMPORT)) {
       const name2 = packageOf(m[1]);
       if (name2 && !ignorePackages.has(name2)) packages.add(name2);
     }
     return [
       ...named,
-      ...[...packages].sort(compare).slice(0, MAX_PACKAGE_HINTS).map((value2) => ({ kind: "package", value: value2 }))
+      ...[...packages].sort(compare2).slice(0, MAX_PACKAGE_HINTS).map((value2) => ({ kind: "package", value: value2 }))
     ];
   }
   const dot = base.lastIndexOf(".");
@@ -25430,7 +26879,7 @@ async function computeCoverage(input3) {
   const unsupported = [];
   const failed = [];
   let other = 0;
-  for (const file2 of [...input3.files].sort(compare)) {
+  for (const file2 of [...input3.files].sort(compare2)) {
     const claimants = input3.entries.filter((e) => e.targets.includes(file2));
     const active = claimants.find(
       (e) => e.enabled && runOf.get(e.id) !== void 0 && runOf.get(e.id)?.status !== "not-detected"
@@ -25838,7 +27287,7 @@ var braceDelta = (s) => {
   }
   return d;
 };
-var indentOf = (s) => s.length - s.trimStart().length;
+var indentOf2 = (s) => s.length - s.trimStart().length;
 var nextNonBlank = (ls, from) => {
   let k = from;
   while (k < ls.length && ls[k].trim() === "") k++;
@@ -25884,7 +27333,7 @@ function maskBlocks(input3) {
             inner += braceDelta(original);
             const closes = inner <= 0 && /^\s*[}\]]/.test(original);
             if (!closes && original.trim() !== "")
-              changed = set2(k, `${" ".repeat(indentOf(original))}${MASK}`) || changed;
+              changed = set2(k, `${" ".repeat(indentOf2(original))}${MASK}`) || changed;
             k++;
           }
           j = k;
@@ -25893,7 +27342,7 @@ function maskBlocks(input3) {
           while (k < lines.length && lines[k].trim() !== heredoc) {
             const original = lines[k];
             if (original.trim() !== "")
-              changed = set2(k, `${" ".repeat(indentOf(original))}${MASK}`) || changed;
+              changed = set2(k, `${" ".repeat(indentOf2(original))}${MASK}`) || changed;
             k++;
           }
           j = k;
@@ -25922,7 +27371,7 @@ function maskBlocks(input3) {
         const k = nextNonBlank(lines, i + 1);
         const target = k < lines.length ? lines[k] : "";
         if (target !== "" && !target.includes(MASK) && !MAPPING_ENTRY.test(target) && !/^\s*[{}[\]]/.test(target)) {
-          if (set2(k, `${" ".repeat(indentOf(target))}${MASK}`)) count++;
+          if (set2(k, `${" ".repeat(indentOf2(target))}${MASK}`)) count++;
         }
       } else {
         if (rest.startsWith("[") && braceDelta(rest) > 0) {
@@ -25934,7 +27383,7 @@ function maskBlocks(input3) {
             depth += braceDelta(original);
             if (depth <= 0 && /^\s*\]/.test(original)) break;
             if (original.trim() !== "")
-              changed = set2(k, `${" ".repeat(indentOf(original))}${MASK}`) || changed;
+              changed = set2(k, `${" ".repeat(indentOf2(original))}${MASK}`) || changed;
           }
           if (changed) count++;
           i = k - 1;
@@ -25951,11 +27400,11 @@ function maskBlocks(input3) {
             const end = heredoc ? original.trim() === heredoc : original.includes(triple);
             if (end) {
               if (!heredoc && original.trim() !== triple)
-                changed = set2(k, `${" ".repeat(indentOf(original))}${MASK}${triple}`) || changed;
+                changed = set2(k, `${" ".repeat(indentOf2(original))}${MASK}${triple}`) || changed;
               break;
             }
             if (original.trim() !== "")
-              changed = set2(k, `${" ".repeat(indentOf(original))}${MASK}`) || changed;
+              changed = set2(k, `${" ".repeat(indentOf2(original))}${MASK}`) || changed;
           }
           if (changed) count++;
           i = k;
@@ -25970,8 +27419,8 @@ function maskBlocks(input3) {
       let k = i + 1;
       while (k < lines.length) {
         const original = lines[k];
-        if (original.trim() !== "" && indentOf(original) <= base) break;
-        if (original.trim() !== "") changed = set2(k, `${" ".repeat(indentOf(original))}${MASK}`) || changed;
+        if (original.trim() !== "" && indentOf2(original) <= base) break;
+        if (original.trim() !== "") changed = set2(k, `${" ".repeat(indentOf2(original))}${MASK}`) || changed;
         k++;
       }
       if (changed) count++;
@@ -25982,31 +27431,31 @@ function maskBlocks(input3) {
 }
 function maskSecrets(input3) {
   let count = 0;
-  const hide2 = (re, text3) => text3.replace(re, () => {
+  const hide2 = (re, text4) => text4.replace(re, () => {
     count++;
     return MASK;
   });
-  let text2 = input3.replace(PEM, (m) => {
+  let text3 = input3.replace(PEM, (m) => {
     count++;
     return MASK + newlines(m);
   });
-  const blocks = maskBlocks(text2);
-  text2 = blocks.text;
+  const blocks = maskBlocks(text3);
+  text3 = blocks.text;
   count += blocks.count;
-  for (const re of TOKEN_PATTERNS) text2 = hide2(re, text2);
-  text2 = text2.replace(AUTH_HEADER, (m, head) => {
+  for (const re of TOKEN_PATTERNS) text3 = hide2(re, text3);
+  text3 = text3.replace(AUTH_HEADER, (m, head) => {
     count++;
     return `${head}${MASK}${newlines(m)}`;
   });
-  text2 = text2.replace(BEARER, (m) => {
+  text3 = text3.replace(BEARER, (m) => {
     count++;
     return `Bearer ${MASK}${newlines(m)}`;
   });
-  text2 = text2.replace(CONNECTION, (_m, scheme) => {
+  text3 = text3.replace(CONNECTION, (_m, scheme) => {
     count++;
     return `${scheme}${MASK}@`;
   });
-  text2 = text2.replace(
+  text3 = text3.replace(
     ASSIGNMENT,
     (m, head, esc2, dq, sq, arr, bare) => {
       const value2 = esc2 ?? dq ?? sq ?? arr ?? bare ?? "";
@@ -26020,27 +27469,27 @@ function maskSecrets(input3) {
       return `${head}${quote}${MASK}${quote}`;
     }
   );
-  text2 = text2.replace(XML_ELEMENT, (m, open2, _tag, value2) => {
+  text3 = text3.replace(XML_ELEMENT, (m, open2, _tag, value2) => {
     if (value2.includes(MASK) || value2.trim() === "" || /^\s*[$<]/.test(value2)) return m;
     count++;
     return `${open2}${MASK}${newlines(value2)}`;
   });
-  text2 = text2.replace(SPACE_ASSIGN, (m, head, value2) => {
+  text3 = text3.replace(SPACE_ASSIGN, (m, head, value2) => {
     if (value2.includes(MASK) || SPACE_KEYWORD.test(value2) || /^["']?\$/.test(value2)) return m;
     count++;
     return `${head}${MASK}`;
   });
-  text2 = text2.replace(OPTION_VALUE, (m, head, value2) => {
+  text3 = text3.replace(OPTION_VALUE, (m, head, value2) => {
     if (value2.includes(MASK)) return m;
     count++;
     return `${head}${MASK}`;
   });
-  text2 = text2.replace(USER_PASS, (m, head) => {
+  text3 = text3.replace(USER_PASS, (m, head) => {
     if (m.includes(MASK)) return m;
     count++;
     return `${head}${MASK}`;
   });
-  text2 = text2.split("\n").map(
+  text3 = text3.split("\n").map(
     (line2) => DB_CLIENT.test(line2) ? line2.replace(GLUED_PASSWORD, () => {
       count++;
       return `-p${MASK}`;
@@ -26050,18 +27499,18 @@ function maskSecrets(input3) {
       return `${head}${MASK}`;
     }) : line2
   ).join("\n");
-  text2 = hide2(BASE64_PADDED, text2);
-  text2 = text2.replace(LONG_RUN, (m) => {
+  text3 = hide2(BASE64_PADDED, text3);
+  text3 = text3.replace(LONG_RUN, (m) => {
     if (!/[0-9]/.test(m) || !/[A-Za-z]/.test(m) || entropy(m) < 4) return m;
     count++;
     return MASK;
   });
-  text2 = text2.replace(QUOTED_RANDOM, (m, quote, content) => {
+  text3 = text3.replace(QUOTED_RANDOM, (m, quote, content) => {
     if (!looksRandom(content)) return m;
     count++;
     return `${quote}${MASK}${quote}`;
   });
-  return { text: text2, count };
+  return { text: text3, count };
 }
 
 // src/candidates.ts
@@ -26074,11 +27523,11 @@ function isCandidate(u) {
   return u.hints.some((h) => h.kind === "parser" || h.kind === "package" && IAC_PACKAGE.test(h.value));
 }
 var tier = (path) => path.endsWith(".tf") ? 0 : SCRIPT.test(path) ? 1 : 2;
-var compare2 = (a, b) => a < b ? -1 : a > b ? 1 : 0;
+var compare3 = (a, b) => a < b ? -1 : a > b ? 1 : 0;
 async function selectInferenceFiles(coverage, read, graph) {
   const covered = filesWithVerifiedNodes(graph);
   const all = [...new Set(coverage.unsupported.filter(isCandidate).map((u) => u.file))];
-  const candidates = all.filter((f) => !covered.has(f)).sort((a, b) => tier(a) - tier(b) || compare2(a, b));
+  const candidates = all.filter((f) => !covered.has(f)).sort((a, b) => tier(a) - tier(b) || compare3(a, b));
   const staticCovered = all.length - candidates.length;
   const files = [];
   let skipped = 0;
@@ -26089,19 +27538,19 @@ async function selectInferenceFiles(coverage, read, graph) {
       skipped++;
       continue;
     }
-    let text2;
+    let text3;
     try {
-      text2 = await read(path);
+      text3 = await read(path);
     } catch {
       skipped++;
       continue;
     }
-    const size = Buffer.byteLength(text2);
-    if (text2 === "" || text2.includes("\0") || size > MAX_FILE_BYTES) {
+    const size = Buffer.byteLength(text3);
+    if (text3 === "" || text3.includes("\0") || size > MAX_FILE_BYTES) {
       skipped++;
       continue;
     }
-    const m = maskSecrets(text2);
+    const m = maskSecrets(text3);
     const bytes = Buffer.byteLength(m.text);
     if (total + bytes > MAX_TOTAL_BYTES) {
       skipped++;
@@ -26586,15 +28035,15 @@ var readOptional = (path) => {
   }
 };
 async function loadConfig(fs, path) {
-  let text2;
+  let text3;
   try {
-    text2 = await fs.readText(path);
+    text3 = await fs.readText(path);
   } catch (e) {
     if (e.code === "ENOENT" && path === DEFAULT_CONFIG)
       return { ok: true, config: {} };
     return { ok: false, errors: [`${path}: cannot be read: ${e instanceof Error ? e.message : String(e)}`] };
   }
-  const parsed = parseSketioYaml(text2);
+  const parsed = parseSketioYaml(text3);
   return parsed.ok ? parsed : { ok: false, errors: parsed.errors.map((m) => m.includes(path) ? m : `${path}: ${m}`) };
 }
 async function runAction(io) {
@@ -26677,7 +28126,7 @@ status=${artifact.status}
 
 // src/index.ts
 try {
-  process.exitCode = await runAction({ env: process.env, stdout: (text2) => process.stdout.write(text2) });
+  process.exitCode = await runAction({ env: process.env, stdout: (text3) => process.stdout.write(text3) });
 } catch (e) {
   process.stdout.write(`${issue("error", e instanceof Error ? e.message : String(e))}
 `);

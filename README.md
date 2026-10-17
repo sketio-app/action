@@ -1,7 +1,7 @@
 # Sketio Architecture (GitHub Action)
 
 Reads the architecture of the checked-out repository (Cloudflare Workers, bindings, routes, CloudFormation, CDK,
-TypeScript / Hono) and writes it as an Architecture Artifact (JSON). With `mode: sync` or `mode: diff` it also
+Terraform, TypeScript / Hono) and writes it as an Architecture Artifact (JSON). With `mode: sync` or `mode: diff` it also
 sends the Artifact to [Sketio Arch](https://arch.sketio.app).
 
 日本語は[下](#日本語)にあります。
@@ -91,7 +91,7 @@ do not send pull requests here.
 
 ## 日本語
 
-チェックアウトしたリポジトリの構成（Cloudflare Workers、binding、ルート、CloudFormation、CDK、TypeScript / Hono）を読み、
+チェックアウトしたリポジトリの構成（Cloudflare Workers、binding、ルート、CloudFormation、CDK、Terraform、TypeScript / Hono）を読み、
 Architecture Artifact（JSON）として書き出す Action です。`mode: sync` / `mode: diff` では Artifact を
 [Sketio Arch](https://arch.sketio.app) に送ります。
 
