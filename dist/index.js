@@ -13,13 +13,13 @@ function issue(level, message, properties = {}) {
   return `::${level}${props ? ` ${props}` : ""}::${escapeData(message)}`;
 }
 var isControl = (code2) => code2 <= 31 || code2 === 127 || code2 === 133 || code2 === 8232 || code2 === 8233;
-var oneLine = (text3) => {
+var oneLine = (text4) => {
   let out = "";
-  for (const ch of text3) out += isControl(ch.codePointAt(0)) ? " " : ch;
+  for (const ch of text4) out += isControl(ch.codePointAt(0)) ? " " : ch;
   return out.replace(/ {2,}/g, " ").trim();
 };
-function plainLine(text3) {
-  const line2 = oneLine(text3);
+function plainLine(text4) {
+  const line2 = oneLine(text4);
   return line2.startsWith("::") ? ` ${line2}` : line2;
 }
 
@@ -52,23 +52,23 @@ function tokenize(glob) {
   }
   return out;
 }
-function globMatch(tokens, text3, anchored) {
-  const n = text3.length;
+function globMatch(tokens, text4, anchored) {
+  const n = text4.length;
   let reach = new Array(n + 1).fill(false);
   if (anchored) reach[0] = true;
-  else for (let i = 0; i <= n; i++) reach[i] = i === 0 || text3[i - 1] === "/";
+  else for (let i = 0; i <= n; i++) reach[i] = i === 0 || text4[i - 1] === "/";
   for (const t of tokens) {
     const next = new Array(n + 1).fill(false);
     if (t.kind === "char" || t.kind === "any1") {
       for (let i = 0; i < n; i++) {
-        if (reach[i] && (t.kind === "char" ? text3[i] === t.c : text3[i] !== "/")) next[i + 1] = true;
+        if (reach[i] && (t.kind === "char" ? text4[i] === t.c : text4[i] !== "/")) next[i + 1] = true;
       }
     } else if (t.kind === "star") {
       let open2 = false;
       for (let j = 0; j <= n; j++) {
         if (reach[j]) open2 = true;
         next[j] = open2;
-        if (text3[j] === "/") open2 = false;
+        if (text4[j] === "/") open2 = false;
       }
     } else if (t.kind === "globstar") {
       let open2 = false;
@@ -79,7 +79,7 @@ function globMatch(tokens, text3, anchored) {
     } else {
       let seen = false;
       for (let j = 0; j <= n; j++) {
-        next[j] = reach[j] || seen && text3[j - 1] === "/";
+        next[j] = reach[j] || seen && text4[j - 1] === "/";
         if (reach[j]) seen = true;
       }
     }
@@ -213,8 +213,8 @@ var ESCAPES = {
   r: "\r",
   t: "	"
 };
-function parseJsonc(text3) {
-  const src = text3.charCodeAt(0) === 65279 ? text3.slice(1) : text3;
+function parseJsonc(text4) {
+  const src = text4.charCodeAt(0) === 65279 ? text4.slice(1) : text4;
   let pos = 0;
   const lineStarts2 = [0];
   for (let i = 0; i < src.length; i++) if (src[i] === "\n") lineStarts2.push(i + 1);
@@ -10002,8 +10002,8 @@ function ko_default() {
 }
 
 // ../../node_modules/.pnpm/zod@4.6.5/node_modules/zod/v4/locales/lt.js
-var capitalizeFirstCharacter = (text3) => {
-  return text3.charAt(0).toUpperCase() + text3.slice(1);
+var capitalizeFirstCharacter = (text4) => {
+  return text4.charAt(0).toUpperCase() + text4.slice(1);
 };
 function getUnitTypeFromNumber(number4) {
   const abs = Math.abs(number4);
@@ -20858,11 +20858,11 @@ function intrinsic(entry, at, stack, r, out, depth) {
     case "Fn::GetAtt": {
       let name2;
       let attribute;
-      const text3 = stringOf(arg);
-      if (text3 !== void 0) {
-        const dot = text3.indexOf(".");
-        name2 = dot < 0 ? text3 : text3.slice(0, dot);
-        attribute = dot < 0 ? void 0 : text3.slice(dot + 1);
+      const text4 = stringOf(arg);
+      if (text4 !== void 0) {
+        const dot = text4.indexOf(".");
+        name2 = dot < 0 ? text4 : text4.slice(0, dot);
+        attribute = dot < 0 ? void 0 : text4.slice(dot + 1);
       } else if (arg.kind === "array") {
         name2 = stringOf(arg.items[0]);
         attribute = stringOf(arg.items[1]);
@@ -21587,11 +21587,11 @@ function joinPath(dir, rel) {
   return parts.join("/");
 }
 var isRecord = (v) => typeof v === "object" && v !== null && !Array.isArray(v);
-function readAssemblyManifest(manifestFile, text3) {
-  if (!text3.includes('"artifacts"')) return void 0;
+function readAssemblyManifest(manifestFile, text4) {
+  if (!text4.includes('"artifacts"')) return void 0;
   let json3;
   try {
-    json3 = JSON.parse(text3);
+    json3 = JSON.parse(text4);
   } catch {
     return void 0;
   }
@@ -21618,13 +21618,13 @@ async function findCloudAssemblies(fs) {
   );
   const found = [];
   for (const file2 of files) {
-    let text3;
+    let text4;
     try {
-      text3 = await fs.readText(file2);
+      text4 = await fs.readText(file2);
     } catch {
       continue;
     }
-    const assembly = readAssemblyManifest(file2, text3);
+    const assembly = readAssemblyManifest(file2, text4);
     if (assembly) found.push(assembly);
   }
   return found;
@@ -21638,19 +21638,19 @@ var PARSER_ID = "cloudformation";
 var CLOUDFORMATION_PARSER_VERSION = "0.1.0";
 var TEMPLATE_FILE = /(^|\/)(template|[^/]+\.template)\.json$/;
 var stackKeyOf = (file2) => file2.replace(/\.template\.json$/, "").replace(/\.json$/, "");
-var looksLikeTemplate = (text3) => /"Resources"\s*:/.test(text3);
+var looksLikeTemplate = (text4) => /"Resources"\s*:/.test(text4);
 async function findTemplateSources(ctx) {
   const owned = assemblyOwnedDirs(await findCloudAssemblies(ctx.fs));
   const files = (await ctx.fs.listFiles()).filter((p) => TEMPLATE_FILE.test(p) && !isIgnoredPath(p) && !owned.has(dirname(p))).sort();
   const found = [];
   for (const file2 of files) {
-    let text3;
+    let text4;
     try {
-      text3 = await ctx.fs.readText(file2);
+      text4 = await ctx.fs.readText(file2);
     } catch {
       continue;
     }
-    if (looksLikeTemplate(text3)) found.push({ file: file2, stackKey: stackKeyOf(file2), text: text3 });
+    if (looksLikeTemplate(text4)) found.push({ file: file2, stackKey: stackKeyOf(file2), text: text4 });
   }
   return found;
 }
@@ -21747,8 +21747,8 @@ function isControl2(c, multiline = false) {
   if (multiline && (c === "\n" || c === "\r")) return false;
   return code2 < 32 || code2 === 127;
 }
-function parseToml(text3) {
-  const src = text3.charCodeAt(0) === 65279 ? text3.slice(1) : text3;
+function parseToml(text4) {
+  const src = text4.charCodeAt(0) === 65279 ? text4.slice(1) : text4;
   let pos = 0;
   let line2 = 1;
   const fail = (message) => {
@@ -22022,7 +22022,7 @@ function finalize2(v) {
 
 // ../../packages/parsers/cloudflare/src/cloudflareParser.ts
 var PARSER_ID3 = "cloudflare";
-var CLOUDFLARE_PARSER_VERSION = "0.2.0";
+var CLOUDFLARE_PARSER_VERSION = "0.3.1";
 var CONFIG_FILE = /(^|\/)wrangler\.(toml|json|jsonc)$/;
 var isConfigFile = (path) => CONFIG_FILE.test(path) && !isIgnoredPath(path);
 var str = (obj, key) => {
@@ -22038,6 +22038,65 @@ function resourceName(item, nameKey, skip) {
   if (name2) return name2;
   skip("resource-name-missing", `no ${nameKey}; skipped`, item.span);
   return void 0;
+}
+var SIMPLE_BINDINGS = [
+  { key: "stream", kind: "stream" },
+  { key: "images", kind: "images" },
+  { key: "media", kind: "media" },
+  { key: "browser", kind: "browser" },
+  { key: "analytics", kind: "analytics-sql" },
+  { key: "version_metadata", kind: "version-metadata" },
+  { key: "hyperdrive", kind: "hyperdrive" },
+  { key: "vectorize", kind: "vectorize", nameKey: "index_name" },
+  { key: "workflows", kind: "workflow", nameKey: "name", scriptKey: "script_name" },
+  { key: "send_email", kind: "email-sending", bindingKey: "name" },
+  { key: "dispatch_namespaces", kind: "dispatch-namespace", nameKey: "namespace" },
+  { key: "pipelines", kind: "pipelines-stream" },
+  { key: "mtls_certificates", kind: "mtls-certificate" },
+  { key: "secrets_store_secrets", kind: "secrets-store-secret", nameKey: "secret_name" },
+  { key: "ratelimits", kind: "rate-limiting", bindingKey: "name" },
+  { key: "ai_search_namespaces", kind: "ai-search-namespace", nameKey: "namespace" },
+  { key: "ai_search", kind: "ai-search", nameKey: "instance_name" }
+];
+var NOT_BINDING_KEYS = /* @__PURE__ */ new Set([
+  "d1_databases",
+  "r2_buckets",
+  "kv_namespaces",
+  "durable_objects",
+  "services",
+  "queues",
+  "ai",
+  "analytics_engine_datasets",
+  "assets",
+  "env",
+  "previews",
+  // Settings, never resources. A `binding` inside them is a plain value (a variable named "binding" in `vars`).
+  "vars",
+  "define",
+  "alias",
+  "build",
+  "limits",
+  "placement",
+  "observability",
+  "compatibility_flags",
+  "triggers",
+  "rules",
+  "site",
+  "tail_consumers",
+  "unsafe",
+  "containers",
+  "migrations",
+  "exports",
+  "secrets",
+  "route",
+  "routes",
+  "dependencies_instrumentation",
+  ...SIMPLE_BINDINGS.map((b) => b.key)
+]);
+function objectsAt(obj, key) {
+  const v = getEntry(obj, key)?.value;
+  if (v?.kind === "object") return [v];
+  return elements(obj, key);
 }
 function declsOf(cfg, workerName, skip) {
   const out = [];
@@ -22144,6 +22203,34 @@ function declsOf(cfg, workerName, skip) {
         relation: "BINDS_TO",
         span: item.span
       });
+    }
+  }
+  for (const spec of SIMPLE_BINDINGS) {
+    for (const item of objectsAt(cfg, spec.key)) {
+      const binding = str(item, spec.bindingKey ?? "binding");
+      const name2 = spec.nameKey ? resourceName(item, spec.nameKey, skip) : binding;
+      if (!name2) {
+        if (!spec.nameKey)
+          skip("resource-name-missing", `${spec.key} entry without a binding; skipped`, item.span);
+        continue;
+      }
+      out.push({
+        binding,
+        type: spec.kind,
+        kind: spec.kind,
+        name: name2,
+        relation: "BINDS_TO",
+        span: item.span,
+        // A Workflow defined in another Worker is only named here, so the config does not prove it exists.
+        ...spec.scriptKey && str(item, spec.scriptKey) ? { reference: true } : {}
+      });
+    }
+  }
+  for (const e of cfg.entries) {
+    if (NOT_BINDING_KEYS.has(e.key)) continue;
+    const items2 = e.value.kind === "array" ? e.value.items : [e.value];
+    if (items2.some((i) => i.kind === "object" && str(i, "binding") !== void 0)) {
+      skip("binding-unsupported", `${e.key} looks like a binding but is not read yet`, e.span);
     }
   }
   return out;
@@ -22334,8 +22421,8 @@ async function parseFile(ctx, file2) {
     unverified: [{ parserId: PARSER_ID3, file: file2, reason: message }]
   });
   try {
-    const text3 = await ctx.fs.readText(file2);
-    const tree = file2.endsWith(".toml") ? parseToml(text3) : parseJsonc(text3);
+    const text4 = await ctx.fs.readText(file2);
+    const tree = file2.endsWith(".toml") ? parseToml(text4) : parseJsonc(text4);
     return analyze(ctx, file2, tree);
   } catch (e) {
     if (e instanceof ConfigSyntaxError) return fail(`${e.message} (line ${e.line})`, e.line);
@@ -22394,6 +22481,76 @@ var cloudflareParser = {
     };
   }
 };
+
+// ../../packages/parsers/cloudflare/src/entries.ts
+var dirOf = (path) => path.includes("/") ? path.slice(0, path.lastIndexOf("/")) : "";
+function joinNormalized(dir, rel) {
+  const out = [];
+  for (const seg of `${dir}/${rel}`.split("/")) {
+    if (seg === "" || seg === ".") continue;
+    if (seg === "..") {
+      if (out.length === 0) return void 0;
+      out.pop();
+    } else out.push(seg);
+  }
+  return out.join("/");
+}
+var text2 = (v, key) => {
+  const e = getEntry(v, key);
+  return e?.value.kind === "scalar" && typeof e.value.value === "string" && e.value.value !== "" ? { value: e.value.value, line: e.span.startLine } : void 0;
+};
+async function readWorkerEntries(fs) {
+  const files = await fs.listFiles();
+  const known = new Set(files);
+  const out = { entries: [], problems: [] };
+  for (const configFile of files.filter(isConfigFile).sort()) {
+    let root;
+    try {
+      const source = await fs.readText(configFile);
+      root = configFile.endsWith(".toml") ? parseToml(source) : parseJsonc(source);
+    } catch {
+      continue;
+    }
+    const name2 = text2(root, "name");
+    const main = text2(root, "main");
+    if (!name2 || !main) continue;
+    let workerId;
+    try {
+      workerId = nodeId("cloudflare", "worker", name2.value);
+    } catch {
+      continue;
+    }
+    const problem = (reason) => {
+      out.problems.push({ configFile, line: main.line, reason });
+    };
+    if (main.value.startsWith("/")) {
+      problem(`main "${main.value}" of Worker ${name2.value} is an absolute path; its code is not read`);
+      continue;
+    }
+    const entryFile = joinNormalized(dirOf(configFile), main.value);
+    if (entryFile === void 0) {
+      problem(
+        `main "${main.value}" of Worker ${name2.value} points outside the repository; its code is not read`
+      );
+      continue;
+    }
+    if (!known.has(entryFile)) {
+      problem(
+        `main "${main.value}" of Worker ${name2.value} is not a file in this repository (a build output?); its code is not read`
+      );
+      continue;
+    }
+    out.entries.push({
+      workerName: name2.value,
+      workerId,
+      configFile,
+      main: main.value,
+      entryFile,
+      line: main.line
+    });
+  }
+  return out;
+}
 
 // ../../node_modules/.pnpm/oxc-parser@0.151.0/node_modules/oxc-parser/src-js/index.js
 import { createRequire as createRequire2 } from "node:module";
@@ -23357,9 +23514,9 @@ var TEST_DIR = /(?:^|\/)__tests__\//;
 function isAnalyzableSource(path) {
   return SOURCE.test(path) && !path.endsWith(".d.ts") && !TEST_FILE.test(path) && !TEST_DIR.test(path);
 }
-function lineStarts(text3) {
+function lineStarts(text4) {
   const starts = [0];
-  for (let i = 0; i < text3.length; i++) if (text3.charCodeAt(i) === 10) starts.push(i + 1);
+  for (let i = 0; i < text4.length; i++) if (text4.charCodeAt(i) === 10) starts.push(i + 1);
   return starts;
 }
 function lineAt(starts, offset) {
@@ -23372,21 +23529,21 @@ function lineAt(starts, offset) {
   }
   return lo + 1;
 }
-function parseModule(file2, text3) {
+function parseModule(file2, text4) {
   let result;
   try {
-    result = parseSync2(file2, text3, { preserveParens: false });
+    result = parseSync2(file2, text4, { preserveParens: false });
   } catch (e) {
     return { ok: false, message: e instanceof Error ? e.message : String(e) };
   }
   const error62 = result.errors.find((e) => e.severity === "Error");
   if (error62) return { ok: false, message: error62.message };
-  const starts = lineStarts(text3);
+  const starts = lineStarts(text4);
   return {
     ok: true,
     module: {
       file: file2,
-      text: text3,
+      text: text4,
       program: result.program,
       lines: (node2) => ({
         startLine: lineAt(starts, node2.start),
@@ -23557,9 +23714,9 @@ function hasSecondStatement(sql) {
   return i >= 0 && bare.slice(i + 1).replace(/[\s;]+/g, "") !== "";
 }
 function sqlKind(arg) {
-  const text3 = leadingText(arg);
-  if (text3 !== void 0 && hasSecondStatement(text3)) return "unknown";
-  const word = text3?.trimStart().split(/[\s(]/, 1)[0]?.toLowerCase();
+  const text4 = leadingText(arg);
+  if (text4 !== void 0 && hasSecondStatement(text4)) return "unknown";
+  const word = text4?.trimStart().split(/[\s(]/, 1)[0]?.toLowerCase();
   if (word && SQL_READ.has(word)) return "read";
   if (word && SQL_WRITE.has(word)) return "write";
   return "unknown";
@@ -23932,7 +24089,7 @@ function onMethods(arg) {
 var HONO_PARSER_ID = "hono";
 var HONO_PARSER_VERSION = "0.2.0";
 var HONO_IMPORT = /["']hono(?:\/[^"']*)?["']/;
-var importsHono = (text3) => HONO_IMPORT.test(text3);
+var importsHono = (text4) => HONO_IMPORT.test(text4);
 var messageOf2 = (e) => e instanceof Error ? e.message : String(e);
 var Project = class {
   constructor(files) {
@@ -24026,10 +24183,10 @@ async function analyzeHono(ctx) {
   );
   for (const item of texts) {
     if (!item) continue;
-    const [file2, text3] = item;
-    const parsed = parseModule(file2, text3);
+    const [file2, text4] = item;
+    const parsed = parseModule(file2, text4);
     if (!parsed.ok) {
-      if (!HONO_IMPORT.test(text3)) continue;
+      if (!HONO_IMPORT.test(text4)) continue;
       failFile(file2, "syntax-error", `syntax error: ${parsed.message}`);
       continue;
     }
@@ -24264,8 +24421,8 @@ function relationOf(type, usage) {
       return "DEPENDS_ON";
   }
 }
-var dirOf = (path) => path.includes("/") ? path.slice(0, path.lastIndexOf("/")) : "";
-function joinNormalized(dir, rel) {
+var dirOf2 = (path) => path.includes("/") ? path.slice(0, path.lastIndexOf("/")) : "";
+function joinNormalized2(dir, rel) {
   const out = [];
   for (const seg of `${dir}/${rel}`.split("/")) {
     if (seg === "" || seg === ".") continue;
@@ -24312,7 +24469,7 @@ var honoBindingLinker = {
           });
           continue;
         }
-        const entryPath = joinNormalized(dirOf(configFile), main);
+        const entryPath = joinNormalized2(dirOf2(configFile), main);
         if (entryPath === void 0) continue;
         const configEvidence = worker.evidence.filter((e) => e.file === configFile);
         const bindings = /* @__PURE__ */ new Map();
@@ -24502,9 +24659,9 @@ var Lexer = class {
       }
       if (c >= "0" && c <= "9") {
         const m = NUMBER3.exec(src.slice(this.pos, this.pos + 64));
-        const text3 = m?.[0] ?? c;
-        out.push({ t: "num", v: text3, line: line2, endLine: line2, col });
-        this.pos += text3.length;
+        const text4 = m?.[0] ?? c;
+        out.push({ t: "num", v: text4, line: line2, endLine: line2, col });
+        this.pos += text4.length;
         continue;
       }
       if (ID_START.test(c)) {
@@ -24993,8 +25150,8 @@ function resync(parser, startIndex) {
     parser.pos++;
   }
 }
-function parseHcl(text3) {
-  const lexer = new Lexer(text3);
+function parseHcl(text4) {
+  const lexer = new Lexer(text4);
   const toks = lexer.tokens(false);
   toks.push({ t: "eof", v: "", line: lexer.line, endLine: lexer.line, col: lexer.pos - lexer.lineStart + 1 });
   const parser = new Parser(toks);
@@ -25034,7 +25191,7 @@ function literalValue(e) {
   if (e.kind === "number" || e.kind === "bool") return e.value;
   return void 0;
 }
-var text2 = (b, name2) => {
+var text3 = (b, name2) => {
   const v = literalOf(b, name2);
   return typeof v === "string" && v !== "" ? v : void 0;
 };
@@ -25060,8 +25217,8 @@ var aws = (kind2, nameKeys, describe3, role) => ({
   ...describe3 ? { describe: describe3 } : {},
   ...role ? { role } : {}
 });
-var describeWorker = (b) => pick2({ compatibilityDate: text2(b, "compatibility_date"), mainModule: text2(b, "main_module") });
-var describeTable2 = (b) => pick2({ billingMode: text2(b, "billing_mode"), hashKey: text2(b, "hash_key"), rangeKey: text2(b, "range_key") });
+var describeWorker = (b) => pick2({ compatibilityDate: text3(b, "compatibility_date"), mainModule: text3(b, "main_module") });
+var describeTable2 = (b) => pick2({ billingMode: text3(b, "billing_mode"), hashKey: text3(b, "hash_key"), rangeKey: text3(b, "range_key") });
 var TYPES3 = {
   // --- Cloudflare provider（v4 と v5 の両方の名前） ---
   cloudflare_workers_script: cf("worker", ["script_name", "name"], "name", {
@@ -25079,19 +25236,19 @@ var TYPES3 = {
   cloudflare_worker_version: cf("worker", [], "name", { role: "worker-version" }),
   cloudflare_workers_route: cf("worker-route", ["pattern"], "label", {
     role: "exposes-worker",
-    describe: (b) => pick2({ pattern: text2(b, "pattern") })
+    describe: (b) => pick2({ pattern: text3(b, "pattern") })
   }),
   cloudflare_worker_route: cf("worker-route", ["pattern"], "label", {
     role: "exposes-worker",
-    describe: (b) => pick2({ pattern: text2(b, "pattern") })
+    describe: (b) => pick2({ pattern: text3(b, "pattern") })
   }),
   cloudflare_workers_custom_domain: cf("custom-domain", ["hostname"], "label", {
     role: "exposes-worker",
-    describe: (b) => pick2({ hostname: text2(b, "hostname") })
+    describe: (b) => pick2({ hostname: text3(b, "hostname") })
   }),
   cloudflare_worker_domain: cf("custom-domain", ["hostname"], "label", {
     role: "exposes-worker",
-    describe: (b) => pick2({ hostname: text2(b, "hostname") })
+    describe: (b) => pick2({ hostname: text3(b, "hostname") })
   }),
   cloudflare_d1_database: cf("d1", ["name"], "name"),
   cloudflare_r2_bucket: cf("r2", ["name"], "name"),
@@ -25099,40 +25256,40 @@ var TYPES3 = {
   cloudflare_queue: cf("queue", ["queue_name", "name"], "name"),
   cloudflare_zone: cf("zone", ["name", "zone"], "name"),
   cloudflare_dns_record: cf("dns-record", ["name"], "label", {
-    describe: (b) => pick2({ recordType: text2(b, "type"), recordName: text2(b, "name") })
+    describe: (b) => pick2({ recordType: text3(b, "type"), recordName: text3(b, "name") })
   }),
   cloudflare_record: cf("dns-record", ["name"], "label", {
-    describe: (b) => pick2({ recordType: text2(b, "type"), recordName: text2(b, "name") })
+    describe: (b) => pick2({ recordType: text3(b, "type"), recordName: text3(b, "name") })
   }),
   cloudflare_zero_trust_access_application: cf("access-application", ["name"], "label", {
-    describe: (b) => pick2({ domain: text2(b, "domain"), applicationType: text2(b, "type") })
+    describe: (b) => pick2({ domain: text3(b, "domain"), applicationType: text3(b, "type") })
   }),
   cloudflare_access_application: cf("access-application", ["name"], "label", {
-    describe: (b) => pick2({ domain: text2(b, "domain"), applicationType: text2(b, "type") })
+    describe: (b) => pick2({ domain: text3(b, "domain"), applicationType: text3(b, "type") })
   }),
   cloudflare_zero_trust_access_policy: cf("access-policy", ["name"], "label"),
   cloudflare_access_policy: cf("access-policy", ["name"], "label"),
   cloudflare_zero_trust_access_ai_controls_mcp_server: cf("mcp-server", ["name"], "label", {
-    describe: (b) => pick2({ hostname: text2(b, "hostname") })
+    describe: (b) => pick2({ hostname: text3(b, "hostname") })
   }),
   cloudflare_zero_trust_access_ai_controls_mcp_portal: cf("mcp-portal", ["name"], "label", {
-    describe: (b) => pick2({ hostname: text2(b, "hostname") })
+    describe: (b) => pick2({ hostname: text3(b, "hostname") })
   }),
   cloudflare_pages_project: cf("pages-project", ["name"], "name"),
   cloudflare_zero_trust_tunnel_cloudflared: cf("tunnel", ["name"], "label"),
   cloudflare_tunnel: cf("tunnel", ["name"], "label"),
   cloudflare_hyperdrive_config: cf("hyperdrive", ["name"], "label"),
-  cloudflare_vectorize_index: cf("vectorize", ["name"], "label"),
+  cloudflare_vectorize_index: cf("vectorize", ["name"], "name"),
   // --- AWS provider ---
   aws_lambda_function: aws(
     "lambda",
     ["function_name"],
     (b) => pick2({
-      runtime: text2(b, "runtime"),
-      handler: text2(b, "handler"),
+      runtime: text3(b, "runtime"),
+      handler: text3(b, "handler"),
       memorySize: num2(b, "memory_size"),
       timeout: num2(b, "timeout"),
-      packageType: text2(b, "package_type")
+      packageType: text3(b, "package_type")
     }),
     "lambda"
   ),
@@ -25143,29 +25300,29 @@ var TYPES3 = {
   aws_cloudwatch_event_rule: aws(
     "eventbridge",
     ["name"],
-    (b) => pick2({ scheduleExpression: text2(b, "schedule_expression") })
+    (b) => pick2({ scheduleExpression: text3(b, "schedule_expression") })
   ),
   aws_apigatewayv2_api: aws(
     "api-gateway",
     ["name"],
-    (b) => pick2({ apiVersion: "v2", protocolType: text2(b, "protocol_type") })
+    (b) => pick2({ apiVersion: "v2", protocolType: text3(b, "protocol_type") })
   ),
   aws_api_gateway_rest_api: aws("api-gateway", ["name"], () => ({ apiVersion: "v1" })),
   aws_db_instance: aws(
     "rds",
     ["identifier"],
-    (b) => pick2({ engine: text2(b, "engine"), instanceClass: text2(b, "instance_class") })
+    (b) => pick2({ engine: text3(b, "engine"), instanceClass: text3(b, "instance_class") })
   ),
-  aws_rds_cluster: aws("aurora", ["cluster_identifier"], (b) => pick2({ engine: text2(b, "engine") })),
+  aws_rds_cluster: aws("aurora", ["cluster_identifier"], (b) => pick2({ engine: text3(b, "engine") })),
   aws_ecs_cluster: aws("ecs", ["name"]),
-  aws_ecs_service: aws("ecs", ["name"], (b) => pick2({ launchType: text2(b, "launch_type") })),
+  aws_ecs_service: aws("ecs", ["name"], (b) => pick2({ launchType: text3(b, "launch_type") })),
   aws_eks_cluster: aws("eks", ["name"]),
   aws_ecr_repository: aws("ecr", ["name"]),
-  aws_instance: aws("ec2", [], (b) => pick2({ instanceType: text2(b, "instance_type") })),
+  aws_instance: aws("ec2", [], (b) => pick2({ instanceType: text3(b, "instance_type") })),
   aws_cloudfront_distribution: aws("cloudfront", ["comment"]),
   aws_route53_zone: aws("route53", ["name"]),
-  aws_lb: aws("elb", ["name"], (b) => pick2({ loadBalancerType: text2(b, "load_balancer_type") })),
-  aws_alb: aws("elb", ["name"], (b) => pick2({ loadBalancerType: text2(b, "load_balancer_type") })),
+  aws_lb: aws("elb", ["name"], (b) => pick2({ loadBalancerType: text3(b, "load_balancer_type") })),
+  aws_alb: aws("elb", ["name"], (b) => pick2({ loadBalancerType: text3(b, "load_balancer_type") })),
   aws_sfn_state_machine: aws("step-functions", ["name"]),
   aws_kinesis_stream: aws("kinesis", ["name"]),
   aws_appsync_graphql_api: aws("appsync", ["name"]),
@@ -25301,10 +25458,10 @@ function bindingKindOf(typeOrBlock) {
 
 // ../../packages/parsers/terraform/src/terraformParser.ts
 var PARSER_ID4 = "terraform";
-var TERRAFORM_PARSER_VERSION = "0.1.0";
+var TERRAFORM_PARSER_VERSION = "0.1.1";
 var isTerraformFile = (path) => path.endsWith(".tf") && !isIgnoredPath(path) && !path.split("/").slice(0, -1).includes(".terraform");
 var compare = (a, b) => a < b ? -1 : a > b ? 1 : 0;
-var dirOf2 = (file2) => {
+var dirOf3 = (file2) => {
   const i = file2.lastIndexOf("/");
   return i < 0 ? "." : file2.slice(0, i);
 };
@@ -25372,7 +25529,7 @@ var Analysis = class {
     }
   }
   collect(file2, block) {
-    const dir = dirOf2(file2);
+    const dir = dirOf3(file2);
     if (block.type === "locals") {
       const map2 = this.locals.get(dir) ?? /* @__PURE__ */ new Map();
       this.locals.set(dir, map2);
@@ -25880,19 +26037,19 @@ function urlOf(arg) {
   if (n.type !== "TemplateLiteral") return { kind: "ignore" };
   const quasis = n.quasis.map((q) => q.value.cooked ?? "");
   if (!(quasis[0] ?? "").startsWith("/") || (quasis[0] ?? "").startsWith("//")) return { kind: "ignore" };
-  let text3 = "";
+  let text4 = "";
   for (let i = 0; i < quasis.length; i++) {
     const quasi = quasis[i];
-    text3 += quasi;
+    text4 += quasi;
     if (i === quasis.length - 1) break;
-    const before = text3 === "" || text3.endsWith("/");
+    const before = text4 === "" || text4.endsWith("/");
     const next = quasis[i + 1];
     const after = next === "" ? i + 1 === quasis.length - 1 : /^[/?#]/.test(next);
-    if (text3.includes("?") || text3.includes("#")) break;
+    if (text4.includes("?") || text4.includes("#")) break;
     if (!before || !after) return { kind: "gap", reason: "the path is built inside a segment" };
-    text3 += PLACEHOLDER;
+    text4 += PLACEHOLDER;
   }
-  return fromPath(text3);
+  return fromPath(text4);
 }
 function fromPath(raw) {
   if (!raw.startsWith("/") || raw.startsWith("//")) return { kind: "ignore" };
@@ -25955,9 +26112,9 @@ function extractFetchCalls(module) {
 
 // ../../packages/parsers/vite-react/src/linker.ts
 var VITE_LINKER_ID = "vite-frontend";
-var dirOf3 = (path) => path.includes("/") ? path.slice(0, path.lastIndexOf("/")) : "";
+var dirOf4 = (path) => path.includes("/") ? path.slice(0, path.lastIndexOf("/")) : "";
 var baseOf = (path) => path.slice(path.lastIndexOf("/") + 1);
-function joinNormalized2(dir, rel) {
+function joinNormalized3(dir, rel) {
   const out = [];
   for (const seg of `${dir}/${rel}`.split("/")) {
     if (seg === "" || seg === ".") continue;
@@ -26023,7 +26180,7 @@ var viteFrontendLinker = {
       const calls = fe.properties.apiCalls ?? [];
       const configFile = fe.properties.configFile;
       if (!plugin) continue;
-      const dir = dirOf3(configFile);
+      const dir = dirOf4(configFile);
       let wranglerFile;
       if (plugin.configPath === null) {
         unverified(
@@ -26032,11 +26189,11 @@ var viteFrontendLinker = {
         );
         continue;
       }
-      if (plugin.configPath !== void 0) wranglerFile = joinNormalized2(dir, plugin.configPath);
+      if (plugin.configPath !== void 0) wranglerFile = joinNormalized3(dir, plugin.configPath);
       const candidates = workers.filter((w) => {
         const configs = Object.keys(w.properties.configs ?? {});
         return configs.some(
-          (f) => wranglerFile !== void 0 ? f === wranglerFile : dirOf3(f) === dir && /^wrangler\./.test(baseOf(f))
+          (f) => wranglerFile !== void 0 ? f === wranglerFile : dirOf4(f) === dir && /^wrangler\./.test(baseOf(f))
         );
       });
       if (candidates.length !== 1) {
@@ -26048,7 +26205,7 @@ var viteFrontendLinker = {
       }
       const worker = candidates[0];
       const configEvidence = worker.evidence.filter(
-        (e) => wranglerFile !== void 0 ? e.file === wranglerFile : dirOf3(e.file) === dir && /^wrangler\./.test(baseOf(e.file))
+        (e) => wranglerFile !== void 0 ? e.file === wranglerFile : dirOf4(e.file) === dir && /^wrangler\./.test(baseOf(e.file))
       );
       const pluginEvidence = staticEvidence(ctx, plugin.file, plugin.startLine, plugin.endLine);
       out.edges.push({
@@ -26113,10 +26270,10 @@ var CLOUDFLARE_VITE_PLUGIN = "@cloudflare/vite-plugin";
 var DEPENDENCY_SECTIONS = ["dependencies", "devDependencies", "peerDependencies"];
 var RECORDED_DEPENDENCIES = /* @__PURE__ */ new Set(["vite", "react", ...PLUGIN_PACKAGES]);
 var messageOf3 = (e) => e instanceof Error ? e.message : String(e);
-var dirOf4 = (path) => path.includes("/") ? path.slice(0, path.lastIndexOf("/")) : "";
+var dirOf5 = (path) => path.includes("/") ? path.slice(0, path.lastIndexOf("/")) : "";
 var join2 = (dir, name2) => dir === "" ? name2 : `${dir}/${name2}`;
 async function reactAppCheck(fs, configFile) {
-  const packageFile = join2(dirOf4(configFile), "package.json");
+  const packageFile = join2(dirOf5(configFile), "package.json");
   let pkg;
   try {
     pkg = JSON.parse(await fs.readText(packageFile));
@@ -26162,9 +26319,9 @@ function pluginUses(module) {
   });
   return out;
 }
-function lineOfKey(text3, name2) {
+function lineOfKey(text4, name2) {
   const re = new RegExp(`^\\s*"${name2.replace(/[/\\^$.*+?()[\]{}|-]/g, "\\$&")}"\\s*:`);
-  const i = text3.split("\n").findIndex((l) => re.test(l));
+  const i = text4.split("\n").findIndex((l) => re.test(l));
   return i < 0 ? void 0 : i + 1;
 }
 async function readFrontend(ctx, configFile) {
@@ -26180,7 +26337,7 @@ async function readFrontend(ctx, configFile) {
     out.unverified.push({ parserId: VITE_REACT_PARSER_ID, file: file2, reason });
     return out;
   };
-  const dir = dirOf4(configFile);
+  const dir = dirOf5(configFile);
   const packageFile = join2(dir, "package.json");
   const react = await reactAppCheck(ctx.fs, configFile);
   if (!react.ok) {
@@ -26305,7 +26462,7 @@ var viteReactParser = {
     const diagnostics = outputs.flatMap((o) => o.diagnostics);
     const unverified = outputs.flatMap((o) => o.unverified);
     const frontends = outputs.flatMap((o) => o.frontend ? [o.frontend] : []);
-    const projectDirs = configs.map(dirOf4);
+    const projectDirs = configs.map(dirOf5);
     const owner = (file2) => {
       const dirs = projectDirs.filter((d) => isUnder(file2, d)).sort((a, b) => b.length - a.length);
       return dirs[0] === void 0 ? void 0 : frontends.find((f) => f.dir === dirs[0]);
@@ -26315,15 +26472,15 @@ var viteReactParser = {
       sources.map(async (file2) => {
         const project = owner(file2);
         if (!project) return;
-        let text3;
+        let text4;
         try {
-          text3 = await ctx.fs.readText(file2);
+          text4 = await ctx.fs.readText(file2);
         } catch (e) {
           unverified.push({ parserId: VITE_REACT_PARSER_ID, file: file2, reason: `could not read: ${messageOf3(e)}` });
           return;
         }
-        if (!text3.includes("fetch")) return;
-        const parsed = parseModule(file2, text3);
+        if (!text4.includes("fetch")) return;
+        const parsed = parseModule(file2, text4);
         if (!parsed.ok) {
           const reason = `could not parse: ${parsed.message}; its fetch calls are not read`;
           diagnostics.push({
@@ -26358,6 +26515,530 @@ var viteReactParser = {
     return { nodes: frontends.map((f) => f.node), edges: [], diagnostics, unverified };
   }
 };
+
+// ../../packages/parsers/worker-fetch/src/extract.ts
+var HANDLER_NAMES = /* @__PURE__ */ new Set(["fetch", "scheduled", "queue", "email", "tail", "trace", "tailStream"]);
+var MAX_DEPTH3 = 4;
+var isFunction2 = (n) => n.type === "ArrowFunctionExpression" || n.type === "FunctionExpression" || n.type === "FunctionDeclaration";
+var identName2 = (n) => n?.type === "Identifier" ? n.name : void 0;
+function keyName(key, computed) {
+  if (!key || computed === true) return void 0;
+  return identName2(key) ?? (key.type === "Literal" && typeof key.value === "string" ? key.value : void 0);
+}
+function isAppFetch(value2) {
+  const member = (n) => n.type === "MemberExpression" && n.computed !== true && identName2(n.property) === "fetch";
+  if (member(value2)) return true;
+  if (value2.type !== "CallExpression") return false;
+  const callee = unwrapExpression(value2.callee);
+  return callee.type === "MemberExpression" && identName2(callee.property) === "bind" && member(unwrapExpression(callee.object));
+}
+function delegatesToApp(fn) {
+  const first = fn.params?.[0];
+  const request = identName2(first);
+  if (!request) return false;
+  let found = false;
+  walk2(fn.body, (n) => {
+    if (found) return false;
+    if (n.type !== "CallExpression") return;
+    const callee = unwrapExpression(n.callee);
+    if (callee.type === "MemberExpression" && callee.computed !== true && identName2(callee.property) === "fetch" && identName2(unwrapExpression(callee.object)) !== void 0 && n.arguments.some((a) => identName2(unwrapExpression(a)) === request)) {
+      found = true;
+    }
+  });
+  return found;
+}
+function extractModule(module) {
+  const lineOf = (n) => module.lines(n).startLine;
+  const topLevel = /* @__PURE__ */ new Map();
+  const constStrings = /* @__PURE__ */ new Map();
+  for (const stmt of module.program.body) {
+    const decl = (stmt.type === "ExportNamedDeclaration" || stmt.type === "ExportDefaultDeclaration") && stmt.declaration ? stmt.declaration : stmt;
+    if ((decl.type === "FunctionDeclaration" || decl.type === "ClassDeclaration") && decl.id) {
+      topLevel.set(identName2(decl.id), decl);
+    }
+    if (decl.type === "VariableDeclaration") {
+      for (const d of decl.declarations) {
+        const name2 = identName2(d.id);
+        if (!name2 || !d.init) continue;
+        const init = unwrapExpression(d.init);
+        topLevel.set(name2, init);
+        const s = decl.kind === "const" ? stringValue(init) : void 0;
+        if (s !== void 0) constStrings.set(name2, s);
+      }
+    }
+  }
+  const exportStmt = module.program.body.find((s) => s.type === "ExportDefaultDeclaration");
+  if (!exportStmt) {
+    return {
+      ok: false,
+      gap: { code: "no-default-export", message: "the module has no default export", line: 1 }
+    };
+  }
+  const declaration = module.lines(exportStmt);
+  let target = unwrapExpression(exportStmt.declaration);
+  const viaName = identName2(target);
+  if (viaName && !topLevel.has(viaName)) return { ok: false };
+  if (viaName) target = topLevel.get(viaName) ?? target;
+  const isClass = target.type === "ClassDeclaration" || target.type === "ClassExpression";
+  if (target.type !== "ObjectExpression" && !isClass) {
+    return {
+      ok: false,
+      gap: {
+        code: "default-export-unsupported",
+        message: "the default export is not an object (or class) with the handlers written in it (a wrapper call or a framework app); routes are not read",
+        line: declaration.startLine
+      }
+    };
+  }
+  const handlers = [];
+  let fetchFn;
+  let fetchNotFollowed;
+  if (target.type === "ObjectExpression") {
+    for (const prop of target.properties) {
+      if (prop.type !== "Property") continue;
+      const name2 = keyName(prop.key, prop.computed);
+      if (!name2 || !HANDLER_NAMES.has(name2)) continue;
+      handlers.push(name2);
+      if (name2 !== "fetch") continue;
+      const value2 = unwrapExpression(prop.value);
+      if (isAppFetch(value2)) return { ok: false };
+      const fn = isFunction2(value2) ? value2 : topLevel.get(identName2(value2) ?? "");
+      if (fn && isFunction2(fn)) fetchFn = fn;
+      else fetchNotFollowed = prop;
+    }
+  } else {
+    for (const member of target.body.body) {
+      if (member.type !== "MethodDefinition" || member.static === true) continue;
+      const name2 = keyName(member.key, member.computed);
+      if (!name2 || !HANDLER_NAMES.has(name2)) continue;
+      handlers.push(name2);
+      if (name2 === "fetch") fetchFn = member.value;
+    }
+  }
+  const raws = [];
+  const gaps = [];
+  const gap = (code2, message, node2) => {
+    gaps.push({ code: code2, message, line: lineOf(node2) });
+  };
+  const resolveString = (n) => {
+    if (!n) return void 0;
+    const u = unwrapExpression(n);
+    const name2 = identName2(u);
+    return name2 ? constStrings.get(name2) : stringValue(u);
+  };
+  const addPath = (value2, match, node2, what) => {
+    if (value2 === void 0) {
+      gap(
+        "route-dynamic",
+        `${what} is compared with something that is not a string literal; not read as a route`,
+        node2
+      );
+    } else if (!value2.startsWith("/")) {
+      gap("route-dynamic", `${what} is compared with a string that is not a path; not read as a route`, node2);
+    } else raws.push({ method: void 0, path: value2, match, node: node2 });
+  };
+  const visited = /* @__PURE__ */ new Set();
+  const analyze2 = (fn, paramIndex, depth) => {
+    if (visited.has(fn) || depth > MAX_DEPTH3) return;
+    visited.add(fn);
+    const params = fn.params ?? [];
+    const first = params[paramIndex];
+    if (!first) return;
+    const request = identName2(first);
+    if (!request) {
+      gap(
+        "request-untraceable",
+        "the request parameter is not a plain name (a destructured pattern); the routes in this function are not read",
+        first
+      );
+      return;
+    }
+    const body = fn.body;
+    const isRequestMember = (n, prop) => {
+      if (!n) return false;
+      const m = unwrapExpression(n);
+      return m.type === "MemberExpression" && m.computed !== true && identName2(m.property) === prop && identName2(unwrapExpression(m.object)) === request;
+    };
+    const urlVars = /* @__PURE__ */ new Set();
+    const pathVars = /* @__PURE__ */ new Set();
+    const isUrl = (n) => {
+      if (!n) return false;
+      const u = unwrapExpression(n);
+      if (u.type === "NewExpression") {
+        return identName2(u.callee) === "URL" && isRequestMember(u.arguments[0], "url");
+      }
+      const name2 = identName2(u);
+      return name2 !== void 0 && urlVars.has(name2);
+    };
+    const isPath = (n) => {
+      if (!n) return false;
+      const u = unwrapExpression(n);
+      if (u.type === "MemberExpression") {
+        return u.computed !== true && identName2(u.property) === "pathname" && isUrl(u.object);
+      }
+      const name2 = identName2(u);
+      return name2 !== void 0 && pathVars.has(name2);
+    };
+    walk2(body, (n) => {
+      if (n.type !== "VariableDeclarator" || !n.init) return;
+      const init = n.init;
+      const id = n.id;
+      if (id.type === "Identifier") {
+        if (isUrl(init)) urlVars.add(id.name);
+        else if (isPath(init)) pathVars.add(id.name);
+      } else if (id.type === "ObjectPattern" && isUrl(init)) {
+        for (const p of id.properties) {
+          if (p.type === "Property" && keyName(p.key, p.computed) === "pathname") {
+            const local = identName2(p.value);
+            if (local) pathVars.add(local);
+          }
+        }
+      }
+    });
+    const methodsOf = (n) => {
+      const u = unwrapExpression(n);
+      if (u.type === "BinaryExpression" && (u.operator === "===" || u.operator === "==")) {
+        const sides = [u.left, u.right];
+        const at = sides.findIndex((s) => isRequestMember(s, "method"));
+        if (at < 0) return void 0;
+        const lit = stringValue(sides[1 - at]);
+        return lit === void 0 ? void 0 : [lit.toUpperCase()];
+      }
+      if (u.type === "CallExpression") {
+        const callee = unwrapExpression(u.callee);
+        if (callee.type === "MemberExpression" && identName2(callee.property) === "includes" && isRequestMember(u.arguments[0], "method")) {
+          const list2 = literalList(callee.object);
+          return list2?.map((m) => m.toUpperCase());
+        }
+      }
+      return void 0;
+    };
+    const literalList = (n) => {
+      const u = unwrapExpression(n);
+      if (u.type !== "ArrayExpression") return void 0;
+      const out = [];
+      for (const el of u.elements) {
+        const s = el ? resolveString(el) : void 0;
+        if (s === void 0) return void 0;
+        out.push(s);
+      }
+      return out;
+    };
+    const mine = [];
+    const before = raws.length;
+    walk2(body, (n) => {
+      if (n.type === "BinaryExpression") {
+        const op = n.operator;
+        if (!["===", "==", "!==", "!="].includes(op)) return;
+        const left = n.left;
+        const right = n.right;
+        const pathSide = isPath(left) ? left : isPath(right) ? right : void 0;
+        if (!pathSide) return;
+        if (op.startsWith("!")) {
+          gap(
+            "route-dynamic",
+            "the pathname is checked with a not-equal comparison (a guard); not read as a route",
+            n
+          );
+          return;
+        }
+        addPath(resolveString(pathSide === left ? right : left), "exact", n, "the pathname");
+      } else if (n.type === "SwitchStatement") {
+        if (!isPath(n.discriminant)) return;
+        for (const c of n.cases) {
+          if (!c.test) continue;
+          addPath(resolveString(c.test), "exact", c.test, "a case of switch (pathname)");
+        }
+      } else if (n.type === "CallExpression") {
+        const callee = unwrapExpression(n.callee);
+        const args = n.arguments;
+        const calleeName = callee.type === "MemberExpression" ? identName2(callee.property) : void 0;
+        if (callee.type === "MemberExpression" && isPath(callee.object)) {
+          if (calleeName === "startsWith")
+            addPath(resolveString(args[0]), "prefix", n, "pathname.startsWith()");
+          else
+            gap(
+              "route-dynamic",
+              `pathname.${calleeName ?? "?"}() is not a plain comparison; not read as a route`,
+              n
+            );
+        } else if (args.some((a) => isPath(a))) {
+          const list2 = calleeName === "includes" ? literalList(callee.object) : void 0;
+          if (list2 && isPath(args[0])) for (const p of list2) addPath(p, "exact", n, "an includes() list");
+          else
+            gap(
+              "route-dynamic",
+              "the pathname is passed to other code (a router or a pattern match); not read as a route",
+              n
+            );
+        }
+        const calleeFn = topLevel.get(identName2(callee) ?? "");
+        if (calleeFn && isFunction2(calleeFn)) {
+          args.forEach((a, i) => {
+            if (identName2(unwrapExpression(a)) === request) analyze2(calleeFn, i, depth + 1);
+          });
+        }
+      }
+    });
+    for (const r of raws.slice(before)) mine.push(r);
+    mine.sort((a, b) => a.node.start - b.node.start);
+    const negated = [];
+    walk2(body, (n) => {
+      if (n.type !== "UnaryExpression" || n.operator !== "!") return;
+      const last = negated[negated.length - 1];
+      if (last && n.start >= last.start && n.end <= last.end) return false;
+      negated.push({ start: n.start, end: n.end });
+    });
+    const isNegated = (pos) => {
+      let lo = 0;
+      let hi = negated.length - 1;
+      while (lo <= hi) {
+        const mid = lo + hi >> 1;
+        const r = negated[mid];
+        if (pos < r.start) hi = mid - 1;
+        else if (pos >= r.end) lo = mid + 1;
+        else return true;
+      }
+      return false;
+    };
+    const firstAtOrAfter = (pos) => {
+      let lo = 0;
+      let hi = mine.length;
+      while (lo < hi) {
+        const mid = lo + hi >> 1;
+        if (mine[mid].node.start < pos) lo = mid + 1;
+        else hi = mid;
+      }
+      return lo;
+    };
+    walk2(body, (n, parent) => {
+      if (n.type !== "LogicalExpression" || n.operator !== "&&") return;
+      if (parent?.type === "LogicalExpression" && parent.operator === "&&") return;
+      const operands = [];
+      const flatten = (e) => {
+        const u = unwrapExpression(e);
+        if (u.type === "LogicalExpression" && u.operator === "&&") {
+          flatten(u.left);
+          flatten(u.right);
+        } else operands.push(u);
+      };
+      flatten(n);
+      const methods = operands.flatMap((o) => methodsOf(o) ?? []);
+      if (methods.length === 0) return;
+      for (const o of operands) {
+        if (methodsOf(o)) continue;
+        for (let k = firstAtOrAfter(o.start); k < mine.length; k++) {
+          const r = mine[k];
+          if (r.node.start >= o.end) break;
+          if (r.method === void 0 && r.node.end <= o.end && !isNegated(r.node.start)) {
+            r.method = methods.join(",");
+          }
+        }
+      }
+    });
+  };
+  if (fetchFn && delegatesToApp(fetchFn)) return { ok: false };
+  if (fetchFn) analyze2(fetchFn, 0, 0);
+  else if (fetchNotFollowed) {
+    gap(
+      "fetch-not-followed",
+      "fetch is not a function written in this file (or one of its top-level functions); routes are not read",
+      fetchNotFollowed
+    );
+  }
+  if (fetchFn && raws.length === 0 && gaps.length === 0) {
+    gap(
+      "no-routes-found",
+      "fetch has no comparison of the URL pathname with a string literal; its routes are not read",
+      fetchFn
+    );
+  }
+  const routes = [];
+  for (const r of raws) {
+    for (const method of (r.method ?? "ALL").split(",")) {
+      routes.push({
+        method,
+        path: r.match === "prefix" ? `${r.path}*` : r.path,
+        match: r.match,
+        lines: module.lines(r.node)
+      });
+    }
+  }
+  return { ok: true, model: { handlers, declaration, routes, gaps } };
+}
+
+// ../../packages/parsers/worker-fetch/src/workerFetchParser.ts
+var WORKER_FETCH_PARSER_ID = "worker-fetch";
+var WORKER_FETCH_PARSER_VERSION = "0.1.1";
+var messageOf4 = (e) => e instanceof Error ? e.message : String(e);
+async function entryFiles(ctx) {
+  const { entries, problems } = await readWorkerEntries(ctx.fs);
+  const byFile = /* @__PURE__ */ new Map();
+  const hono = /* @__PURE__ */ new Set();
+  const texts = /* @__PURE__ */ new Map();
+  const unreadable = /* @__PURE__ */ new Map();
+  for (const entry of entries) {
+    if (!isAnalyzableSource(entry.entryFile)) continue;
+    const list2 = byFile.get(entry.entryFile) ?? [];
+    list2.push(entry);
+    byFile.set(entry.entryFile, list2);
+  }
+  for (const file2 of [...byFile.keys()].sort()) {
+    try {
+      const text4 = await ctx.fs.readText(file2);
+      if (importsHono(text4)) {
+        hono.add(file2);
+        byFile.delete(file2);
+      } else texts.set(file2, text4);
+    } catch (e) {
+      unreadable.set(file2, messageOf4(e));
+    }
+  }
+  return { byFile, problems, hono, texts, unreadable };
+}
+async function analyzeWorkerFetch(ctx) {
+  const nodes = [];
+  const edges = [];
+  const diagnostics = [];
+  const unverified = [];
+  const note = (level, code2, file2, message, line2) => {
+    diagnostics.push({
+      level,
+      code: code2,
+      message: `${file2}: ${message}`,
+      parserId: WORKER_FETCH_PARSER_ID,
+      file: file2,
+      ...line2 !== void 0 ? { line: line2 } : {}
+    });
+    unverified.push({
+      parserId: WORKER_FETCH_PARSER_ID,
+      file: file2,
+      reason: line2 !== void 0 ? `${message} (line ${line2})` : message
+    });
+  };
+  const { byFile, problems, texts, unreadable } = await entryFiles(ctx);
+  for (const p of problems) note("warning", "main-unreadable", p.configFile, p.reason, p.line);
+  for (const [file2, workers] of [...byFile].sort(([a], [b]) => a < b ? -1 : 1)) {
+    const failure2 = unreadable.get(file2);
+    if (failure2 !== void 0) {
+      note("error", "file-unreadable", file2, `could not read: ${failure2}`);
+      continue;
+    }
+    const parsed = parseModule(file2, texts.get(file2));
+    if (!parsed.ok) {
+      note("error", "syntax-error", file2, `syntax error: ${parsed.message}`);
+      continue;
+    }
+    const extracted = extractModule(parsed.module);
+    if (!extracted.ok) {
+      if (extracted.gap) note("warning", extracted.gap.code, file2, extracted.gap.message, extracted.gap.line);
+      continue;
+    }
+    const { model } = extracted;
+    for (const g of model.gaps) note("warning", g.code, file2, g.message, g.line);
+    let serviceId;
+    try {
+      serviceId = nodeId("application", "service", `${file2}#default`);
+    } catch (e) {
+      note(
+        "error",
+        "identifier-invalid",
+        file2,
+        `service ${file2}#default cannot be used as an id: ${messageOf4(e)}`
+      );
+      continue;
+    }
+    const declEvidence = staticEvidence(ctx, file2, model.declaration.startLine, model.declaration.endLine);
+    nodes.push({
+      id: serviceId,
+      type: "service",
+      name: `${file2}#default`,
+      scope: "application",
+      properties: {
+        framework: "workers-fetch",
+        file: file2,
+        handlers: model.handlers,
+        declaration: { file: file2, ...model.declaration }
+      },
+      evidence: [declEvidence],
+      verification: "verified"
+    });
+    for (const w of workers) {
+      edges.push({
+        id: edgeId(serviceId, "DEPLOYED_ON", w.workerId),
+        source: serviceId,
+        target: w.workerId,
+        relation: "DEPLOYED_ON",
+        properties: { deployedVia: "default-export" },
+        evidence: [declEvidence, staticEvidence(ctx, w.configFile, w.line, w.line)],
+        verification: "verified"
+      });
+    }
+    const byId = /* @__PURE__ */ new Map();
+    for (const route of model.routes) {
+      let id;
+      try {
+        id = routeNodeId(route.method, route.path);
+      } catch (e) {
+        note(
+          "error",
+          "identifier-invalid",
+          file2,
+          `route ${route.method} ${route.path} cannot be used as an id: ${messageOf4(e)}`,
+          route.lines.startLine
+        );
+        continue;
+      }
+      const evidence = staticEvidence(ctx, file2, route.lines.startLine, route.lines.endLine);
+      const seen = byId.get(id);
+      if (seen) seen.evidence.push(evidence);
+      else byId.set(id, { route, evidence: [evidence] });
+    }
+    for (const [id, { route, evidence }] of byId) {
+      nodes.push({
+        id,
+        type: "route",
+        name: `${route.method} ${route.path}`,
+        scope: "application",
+        properties: {
+          method: route.method,
+          path: route.path,
+          ...route.match === "prefix" ? { match: "prefix" } : {}
+        },
+        evidence,
+        verification: "verified"
+      });
+      edges.push({
+        id: edgeId(serviceId, "EXPOSES", id),
+        source: serviceId,
+        target: id,
+        relation: "EXPOSES",
+        evidence,
+        verification: "verified"
+      });
+    }
+  }
+  return { nodes, edges, diagnostics, unverified };
+}
+var workerFetchParser = {
+  id: WORKER_FETCH_PARSER_ID,
+  version: WORKER_FETCH_PARSER_VERSION,
+  async detect(ctx) {
+    try {
+      return (await entryFiles(ctx)).byFile.size > 0;
+    } catch {
+      return false;
+    }
+  },
+  parse: analyzeWorkerFetch
+};
+async function workerFetchTargets(ctx) {
+  try {
+    return [...(await entryFiles(ctx)).byFile.keys()].sort();
+  } catch {
+    return [];
+  }
+}
 
 // ../../packages/parsers/registry/src/registry.ts
 var sorted = (list2) => [...list2].sort((a, b) => a < b ? -1 : a > b ? 1 : 0);
@@ -26447,6 +27128,19 @@ var PARSERS = [
       const ok = await Promise.all(configs.map(async (f) => (await reactAppCheck(fs, f)).ok));
       return configs.filter((_, i) => ok[i]);
     }
+  },
+  {
+    id: workerFetchParser.id,
+    version: workerFetchParser.version,
+    analysisKey: "worker-fetch",
+    // The Worker it attaches the routes to is the Cloudflare parser's node, found from the same wrangler config.
+    requires: ["cloudflare", "typescript"],
+    description: "Workers written as a plain `export default { fetch }` (no framework): the routes read from comparisons with the URL's pathname, in the module wrangler's `main` points at",
+    parser: workerFetchParser,
+    // Same condition as detect: the `main` module of a wrangler config (a Hono one is the Hono parser's).
+    async targets(fs) {
+      return workerFetchTargets({ fs, repository: "", commit: "" });
+    }
   }
 ];
 var LINKERS = [
@@ -26506,9 +27200,9 @@ function stripComment(raw) {
   }
   return raw;
 }
-function toLines(text3) {
+function toLines(text4) {
   const lines = [];
-  text3.split(/\r?\n/).forEach((raw, i) => {
+  text4.split(/\r?\n/).forEach((raw, i) => {
     const no = i + 1;
     const leading = /^[ \t]*/.exec(raw)?.[0] ?? "";
     if (leading.includes("	")) {
@@ -26523,21 +27217,21 @@ function toLines(text3) {
   });
   return lines;
 }
-function readQuoted(text3, no) {
-  const quote = text3[0];
+function readQuoted(text4, no) {
+  const quote = text4[0];
   let out = "";
-  for (let i = 1; i < text3.length; i++) {
-    const ch = text3[i];
+  for (let i = 1; i < text4.length; i++) {
+    const ch = text4[i];
     if (quote === '"' && ch === "\\") {
-      const next = text3[++i];
+      const next = text4[++i];
       if (next === void 0) break;
       out += next === "n" ? "\n" : next === "t" ? "	" : next;
     } else if (ch === quote) {
-      if (quote === "'" && text3[i + 1] === "'") {
+      if (quote === "'" && text4[i + 1] === "'") {
         out += "'";
         i++;
       } else {
-        return { value: out, rest: text3.slice(i + 1) };
+        return { value: out, rest: text4.slice(i + 1) };
       }
     } else {
       out += ch;
@@ -26545,33 +27239,33 @@ function readQuoted(text3, no) {
   }
   throw new YamlSyntaxError("unterminated quoted string", no);
 }
-function plainScalar(text3, no) {
-  if (/^[&*!|>@`%]/.test(text3)) {
-    throw new YamlSyntaxError(`unsupported YAML syntax (${text3[0]}); quote the value if it is plain text`, no);
+function plainScalar(text4, no) {
+  if (/^[&*!|>@`%]/.test(text4)) {
+    throw new YamlSyntaxError(`unsupported YAML syntax (${text4[0]}); quote the value if it is plain text`, no);
   }
-  if (/:(\s|$)/.test(text3)) throw new YamlSyntaxError("unexpected ':' in a value", no);
-  if (/^(true|True|TRUE)$/.test(text3)) return true;
-  if (/^(false|False|FALSE)$/.test(text3)) return false;
-  if (/^(null|Null|NULL|~)$/.test(text3)) return null;
-  if (/^-?\d+$/.test(text3)) return Number(text3);
-  if (/^-?\d+\.\d+$/.test(text3)) return Number(text3);
-  return text3;
+  if (/:(\s|$)/.test(text4)) throw new YamlSyntaxError("unexpected ':' in a value", no);
+  if (/^(true|True|TRUE)$/.test(text4)) return true;
+  if (/^(false|False|FALSE)$/.test(text4)) return false;
+  if (/^(null|Null|NULL|~)$/.test(text4)) return null;
+  if (/^-?\d+$/.test(text4)) return Number(text4);
+  if (/^-?\d+\.\d+$/.test(text4)) return Number(text4);
+  return text4;
 }
 function scalar2(raw, no) {
-  const text3 = raw.trim();
-  if (text3[0] === "'" || text3[0] === '"') {
-    const { value: value2, rest } = readQuoted(text3, no);
+  const text4 = raw.trim();
+  if (text4[0] === "'" || text4[0] === '"') {
+    const { value: value2, rest } = readQuoted(text4, no);
     if (rest.trim() !== "") throw new YamlSyntaxError("unexpected text after a quoted string", no);
     return value2;
   }
-  return plainScalar(text3, no);
+  return plainScalar(text4, no);
 }
 function flow(raw, no) {
-  const text3 = raw.trim();
-  if (text3 === "{}") return /* @__PURE__ */ Object.create(null);
-  if (text3[0] === "{") throw new YamlSyntaxError("flow mappings are not supported (only {})", no);
-  if (!text3.endsWith("]")) throw new YamlSyntaxError("a flow sequence must close with ] on the same line", no);
-  let rest = text3.slice(1, -1).trim();
+  const text4 = raw.trim();
+  if (text4 === "{}") return /* @__PURE__ */ Object.create(null);
+  if (text4[0] === "{") throw new YamlSyntaxError("flow mappings are not supported (only {})", no);
+  if (!text4.endsWith("]")) throw new YamlSyntaxError("a flow sequence must close with ] on the same line", no);
+  let rest = text4.slice(1, -1).trim();
   const items2 = [];
   while (rest !== "") {
     if (rest[0] === ",") throw new YamlSyntaxError("empty item in a flow sequence", no);
@@ -26597,28 +27291,28 @@ function flow(raw, no) {
   return items2;
 }
 function value(raw, no) {
-  const text3 = raw.trim();
-  return text3[0] === "[" || text3[0] === "{" ? flow(text3, no) : scalar2(text3, no);
+  const text4 = raw.trim();
+  return text4[0] === "[" || text4[0] === "{" ? flow(text4, no) : scalar2(text4, no);
 }
-function splitKey(text3, no) {
+function splitKey(text4, no) {
   let key;
   let after;
-  if (text3[0] === "'" || text3[0] === '"') {
-    const q = readQuoted(text3, no);
+  if (text4[0] === "'" || text4[0] === '"') {
+    const q = readQuoted(text4, no);
     key = q.value;
     after = q.rest.trimStart();
     if (after[0] !== ":") throw new YamlSyntaxError("expected 'key: value'", no);
     after = after.slice(1);
   } else {
-    const m = /^([^:\s][^:]*?)\s*:(\s+|$)/.exec(text3);
+    const m = /^([^:\s][^:]*?)\s*:(\s+|$)/.exec(text4);
     if (!m) throw new YamlSyntaxError("expected 'key: value'", no);
     key = m[1];
-    after = text3.slice(m[0].length);
+    after = text4.slice(m[0].length);
   }
-  if (after !== "" && !/^\s/.test(after) && text3[0] !== "'" && text3[0] !== '"') after = ` ${after}`;
+  if (after !== "" && !/^\s/.test(after) && text4[0] !== "'" && text4[0] !== '"') after = ` ${after}`;
   return { key, rest: after.trim() };
 }
-var MAX_DEPTH3 = 32;
+var MAX_DEPTH4 = 32;
 var Reader = class {
   constructor(lines) {
     this.lines = lines;
@@ -26642,7 +27336,7 @@ var Reader = class {
   }
   /** Runs a nested block, refusing to go deeper than MAX_DEPTH (so hostile input cannot overflow the stack). */
   #nested(no, read) {
-    if (++this.#depth > MAX_DEPTH3) throw new YamlSyntaxError(`nesting is deeper than ${MAX_DEPTH3} levels`, no);
+    if (++this.#depth > MAX_DEPTH4) throw new YamlSyntaxError(`nesting is deeper than ${MAX_DEPTH4} levels`, no);
     try {
       return read();
     } finally {
@@ -26700,16 +27394,16 @@ var Reader = class {
     return out;
   }
 };
-function parseYamlSubset(text3) {
+function parseYamlSubset(text4) {
   try {
-    return parse4(text3);
+    return parse4(text4);
   } catch (e) {
     if (e instanceof YamlSyntaxError) throw e;
     throw new YamlSyntaxError(`cannot be read (${e instanceof Error ? e.message : String(e)})`, 1);
   }
 }
-function parse4(text3) {
-  const lines = toLines(text3);
+function parse4(text4) {
+  const lines = toLines(text4);
   if (lines.length === 0) return /* @__PURE__ */ Object.create(null);
   const reader = new Reader(lines);
   const first = lines[0];
@@ -26724,10 +27418,10 @@ function parse4(text3) {
 
 // ../../packages/parsers/registry/src/config.ts
 var CONFIG_FILE2 = ".sketio.yml";
-function parseSketioYaml(text3) {
+function parseSketioYaml(text4) {
   let raw;
   try {
-    raw = parseYamlSubset(text3);
+    raw = parseYamlSubset(text4);
   } catch (e) {
     return { ok: false, errors: [`${CONFIG_FILE2}: ${e instanceof Error ? e.message : String(e)}`] };
   }
@@ -26822,14 +27516,14 @@ async function technologyHints(path, read, ignorePackages = /* @__PURE__ */ new 
   if (named.length > 0 && !SOURCE2.test(path)) return named;
   if (SOURCE2.test(path)) {
     if (path.endsWith(".d.ts") || TEST_FILE2.test(path) || TEST_DIR2.test(path)) return named;
-    let text3;
+    let text4;
     try {
-      text3 = await read();
+      text4 = await read();
     } catch {
       return named;
     }
     const packages = /* @__PURE__ */ new Set();
-    for (const m of text3.matchAll(IMPORT)) {
+    for (const m of text4.matchAll(IMPORT)) {
       const name2 = packageOf(m[1]);
       if (name2 && !ignorePackages.has(name2)) packages.add(name2);
     }
@@ -27431,31 +28125,31 @@ function maskBlocks(input3) {
 }
 function maskSecrets(input3) {
   let count = 0;
-  const hide2 = (re, text4) => text4.replace(re, () => {
+  const hide2 = (re, text5) => text5.replace(re, () => {
     count++;
     return MASK;
   });
-  let text3 = input3.replace(PEM, (m) => {
+  let text4 = input3.replace(PEM, (m) => {
     count++;
     return MASK + newlines(m);
   });
-  const blocks = maskBlocks(text3);
-  text3 = blocks.text;
+  const blocks = maskBlocks(text4);
+  text4 = blocks.text;
   count += blocks.count;
-  for (const re of TOKEN_PATTERNS) text3 = hide2(re, text3);
-  text3 = text3.replace(AUTH_HEADER, (m, head) => {
+  for (const re of TOKEN_PATTERNS) text4 = hide2(re, text4);
+  text4 = text4.replace(AUTH_HEADER, (m, head) => {
     count++;
     return `${head}${MASK}${newlines(m)}`;
   });
-  text3 = text3.replace(BEARER, (m) => {
+  text4 = text4.replace(BEARER, (m) => {
     count++;
     return `Bearer ${MASK}${newlines(m)}`;
   });
-  text3 = text3.replace(CONNECTION, (_m, scheme) => {
+  text4 = text4.replace(CONNECTION, (_m, scheme) => {
     count++;
     return `${scheme}${MASK}@`;
   });
-  text3 = text3.replace(
+  text4 = text4.replace(
     ASSIGNMENT,
     (m, head, esc2, dq, sq, arr, bare) => {
       const value2 = esc2 ?? dq ?? sq ?? arr ?? bare ?? "";
@@ -27469,27 +28163,27 @@ function maskSecrets(input3) {
       return `${head}${quote}${MASK}${quote}`;
     }
   );
-  text3 = text3.replace(XML_ELEMENT, (m, open2, _tag, value2) => {
+  text4 = text4.replace(XML_ELEMENT, (m, open2, _tag, value2) => {
     if (value2.includes(MASK) || value2.trim() === "" || /^\s*[$<]/.test(value2)) return m;
     count++;
     return `${open2}${MASK}${newlines(value2)}`;
   });
-  text3 = text3.replace(SPACE_ASSIGN, (m, head, value2) => {
+  text4 = text4.replace(SPACE_ASSIGN, (m, head, value2) => {
     if (value2.includes(MASK) || SPACE_KEYWORD.test(value2) || /^["']?\$/.test(value2)) return m;
     count++;
     return `${head}${MASK}`;
   });
-  text3 = text3.replace(OPTION_VALUE, (m, head, value2) => {
+  text4 = text4.replace(OPTION_VALUE, (m, head, value2) => {
     if (value2.includes(MASK)) return m;
     count++;
     return `${head}${MASK}`;
   });
-  text3 = text3.replace(USER_PASS, (m, head) => {
+  text4 = text4.replace(USER_PASS, (m, head) => {
     if (m.includes(MASK)) return m;
     count++;
     return `${head}${MASK}`;
   });
-  text3 = text3.split("\n").map(
+  text4 = text4.split("\n").map(
     (line2) => DB_CLIENT.test(line2) ? line2.replace(GLUED_PASSWORD, () => {
       count++;
       return `-p${MASK}`;
@@ -27499,18 +28193,18 @@ function maskSecrets(input3) {
       return `${head}${MASK}`;
     }) : line2
   ).join("\n");
-  text3 = hide2(BASE64_PADDED, text3);
-  text3 = text3.replace(LONG_RUN, (m) => {
+  text4 = hide2(BASE64_PADDED, text4);
+  text4 = text4.replace(LONG_RUN, (m) => {
     if (!/[0-9]/.test(m) || !/[A-Za-z]/.test(m) || entropy(m) < 4) return m;
     count++;
     return MASK;
   });
-  text3 = text3.replace(QUOTED_RANDOM, (m, quote, content) => {
+  text4 = text4.replace(QUOTED_RANDOM, (m, quote, content) => {
     if (!looksRandom(content)) return m;
     count++;
     return `${quote}${MASK}${quote}`;
   });
-  return { text: text3, count };
+  return { text: text4, count };
 }
 
 // src/candidates.ts
@@ -27538,19 +28232,19 @@ async function selectInferenceFiles(coverage, read, graph) {
       skipped++;
       continue;
     }
-    let text3;
+    let text4;
     try {
-      text3 = await read(path);
+      text4 = await read(path);
     } catch {
       skipped++;
       continue;
     }
-    const size = Buffer.byteLength(text3);
-    if (text3 === "" || text3.includes("\0") || size > MAX_FILE_BYTES) {
+    const size = Buffer.byteLength(text4);
+    if (text4 === "" || text4.includes("\0") || size > MAX_FILE_BYTES) {
       skipped++;
       continue;
     }
-    const m = maskSecrets(text3);
+    const m = maskSecrets(text4);
     const bytes = Buffer.byteLength(m.text);
     if (total + bytes > MAX_TOTAL_BYTES) {
       skipped++;
@@ -28035,15 +28729,15 @@ var readOptional = (path) => {
   }
 };
 async function loadConfig(fs, path) {
-  let text3;
+  let text4;
   try {
-    text3 = await fs.readText(path);
+    text4 = await fs.readText(path);
   } catch (e) {
     if (e.code === "ENOENT" && path === DEFAULT_CONFIG)
       return { ok: true, config: {} };
     return { ok: false, errors: [`${path}: cannot be read: ${e instanceof Error ? e.message : String(e)}`] };
   }
-  const parsed = parseSketioYaml(text3);
+  const parsed = parseSketioYaml(text4);
   return parsed.ok ? parsed : { ok: false, errors: parsed.errors.map((m) => m.includes(path) ? m : `${path}: ${m}`) };
 }
 async function runAction(io) {
@@ -28126,7 +28820,7 @@ status=${artifact.status}
 
 // src/index.ts
 try {
-  process.exitCode = await runAction({ env: process.env, stdout: (text3) => process.stdout.write(text3) });
+  process.exitCode = await runAction({ env: process.env, stdout: (text4) => process.stdout.write(text4) });
 } catch (e) {
   process.stdout.write(`${issue("error", e instanceof Error ? e.message : String(e))}
 `);
