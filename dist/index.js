@@ -21742,9 +21742,1417 @@ var awsCdkParser = {
   }
 };
 
+// ../../packages/parsers/bicep/src/armTypes.ts
+var ARM_TYPES = {
+  "microsoft.resources/resourcegroups": { kind: "resource-group", props: { location: "location" } },
+  "microsoft.web/sites": { kind: "app-service", role: "azure-app", dispatch: "sites" },
+  "microsoft.web/serverfarms": { kind: "app-service-plan", props: { skuName: "sku.name" } },
+  "microsoft.web/staticsites": { kind: "static-web-apps", role: "azure-app", props: { skuName: "sku.name" } },
+  "microsoft.app/containerapps": { kind: "container-apps", role: "azure-app" },
+  "microsoft.containerservice/managedclusters": { kind: "aks" },
+  "microsoft.storage/storageaccounts": {
+    kind: "storage-account",
+    props: { skuName: "sku.name", storageKind: "kind" }
+  },
+  "microsoft.documentdb/databaseaccounts": { kind: "cosmos-db", props: { cosmosKind: "kind" } },
+  "microsoft.sql/servers": { kind: "sql-server" },
+  "microsoft.sql/servers/databases": { kind: "sql-database", props: { skuName: "sku.name" } },
+  "microsoft.cache/redis": { kind: "cache-for-redis", props: { skuName: "properties.sku.name" } },
+  "microsoft.cache/redisenterprise": {
+    kind: "managed-redis",
+    dispatch: "redis-enterprise",
+    props: { skuName: "sku.name" }
+  },
+  "microsoft.keyvault/vaults": { kind: "key-vault", props: { skuName: "properties.sku.name" } },
+  "microsoft.servicebus/namespaces": { kind: "service-bus", props: { sku: "sku.name" } },
+  "microsoft.eventhub/namespaces": { kind: "event-hubs", props: { sku: "sku.name" } },
+  "microsoft.apimanagement/service": { kind: "api-management", props: { skuName: "sku.name" } },
+  "microsoft.network/virtualnetworks": { kind: "virtual-network" },
+  "microsoft.network/virtualnetworks/subnets": { kind: "subnet" },
+  "microsoft.cdn/profiles": { kind: "front-door", dispatch: "cdn-profile", props: { skuName: "sku.name" } },
+  "microsoft.network/frontdoors": { kind: "front-door" },
+  "microsoft.insights/components": {
+    kind: "application-insights",
+    props: { applicationType: "properties.Application_Type" }
+  },
+  "microsoft.operationalinsights/workspaces": {
+    kind: "log-analytics",
+    props: { sku: "properties.sku.name" }
+  }
+};
+var ROLE_ASSIGNMENT = "microsoft.authorization/roleassignments";
+var SITES_CONFIG = "microsoft.web/sites/config";
+var SUPPORTING_TYPES = /* @__PURE__ */ new Set([
+  ROLE_ASSIGNMENT,
+  "microsoft.managedidentity/userassignedidentities",
+  "microsoft.insights/diagnosticsettings",
+  "microsoft.network/privateendpoints",
+  "microsoft.network/networksecuritygroups",
+  "microsoft.network/publicipaddresses",
+  "microsoft.network/privatednszones",
+  "microsoft.network/networkinterfaces",
+  "microsoft.app/managedenvironments",
+  "microsoft.authorization/locks",
+  "microsoft.resources/deployments",
+  "microsoft.resources/deploymentscripts"
+]);
+var FUNCTIONS_SETTING_NAMES = /* @__PURE__ */ new Set([
+  "FUNCTIONS_WORKER_RUNTIME",
+  "FUNCTIONS_EXTENSION_VERSION",
+  "AzureWebJobsStorage"
+]);
+var MANAGED_REDIS_SKU_PREFIXES = [
+  "Balanced_",
+  "MemoryOptimized_",
+  "ComputeOptimized_",
+  "FlashOptimized_"
+];
+var FRONT_DOOR_SKU_SUFFIX = "_AzureFrontDoor";
+
+// ../../packages/parsers/bicep/src/bicep.ts
+var PUNCT3 = /* @__PURE__ */ new Set(["..."]);
+var PUNCT2 = /* @__PURE__ */ new Set(["==", "!=", "<=", ">=", "&&", "||", "=>", "??", "::", ".?", "=~", "!~"]);
+var PUNCT1 = new Set("{}[]().,:?=!<>+-*/%&|@;".split(""));
+var ID_START = /[A-Za-z_]/;
+var ID_PART = /[A-Za-z0-9_]/;
+var NUMBER2 = /^\d+/;
+var MAX_DEPTH2 = 200;
+var Lexer = class {
+  constructor(src) {
+    this.src = src;
+  }
+  src;
+  pos = 0;
+  line = 1;
+  lineStart = 0;
+  err(message, line2, col) {
+    return { t: "err", v: message, line: line2, endLine: line2, col };
+  }
+  /** `stopAtBrace`: `${ ... }` の中身。対応する `}` で止まり、それを読み終えた位置に pos を置く。 */
+  tokens(stopAtBrace) {
+    const out = [];
+    const src = this.src;
+    let depth = 0;
+    for (; ; ) {
+      while (this.pos < src.length) {
+        const ch = src[this.pos];
+        if (ch === " " || ch === "	" || ch === "\r") this.pos++;
+        else break;
+      }
+      if (this.pos >= src.length) {
+        if (stopAtBrace) {
+          out.push(this.err("\u9589\u3058\u3066\u3044\u306A\u3044 ${ \u304C\u3042\u308A\u307E\u3059", this.line, this.pos - this.lineStart + 1));
+        }
+        return out;
+      }
+      const c = src[this.pos];
+      const line2 = this.line;
+      const col = this.pos - this.lineStart + 1;
+      if (c === "\n") {
+        out.push({ t: "nl", v: "\n", line: line2, endLine: line2, col });
+        this.pos++;
+        this.line++;
+        this.lineStart = this.pos;
+        continue;
+      }
+      if (c === "#" || c === "/" && src[this.pos + 1] === "/") {
+        while (this.pos < src.length && src[this.pos] !== "\n") this.pos++;
+        continue;
+      }
+      if (c === "/" && src[this.pos + 1] === "*") {
+        const end = src.indexOf("*/", this.pos + 2);
+        const stop = end < 0 ? src.length : end + 2;
+        for (let i = this.pos; i < stop; i++) {
+          if (src[i] === "\n") {
+            this.line++;
+            this.lineStart = i + 1;
+          }
+        }
+        this.pos = stop;
+        if (end < 0) out.push(this.err("\u9589\u3058\u3066\u3044\u306A\u3044\u30B3\u30E1\u30F3\u30C8 /* \u304C\u3042\u308A\u307E\u3059", line2, col));
+        continue;
+      }
+      if (c === "'") {
+        out.push(src.startsWith("'''", this.pos) ? this.multiline() : this.string());
+        continue;
+      }
+      if (c >= "0" && c <= "9") {
+        const m = NUMBER2.exec(src.slice(this.pos, this.pos + 32));
+        const text4 = m?.[0] ?? c;
+        out.push({ t: "num", v: text4, line: line2, endLine: line2, col });
+        this.pos += text4.length;
+        continue;
+      }
+      if (ID_START.test(c)) {
+        let end = this.pos + 1;
+        while (end < src.length && ID_PART.test(src[end])) end++;
+        out.push({ t: "id", v: src.slice(this.pos, end), line: line2, endLine: line2, col });
+        this.pos = end;
+        continue;
+      }
+      const three = src.slice(this.pos, this.pos + 3);
+      if (PUNCT3.has(three)) {
+        out.push({ t: "p", v: three, line: line2, endLine: line2, col });
+        this.pos += 3;
+        continue;
+      }
+      const two = src.slice(this.pos, this.pos + 2);
+      if (PUNCT2.has(two)) {
+        out.push({ t: "p", v: two, line: line2, endLine: line2, col });
+        this.pos += 2;
+        continue;
+      }
+      if (PUNCT1.has(c)) {
+        if (stopAtBrace) {
+          if (c === "{") depth++;
+          else if (c === "}") {
+            if (depth === 0) {
+              this.pos++;
+              return out;
+            }
+            depth--;
+          }
+        }
+        out.push({ t: "p", v: c, line: line2, endLine: line2, col });
+        this.pos++;
+        continue;
+      }
+      out.push(this.err("\u8AAD\u3081\u306A\u3044\u6587\u5B57\u3067\u3059", line2, col));
+      this.pos++;
+    }
+  }
+  interpDepth = 0;
+  /** `${ }` の中を読んで inner に足す。エラーのトークンがあればそれを返す。 */
+  interpolation(inner, line2, col) {
+    if (this.interpDepth >= MAX_DEPTH2) return this.err("\u88DC\u9593\u306E\u5165\u308C\u5B50\u304C\u6DF1\u3059\u304E\u307E\u3059", line2, col);
+    this.interpDepth++;
+    const read = this.tokens(true);
+    this.interpDepth--;
+    let bad;
+    for (const t of read) {
+      if (!bad && t.t === "err") bad = t;
+      inner.push(t);
+    }
+    return bad;
+  }
+  /** `'...'`。エスケープと補間 `${ }` を読む。補間の中のトークンは `inner` に残す。 */
+  string() {
+    const src = this.src;
+    const line2 = this.line;
+    const col = this.pos - this.lineStart + 1;
+    this.pos++;
+    let buf = "";
+    let interpolated = false;
+    const inner = [];
+    for (; ; ) {
+      if (this.pos >= src.length || src[this.pos] === "\n") {
+        return this.err("\u9589\u3058\u3066\u3044\u306A\u3044\u6587\u5B57\u5217\u3067\u3059", line2, col);
+      }
+      const c = src[this.pos];
+      if (c === "'") {
+        this.pos++;
+        break;
+      }
+      if (c === "\\") {
+        const n = src[this.pos + 1];
+        if (n === "u" && src[this.pos + 2] === "{") {
+          const close = src.indexOf("}", this.pos + 3);
+          const digits = close < 0 ? "" : src.slice(this.pos + 3, close);
+          if (/^[0-9a-fA-F]{1,8}$/.test(digits)) {
+            try {
+              buf += String.fromCodePoint(Number.parseInt(digits, 16));
+            } catch {
+              buf += "\uFFFD";
+            }
+            this.pos = close + 1;
+            continue;
+          }
+        }
+        buf += n === "n" ? "\n" : n === "t" ? "	" : n === "r" ? "\r" : n ?? "";
+        this.pos += 2;
+        continue;
+      }
+      if (c === "$" && src[this.pos + 1] === "{") {
+        interpolated = true;
+        this.pos += 2;
+        const bad = this.interpolation(inner, line2, col);
+        if (bad) return bad;
+        continue;
+      }
+      buf += c;
+      this.pos++;
+    }
+    const tok = {
+      t: "str",
+      v: buf,
+      line: line2,
+      endLine: this.line,
+      col,
+      sval: interpolated ? void 0 : buf
+    };
+    if (inner.length > 0) tok.inner = inner;
+    return tok;
+  }
+  /** `'''...'''`。エスケープも補間もない。開きの直後の改行は含めない。 */
+  multiline() {
+    const src = this.src;
+    const line2 = this.line;
+    const col = this.pos - this.lineStart + 1;
+    const end = src.indexOf("'''", this.pos + 3);
+    if (end < 0) {
+      this.pos = src.length;
+      return this.err("\u9589\u3058\u3066\u3044\u306A\u3044 ''' \u304C\u3042\u308A\u307E\u3059", line2, col);
+    }
+    let body = src.slice(this.pos + 3, end);
+    if (body.startsWith("\r\n")) body = body.slice(2);
+    else if (body.startsWith("\n")) body = body.slice(1);
+    for (let i = this.pos; i < end + 3; i++) {
+      if (src[i] === "\n") {
+        this.line++;
+        this.lineStart = i + 1;
+      }
+    }
+    this.pos = end + 3;
+    return { t: "str", v: body, line: line2, endLine: this.line, col, sval: body };
+  }
+};
+var BicepParseError = class extends Error {
+  constructor(message, line2, atEof = false) {
+    super(message);
+    this.line = line2;
+    this.atEof = atEof;
+  }
+  line;
+  atEof;
+};
+var BicepDepthError = class extends BicepParseError {
+};
+var TOP_LEVEL = /* @__PURE__ */ new Set([
+  "resource",
+  "module",
+  "param",
+  "var",
+  "output",
+  "targetScope",
+  "metadata",
+  "type",
+  "func",
+  "import",
+  "extension",
+  "using",
+  "test",
+  "assert"
+]);
+var SKIPPED = /* @__PURE__ */ new Set([
+  "output",
+  "targetScope",
+  "metadata",
+  "type",
+  "func",
+  "import",
+  "extension",
+  "using",
+  "test",
+  "assert"
+]);
+var KEYWORDS = /* @__PURE__ */ new Set(["for", "in", "if", "true", "false", "null"]);
+var CONTINUATION = /* @__PURE__ */ new Set([
+  "?",
+  ":",
+  "??",
+  ".",
+  ".?",
+  "&&",
+  "||",
+  "|",
+  "==",
+  "!=",
+  "=~",
+  "!~",
+  "+",
+  "*",
+  "/",
+  "%",
+  "<",
+  ">",
+  "<=",
+  ">="
+]);
+function describeTok(t) {
+  switch (t.t) {
+    case "id":
+      return "\u8B58\u5225\u5B50";
+    case "str":
+      return "\u6587\u5B57\u5217";
+    case "num":
+      return "\u6570\u5024";
+    case "nl":
+      return "\u6539\u884C";
+    case "eof":
+      return "\u30D5\u30A1\u30A4\u30EB\u306E\u7D42\u308F\u308A";
+    case "err":
+      return "\u8AAD\u3081\u306A\u3044\u90E8\u5206";
+    default:
+      return t.v;
+  }
+}
+var isP = (t, v) => t?.t === "p" && t.v === v;
+var isTerminator = (t) => t.t === "nl" || t.t === "eof" || t.t === "p" && (t.v === "}" || t.v === "]" || t.v === ")" || t.v === ",");
+function boundNames(tokens) {
+  const names = /* @__PURE__ */ new Set();
+  for (let i = 0; i < tokens.length; i++) {
+    const t = tokens[i];
+    if (t.t === "id" && t.v === "for") {
+      const next = tokens[i + 1];
+      if (next?.t === "id") names.add(next.v);
+      else if (isP(next, "(")) {
+        for (let j = i + 2; j < tokens.length && !isP(tokens[j], ")"); j++) {
+          const x = tokens[j];
+          if (x.t === "id") names.add(x.v);
+        }
+      }
+    } else if (isP(t, "=>")) {
+      const prev = tokens[i - 1];
+      if (prev?.t === "id") names.add(prev.v);
+      else if (isP(prev, ")")) {
+        for (let j = i - 2; j >= 0 && !isP(tokens[j], "("); j--) {
+          const x = tokens[j];
+          if (x.t === "id") names.add(x.v);
+        }
+      }
+    }
+  }
+  return names;
+}
+function refsOfTokens(tokens, inherited = /* @__PURE__ */ new Set()) {
+  const refs = [];
+  const bound = /* @__PURE__ */ new Set([...inherited, ...boundNames(tokens)]);
+  const stack = [];
+  for (let i = 0; i < tokens.length; i++) {
+    const t = tokens[i];
+    if (t.t === "p") {
+      if (t.v === "{" || t.v === "[" || t.v === "(") stack.push(t.v);
+      else if (t.v === "}" || t.v === "]" || t.v === ")") stack.pop();
+      continue;
+    }
+    if (t.t === "str" && t.inner) {
+      refs.push(...refsOfTokens(t.inner, bound));
+      continue;
+    }
+    if (t.t !== "id" || KEYWORDS.has(t.v)) continue;
+    const prev = tokens[i - 1];
+    if (isP(prev, ".") || isP(prev, ".?") || isP(prev, "::")) continue;
+    const next = tokens[i + 1];
+    if (isP(next, "(")) continue;
+    const startsEntry = prev === void 0 || prev.t === "nl" || isP(prev, "{") || isP(prev, ",");
+    if (stack[stack.length - 1] === "{" && isP(next, ":") && startsEntry) continue;
+    if (bound.has(t.v)) continue;
+    const ref = { root: t.v, line: t.line };
+    const after = tokens[i + 2];
+    if (isP(next, "::") && after?.t === "id") {
+      ref.child = after.v;
+      i += 2;
+    }
+    refs.push(ref);
+  }
+  return refs;
+}
+function isTraversal(toks) {
+  if (toks[0]?.t !== "id") return false;
+  let depth = 0;
+  for (let i = 1; i < toks.length; i++) {
+    const t = toks[i];
+    if (t.t === "p" && t.v === "[") depth++;
+    else if (t.t === "p" && t.v === "]") depth--;
+    else if (depth > 0) continue;
+    else if (t.t === "id") continue;
+    else if (t.t === "p" && (t.v === "." || t.v === ".?" || t.v === "::" || t.v === "!")) continue;
+    else return false;
+  }
+  return depth === 0;
+}
+var Parser = class {
+  constructor(toks) {
+    this.toks = toks;
+  }
+  toks;
+  pos = 0;
+  depth = 0;
+  /** 入れ子に入る。深すぎたら読み進めない。 */
+  nest(f) {
+    if (this.depth >= MAX_DEPTH2) throw new BicepDepthError("\u5165\u308C\u5B50\u304C\u6DF1\u3059\u304E\u307E\u3059", this.cur.line);
+    this.depth++;
+    try {
+      return f();
+    } finally {
+      this.depth--;
+    }
+  }
+  get cur() {
+    return this.toks[this.pos];
+  }
+  atEof() {
+    return this.cur.t === "eof";
+  }
+  peek(n = 0) {
+    return this.toks[Math.min(this.pos + n, this.toks.length - 1)] ?? this.cur;
+  }
+  fail(message, tok = this.cur) {
+    if (tok.t === "err") throw new BicepParseError(tok.v, tok.line);
+    throw new BicepParseError(message, tok.line, tok.t === "eof");
+  }
+  skipNewlines() {
+    while (this.cur.t === "nl") this.pos++;
+  }
+  /** 改行を飛ばした先のトークン（pos は動かさない）。 */
+  nextSignificant(from = this.pos) {
+    let i = from;
+    while (this.toks[i].t === "nl") i++;
+    return this.toks[i];
+  }
+  /** 宣言の後ろは改行かファイルの終わり。 */
+  expectEnd() {
+    const t = this.cur;
+    if (t.t === "nl" || t.t === "eof") return;
+    this.fail(`\u3053\u3053\u3067\u884C\u304C\u7D42\u308F\u308B\u306F\u305A\u3067\u3059: ${describeTok(t)}`);
+  }
+  expectId(what) {
+    const t = this.cur;
+    if (t.t === "err") this.fail("");
+    if (t.t !== "id") this.fail(`${what}\u304C\u3042\u308A\u307E\u305B\u3093`);
+    this.pos++;
+    return t;
+  }
+  /** 開き括弧の位置から、対応する閉じ括弧の次まで進む。 */
+  skipBalanced() {
+    let depth = 0;
+    for (; ; ) {
+      const t = this.cur;
+      if (t.t === "eof") throw new BicepParseError("\u62EC\u5F27\u304C\u9589\u3058\u3066\u3044\u307E\u305B\u3093", t.line, true);
+      if (t.t === "err") this.fail("");
+      if (t.t === "p" && (t.v === "(" || t.v === "[" || t.v === "{")) depth++;
+      if (t.t === "p" && (t.v === ")" || t.v === "]" || t.v === "}")) depth--;
+      this.pos++;
+      if (depth === 0) return;
+      if (depth > MAX_DEPTH2) throw new BicepDepthError("\u5165\u308C\u5B50\u304C\u6DF1\u3059\u304E\u307E\u3059", t.line);
+    }
+  }
+  /** 文の終わり（括弧の外の改行。次の行が式の続きなら続ける）まで読み飛ばす。`stopAtEq` なら括弧の外の `=` の手前で止まる。 */
+  skipStatement(stopAtEq = false) {
+    let depth = 0;
+    for (; ; ) {
+      const t = this.cur;
+      if (t.t === "err") this.fail("");
+      if (t.t === "eof") {
+        if (depth > 0) throw new BicepParseError("\u62EC\u5F27\u304C\u9589\u3058\u3066\u3044\u307E\u305B\u3093", t.line, true);
+        return;
+      }
+      if (depth === 0) {
+        if (t.t === "nl") {
+          const next = this.nextSignificant();
+          if (next.t === "p" && CONTINUATION.has(next.v)) {
+            this.pos++;
+            continue;
+          }
+          return;
+        }
+        if (stopAtEq && isP(t, "=")) return;
+      }
+      if (t.t === "p") {
+        if (t.v === "(" || t.v === "[" || t.v === "{") depth++;
+        else if (t.v === ")" || t.v === "]" || t.v === "}") depth = Math.max(0, depth - 1);
+      }
+      this.pos++;
+    }
+  }
+  // --- 宣言 ---
+  /** `@name(...)` を読み飛ばす。 */
+  skipDecorator() {
+    this.pos++;
+    this.expectId("\u30C7\u30B3\u30EC\u30FC\u30BF\u30FC\u306E\u540D\u524D");
+    while (isP(this.cur, ".") && this.peek(1).t === "id") this.pos += 2;
+    if (isP(this.cur, "(")) this.skipBalanced();
+    this.skipNewlines();
+  }
+  parseStatement(file2) {
+    while (isP(this.cur, "@")) this.skipDecorator();
+    const head = this.cur;
+    if (head.t === "err") this.fail("");
+    if (head.t !== "id") this.fail(`\u3053\u3053\u306B\u306F\u66F8\u3051\u307E\u305B\u3093: ${describeTok(head)}`);
+    switch (head.v) {
+      case "resource": {
+        const r = this.parseResource();
+        file2.resources.push(r);
+        this.expectEnd();
+        return;
+      }
+      case "module": {
+        file2.modules.push(this.parseModule());
+        this.expectEnd();
+        return;
+      }
+      case "param": {
+        this.pos++;
+        const name2 = this.expectId("param \u306E\u540D\u524D");
+        this.skipStatement(true);
+        let defaultValue;
+        if (isP(this.cur, "=")) {
+          this.pos++;
+          defaultValue = this.parseExpr();
+        }
+        file2.params.push({ name: name2.v, defaultValue });
+        this.expectEnd();
+        return;
+      }
+      case "var": {
+        this.pos++;
+        const name2 = this.expectId("var \u306E\u540D\u524D");
+        this.skipStatement(true);
+        if (!isP(this.cur, "=")) this.fail("var \u306B = \u304C\u3042\u308A\u307E\u305B\u3093");
+        this.pos++;
+        file2.vars.push({ name: name2.v, value: this.parseExpr() });
+        this.expectEnd();
+        return;
+      }
+      default:
+        if (SKIPPED.has(head.v)) {
+          this.pos++;
+          this.skipStatement();
+          return;
+        }
+        this.fail(`\u3053\u3053\u306B\u306F\u66F8\u3051\u307E\u305B\u3093: \u8B58\u5225\u5B50`);
+    }
+  }
+  /** `= [if (...)] { }` と `= [for ... : [if (...)] { }]`。 */
+  parseDeclBody(sink) {
+    this.skipNewlines();
+    let conditional = false;
+    let loop = false;
+    const isIf = () => this.cur.t === "id" && this.cur.v === "if";
+    const skipIf = () => {
+      this.pos++;
+      if (!isP(this.cur, "(")) this.fail("if \u306E\u5F8C\u308D\u306B ( \u304C\u3042\u308A\u307E\u305B\u3093");
+      this.skipBalanced();
+      conditional = true;
+      this.skipNewlines();
+    };
+    if (isIf()) {
+      skipIf();
+    } else if (isP(this.cur, "[")) {
+      loop = true;
+      this.pos++;
+      this.skipNewlines();
+      if (!(this.cur.t === "id" && this.cur.v === "for")) this.fail("[ \u306E\u5F8C\u308D\u306B for \u304C\u3042\u308A\u307E\u305B\u3093");
+      this.pos++;
+      let depth = 0;
+      for (; ; ) {
+        const t = this.cur;
+        if (t.t === "err") this.fail("");
+        if (t.t === "eof") throw new BicepParseError("for \u306E : \u304C\u3042\u308A\u307E\u305B\u3093", t.line, true);
+        if (t.t === "p") {
+          if (t.v === "(" || t.v === "[" || t.v === "{") depth++;
+          else if (t.v === ")" || t.v === "]" || t.v === "}") depth--;
+          else if (t.v === ":" && depth === 0) break;
+        }
+        this.pos++;
+      }
+      this.pos++;
+      this.skipNewlines();
+      if (isIf()) skipIf();
+    }
+    if (!isP(this.cur, "{")) this.fail(`\u5BA3\u8A00\u306E\u672C\u4F53 { \u304C\u3042\u308A\u307E\u305B\u3093: ${describeTok(this.cur)}`);
+    const body = this.nest(() => this.parseObject(sink));
+    if (loop) {
+      this.skipNewlines();
+      if (!isP(this.cur, "]")) this.fail("for \u306E ] \u304C\u3042\u308A\u307E\u305B\u3093");
+      this.pos++;
+    }
+    return { body, conditional, loop };
+  }
+  parseResource() {
+    const head = this.cur;
+    this.pos++;
+    const name2 = this.expectId("resource \u306E\u540D\u524D");
+    const typeTok = this.cur;
+    if (typeTok.t === "err") this.fail("");
+    if (typeTok.t !== "str" || typeTok.sval === void 0) this.fail("resource \u306E\u578B\u306F\u6587\u5B57\u5217\u3067\u66F8\u304D\u307E\u3059");
+    this.pos++;
+    let existing = false;
+    if (this.cur.t === "id" && this.cur.v === "existing") {
+      existing = true;
+      this.pos++;
+    }
+    if (!isP(this.cur, "=")) this.fail("resource \u306B = \u304C\u3042\u308A\u307E\u305B\u3093");
+    this.pos++;
+    const nested = [];
+    const { body, conditional, loop } = this.parseDeclBody(nested);
+    return {
+      symbol: name2.v,
+      type: typeTok.sval,
+      existing,
+      conditional,
+      loop,
+      body,
+      nested,
+      span: { startLine: head.line, endLine: this.toks[this.pos - 1].endLine }
+    };
+  }
+  parseModule() {
+    const head = this.cur;
+    this.pos++;
+    const name2 = this.expectId("module \u306E\u540D\u524D");
+    const pathTok = this.cur;
+    if (pathTok.t === "err") this.fail("");
+    if (pathTok.t !== "str") this.fail("module \u306E\u30D1\u30B9\u306F\u6587\u5B57\u5217\u3067\u66F8\u304D\u307E\u3059");
+    this.pos++;
+    if (!isP(this.cur, "=")) this.fail("module \u306B = \u304C\u3042\u308A\u307E\u305B\u3093");
+    this.pos++;
+    const { body, conditional, loop } = this.parseDeclBody([]);
+    return {
+      symbol: name2.v,
+      source: pathTok.sval,
+      conditional,
+      loop,
+      body,
+      span: { startLine: head.line, endLine: this.toks[this.pos - 1].endLine }
+    };
+  }
+  // --- 式 ---
+  /** 閉じていない `{` `[` の中で、行頭のトップレベルのキーワードに出会った（次の宣言が始まっている）。 */
+  checkRunaway(t, openLine) {
+    if (t.col !== 1) return;
+    const startsDecl = t.t === "id" && TOP_LEVEL.has(t.v) && !isP(this.peek(1), ":") || isP(t, "@");
+    if (startsDecl) throw new BicepParseError("\u9589\u3058\u3066\u3044\u306A\u3044\u30D6\u30ED\u30C3\u30AF\u3067\u3059", openLine);
+  }
+  parseExpr() {
+    const start = this.pos;
+    const first = this.cur;
+    if (first.t === "err") this.fail("");
+    const next = this.peek(1);
+    const isFor = next.t === "id" && next.v === "for";
+    if ((isP(first, "{") || isP(first, "[")) && !isFor) {
+      try {
+        const e = this.nest(() => isP(first, "[") ? this.parseArray() : this.parseObject());
+        if (isTerminator(this.cur)) return e;
+      } catch (e) {
+        if (!(e instanceof BicepParseError) || e instanceof BicepDepthError) throw e;
+      }
+      this.pos = start;
+    }
+    return this.parseGeneric();
+  }
+  parseArray() {
+    const open2 = this.cur;
+    this.pos++;
+    const items2 = [];
+    for (; ; ) {
+      while (this.cur.t === "nl" || isP(this.cur, ",")) this.pos++;
+      const t = this.cur;
+      if (t.t === "eof") throw new BicepParseError("\u9589\u3058\u3066\u3044\u306A\u3044 [ \u304C\u3042\u308A\u307E\u3059", open2.line, true);
+      if (isP(t, "]")) {
+        this.pos++;
+        break;
+      }
+      this.checkRunaway(t, open2.line);
+      if (isP(t, "...")) this.pos++;
+      items2.push(this.parseExpr());
+      const n = this.cur;
+      if (!(n.t === "nl" || isP(n, ",") || isP(n, "]")))
+        this.fail(`\u914D\u5217\u306E\u8981\u7D20\u306E\u5F8C\u308D\u306B ${describeTok(n)} \u306F\u66F8\u3051\u307E\u305B\u3093`);
+    }
+    return {
+      kind: "array",
+      items: items2,
+      span: { startLine: open2.line, endLine: this.toks[this.pos - 1].endLine },
+      refs: items2.flatMap((i) => i.refs)
+    };
+  }
+  /** オブジェクト。`sink` があれば、本体に書かれた子リソース `resource x 'type' = { }` をそこへ入れる。 */
+  parseObject(sink) {
+    const open2 = this.cur;
+    this.pos++;
+    const entries = [];
+    const extraRefs = [];
+    for (; ; ) {
+      while (this.cur.t === "nl" || isP(this.cur, ",")) this.pos++;
+      const t = this.cur;
+      if (t.t === "eof") throw new BicepParseError("\u9589\u3058\u3066\u3044\u306A\u3044 { \u304C\u3042\u308A\u307E\u3059", open2.line, true);
+      if (isP(t, "}")) {
+        this.pos++;
+        break;
+      }
+      this.checkRunaway(t, open2.line);
+      if (isP(t, "@")) {
+        this.skipDecorator();
+        continue;
+      }
+      if (isP(t, "...")) {
+        this.pos++;
+        extraRefs.push(...this.parseExpr().refs);
+      } else if (sink && t.t === "id" && t.v === "resource" && this.peek(1).t === "id") {
+        sink.push(this.nest(() => this.parseResource()));
+      } else {
+        let key;
+        const sep2 = isP(this.peek(1), ":");
+        if ((t.t === "id" || t.t === "num") && sep2) {
+          key = t.v;
+          this.pos++;
+        } else if (t.t === "str" && sep2) {
+          key = t.sval ?? "";
+          if (t.inner) extraRefs.push(...refsOfTokens(t.inner));
+          this.pos++;
+        } else {
+          return this.fail(`\u30AA\u30D6\u30B8\u30A7\u30AF\u30C8\u306E\u30AD\u30FC\u3068\u3057\u3066\u8AAD\u3081\u307E\u305B\u3093: ${describeTok(t)}`);
+        }
+        this.pos++;
+        const value2 = this.parseExpr();
+        entries.push({ key, value: value2, span: { startLine: t.line, endLine: value2.span.endLine } });
+      }
+      const n = this.cur;
+      if (!(n.t === "nl" || isP(n, ",") || isP(n, "}")))
+        this.fail(`\u30AA\u30D6\u30B8\u30A7\u30AF\u30C8\u306E\u5024\u306E\u5F8C\u308D\u306B ${describeTok(n)} \u306F\u66F8\u3051\u307E\u305B\u3093`);
+    }
+    return {
+      kind: "object",
+      entries,
+      span: { startLine: open2.line, endLine: this.toks[this.pos - 1].endLine },
+      refs: [...extraRefs, ...entries.flatMap((e) => e.value.refs)]
+    };
+  }
+  /** 構造を持たない式。括弧の外の改行（次の行が式の続きでなければ）・`,`・閉じ括弧までを 1 つの式として、書かれた参照だけを拾う。 */
+  parseGeneric() {
+    const from = this.pos;
+    const open2 = [];
+    for (; ; ) {
+      const t = this.cur;
+      if (t.t === "err") this.fail("");
+      if (t.t === "eof") {
+        if (open2.length > 0) throw new BicepParseError("\u62EC\u5F27\u304C\u9589\u3058\u3066\u3044\u307E\u305B\u3093", t.line, true);
+        break;
+      }
+      if (open2.length === 0) {
+        if (t.t === "nl") {
+          const next = this.nextSignificant();
+          if (next.t === "p" && CONTINUATION.has(next.v) && this.pos > from) {
+            this.pos++;
+            continue;
+          }
+          break;
+        }
+        if (isTerminator(t)) break;
+      }
+      if (t.t === "p") {
+        if (t.v === "(" || t.v === "[" || t.v === "{") {
+          open2.push(t.v);
+          if (open2.length > MAX_DEPTH2) throw new BicepDepthError("\u5165\u308C\u5B50\u304C\u6DF1\u3059\u304E\u307E\u3059", t.line);
+        } else if (t.v === ")" || t.v === "]" || t.v === "}") open2.pop();
+      }
+      this.pos++;
+    }
+    const toks = this.toks.slice(from, this.pos).filter((t, i, all) => !(t.t === "nl" && i === all.length - 1));
+    const firstTok = toks[0];
+    const lastTok = toks[toks.length - 1];
+    if (!firstTok || !lastTok) return this.fail("\u5F0F\u304C\u3042\u308A\u307E\u305B\u3093");
+    const span = { startLine: firstTok.line, endLine: lastTok.endLine };
+    const refs = refsOfTokens(toks);
+    if (toks.length === 1) {
+      if (firstTok.t === "str") return { kind: "string", value: firstTok.sval, span, refs };
+      if (firstTok.t === "num") return { kind: "number", value: Number(firstTok.v), span, refs };
+      if (firstTok.t === "id" && (firstTok.v === "true" || firstTok.v === "false")) {
+        return { kind: "bool", value: firstTok.v === "true", span, refs };
+      }
+      if (firstTok.t === "id" && firstTok.v === "null") return { kind: "null", span, refs };
+      if (firstTok.t === "id" && !KEYWORDS.has(firstTok.v))
+        return { kind: "ref", ident: firstTok.v, span, refs };
+    }
+    return { kind: isTraversal(toks) && refs.length === 1 ? "ref" : "expr", span, refs };
+  }
+};
+function resync(parser, startIndex) {
+  parser.pos = startIndex + 1;
+  while (!parser.atEof()) {
+    const t = parser.cur;
+    const prevIsNl = parser.toks[parser.pos - 1]?.t === "nl";
+    if (prevIsNl && t.col === 1 && (t.t === "id" && TOP_LEVEL.has(t.v) || isP(t, "@"))) break;
+    parser.pos++;
+  }
+}
+function parseBicep(text4) {
+  const lexer = new Lexer(text4.charCodeAt(0) === 65279 ? text4.slice(1) : text4);
+  const toks = lexer.tokens(false);
+  toks.push({ t: "eof", v: "", line: lexer.line, endLine: lexer.line, col: lexer.pos - lexer.lineStart + 1 });
+  const parser = new Parser(toks);
+  const file2 = { resources: [], modules: [], vars: [], params: [], errors: [] };
+  for (; ; ) {
+    parser.skipNewlines();
+    if (parser.atEof()) break;
+    const startIndex = parser.pos;
+    const startLine = parser.cur.line;
+    try {
+      parser.parseStatement(file2);
+    } catch (e) {
+      if (!(e instanceof BicepParseError)) {
+        file2.errors.push({ line: startLine, message: "\u8AAD\u3081\u307E\u305B\u3093\u3067\u3057\u305F" });
+        resync(parser, startIndex);
+        continue;
+      }
+      file2.errors.push({ line: e.atEof ? startLine : e.line, message: e.message });
+      resync(parser, startIndex);
+    }
+  }
+  return file2;
+}
+
+// ../../packages/parsers/bicep/src/bicepParser.ts
+var PARSER_ID3 = "bicep";
+var BICEP_PARSER_VERSION = "0.1.0";
+var isBicepFile = (path) => path.endsWith(".bicep") && !isIgnoredPath(path);
+var compare = (a, b) => a < b ? -1 : a > b ? 1 : 0;
+var unique = (list2) => [...new Set(list2)];
+var sameSpan = (a, b) => a.file === b.file && a.startLine === b.startLine && a.endLine === b.endLine;
+var cleanSource = (s) => s.replace(/[?#].*$/s, "").replace(/\/\/[^/@\s]*@/g, "//");
+var unversioned = (type) => type.split("@")[0];
+function dig(expr, ...keys) {
+  let cur = expr;
+  for (const k of keys) {
+    if (cur?.kind !== "object") return void 0;
+    cur = cur.entries.find((e) => e.key === k)?.value;
+  }
+  return cur;
+}
+var itemsOf = (expr) => expr?.kind === "array" ? expr.items : [];
+var Analysis = class {
+  constructor(ctx) {
+    this.ctx = ctx;
+  }
+  ctx;
+  nodes = /* @__PURE__ */ new Map();
+  edges = /* @__PURE__ */ new Map();
+  diagnostics = [];
+  unverified = [];
+  infos = [];
+  /** 要素にしなかった型（ファイル → ラベル → 数）。 */
+  unsupported = /* @__PURE__ */ new Map();
+  diag(level, code2, file2, message, line2) {
+    this.diagnostics.push({
+      level,
+      code: code2,
+      message: `${file2}: ${message}`,
+      parserId: PARSER_ID3,
+      file: file2,
+      ...line2 !== void 0 ? { line: line2 } : {}
+    });
+  }
+  /** 一部が読めなかった・要素にできなかった: 診断（warning/error）と unverified に残す。 */
+  gap(level, code2, file2, message, line2) {
+    this.diag(level, code2, file2, message, line2);
+    this.unverified.push({ parserId: PARSER_ID3, file: file2, reason: message });
+  }
+  evidence(file2, span) {
+    return staticEvidence(this.ctx, file2, span.startLine, span.endLine);
+  }
+  // --- 読み込み ---
+  async load(files) {
+    const parsed = await Promise.all(
+      files.map(async (file2) => {
+        try {
+          return { file: file2, bicep: parseBicep(await this.ctx.fs.readText(file2)) };
+        } catch (e) {
+          return { file: file2, failure: e instanceof Error ? e.message : String(e) };
+        }
+      })
+    );
+    for (const p of parsed) {
+      if ("failure" in p) {
+        this.gap("error", "file-unreadable", p.file, `could not read: ${p.failure}`);
+        continue;
+      }
+      for (const err of p.bicep.errors) {
+        this.gap("error", "bicep-syntax", p.file, `${err.message} (line ${err.line})`, err.line);
+      }
+      const info = {
+        file: p.file,
+        prefix: p.file.replace(/\.bicep$/, ""),
+        bicep: p.bicep,
+        decls: /* @__PURE__ */ new Map(),
+        vars: new Map(p.bicep.vars.map((v) => [v.name, v.value])),
+        params: new Map(p.bicep.params.map((v) => [v.name, v.defaultValue]))
+      };
+      this.infos.push(info);
+      for (const r of p.bicep.resources) this.collectResource(info, r, void 0);
+      for (const m of p.bicep.modules) this.collectModule(info, m);
+    }
+    for (const info of this.infos) for (const d of info.decls.values()) this.linkParent(d);
+  }
+  collectResource(info, r, parent) {
+    const own2 = unversioned(r.type);
+    const typeDisplay = parent ? `${parent.typeDisplay}/${own2}` : own2;
+    const path = parent ? `${parent.path}::${r.symbol}` : r.symbol;
+    const decl = {
+      mode: "resource",
+      info,
+      symbol: r.symbol,
+      path,
+      raw: r,
+      type: typeDisplay.toLowerCase(),
+      typeDisplay,
+      existing: r.existing,
+      conditional: r.conditional,
+      entries: entriesOf(r.body),
+      ...parent ? { parent } : {}
+    };
+    if (!info.decls.has(path)) info.decls.set(path, decl);
+    for (const n of r.nested) this.collectResource(info, n, decl);
+  }
+  collectModule(info, m) {
+    if (info.decls.has(m.symbol)) return;
+    info.decls.set(m.symbol, {
+      mode: "module",
+      info,
+      symbol: m.symbol,
+      path: m.symbol,
+      raw: m,
+      type: "",
+      typeDisplay: "",
+      existing: false,
+      conditional: m.conditional,
+      entries: entriesOf(m.body)
+    });
+  }
+  /** 入れ子でない子リソース（3 セグメント以上）の親: `parent:` が指すもの、なければ name の式が指す親の型のもの。 */
+  linkParent(d) {
+    if (d.parent || d.mode !== "resource" || d.type.split("/").length < 3) return;
+    const candidates = [d.entries.get("parent"), d.entries.get("name")];
+    for (const expr of candidates) {
+      for (const ref of expr?.refs ?? []) {
+        const hit = this.lookup(ref, d.info);
+        if (hit && hit !== d && d.type.startsWith(`${hit.type}/`)) {
+          d.parent = hit;
+          return;
+        }
+      }
+    }
+  }
+  // --- 値 ---
+  /** 参照が直接指す宣言（シンボルそのもの、`a::b`）。 */
+  lookup(ref, info) {
+    if (ref.child !== void 0) {
+      const child = info.decls.get(`${ref.root}::${ref.child}`);
+      if (child) return child;
+    }
+    return info.decls.get(ref.root);
+  }
+  /** 文字列リテラル。シンボルが var / param（既定値）のときは、その文字列リテラル。 */
+  stringOf(expr, info, seen = /* @__PURE__ */ new Set()) {
+    if (!expr) return void 0;
+    if (expr.kind === "string") return expr.value;
+    if (expr.kind !== "ref" || expr.ident === void 0 || seen.has(expr.ident)) return void 0;
+    const next = info.vars.get(expr.ident) ?? info.params.get(expr.ident);
+    return this.stringOf(next, info, /* @__PURE__ */ new Set([...seen, expr.ident]));
+  }
+  literalName(d) {
+    const v = this.stringOf(d.entries.get("name"), d.info);
+    return v === void 0 || v === "" ? void 0 : v;
+  }
+  // --- 要素 ---
+  /** 型から要素の種類を決める。要素にしないものは undefined（理由は診断に残す）。 */
+  classify(d) {
+    const def = ARM_TYPES[d.type];
+    if (!def) {
+      if (SUPPORTING_TYPES.has(d.type) || d.type === SITES_CONFIG) return void 0;
+      if (d.type.split("/").length < 3) this.countUnsupported(d.info.file, d.typeDisplay);
+      return void 0;
+    }
+    if (def.dispatch === "sites") return this.classifySite(d, def);
+    if (def.dispatch === "cdn-profile") {
+      const sku = this.skuName(d);
+      if (sku === void 0) {
+        this.diag(
+          "info",
+          "cdn-profile-guessed",
+          d.info.file,
+          `${d.symbol}: sku could not be read as a string; treated as Azure Front Door`,
+          d.raw.span.startLine
+        );
+        return { def, kind: def.kind };
+      }
+      if (sku.endsWith(FRONT_DOOR_SKU_SUFFIX)) return { def, kind: def.kind };
+      this.countUnsupported(d.info.file, d.typeDisplay);
+      return void 0;
+    }
+    if (def.dispatch === "redis-enterprise") {
+      const sku = this.skuName(d);
+      if (sku !== void 0 && MANAGED_REDIS_SKU_PREFIXES.some((p) => sku.startsWith(p))) {
+        return { def, kind: def.kind };
+      }
+      this.countUnsupported(d.info.file, d.typeDisplay);
+      return void 0;
+    }
+    return { def, kind: def.kind };
+  }
+  skuName(d) {
+    return this.stringOf(dig(d.entries.get("sku"), "name"), d.info);
+  }
+  classifySite(d, def) {
+    const kindExpr = d.entries.get("kind");
+    if (kindExpr === void 0) return { def, kind: "app-service" };
+    const literal2 = this.stringOf(kindExpr, d.info);
+    if (literal2 !== void 0) {
+      const parts = literal2.toLowerCase().split(",").map((s) => s.trim());
+      if (parts.includes("workflowapp")) {
+        this.countUnsupported(d.info.file, `${d.typeDisplay} (kind ${literal2})`, true);
+        return void 0;
+      }
+      return { def, kind: parts[0] === "functionapp" ? "azure-functions" : "app-service" };
+    }
+    const functions = this.looksLikeFunctions(d);
+    const kind2 = functions ? "azure-functions" : "app-service";
+    this.diag(
+      "info",
+      "site-kind-guessed",
+      d.info.file,
+      `${d.symbol}: kind could not be read as a string; treated as ${functions ? "Azure Functions" : "Azure App Service"}`,
+      d.raw.span.startLine
+    );
+    return { def, kind: kind2 };
+  }
+  /** kind が式で読めない sites の推測: functionAppConfig があるか、Functions のランタイムの設定名があるか。 */
+  looksLikeFunctions(d) {
+    const properties = d.entries.get("properties");
+    if (dig(properties, "functionAppConfig") !== void 0) return true;
+    const names = itemsOf(dig(properties, "siteConfig", "appSettings")).map(
+      (item) => this.stringOf(dig(item, "name"), d.info)
+    );
+    for (const c of this.configChildren(d)) {
+      const props = c.entries.get("properties");
+      if (props?.kind === "object") names.push(...props.entries.map((e) => e.key));
+    }
+    return names.some((n) => n !== void 0 && FUNCTIONS_SETTING_NAMES.has(n));
+  }
+  countUnsupported(file2, label, perLabel = false) {
+    const key = perLabel ? label : label.toLowerCase();
+    const m = this.unsupported.get(file2) ?? /* @__PURE__ */ new Map();
+    this.unsupported.set(file2, m);
+    const prev = m.get(key);
+    if (prev) prev.n++;
+    else m.set(key, { label, n: 1 });
+  }
+  /** 表にない型の報告（読み飛ばし。読めなかったことにはしない）。 */
+  reportUnsupported() {
+    for (const file2 of [...this.unsupported.keys()].sort(compare)) {
+      const m = this.unsupported.get(file2);
+      const list2 = [...m.values()].sort((a, b) => compare(a.label, b.label)).map((x) => `${x.label} (${x.n})`).join(", ");
+      this.diag(
+        "info",
+        "resource-type-unsupported",
+        file2,
+        `resource types not interpreted, left out of the graph: ${list2}`
+      );
+    }
+  }
+  sorted;
+  /** 全ファイルの宣言を、ファイルと行の順に。 */
+  decls() {
+    this.sorted ??= this.infos.flatMap((i) => [...i.decls.values()]).sort(byLocation);
+    return this.sorted;
+  }
+  buildNodes() {
+    for (const d of this.decls()) {
+      let kind2;
+      let namespace;
+      if (d.mode === "module") {
+        kind2 = "bicep-module";
+        namespace = "bicep";
+      } else {
+        const c = this.classify(d);
+        if (!c) continue;
+        d.def = c.def;
+        kind2 = c.kind;
+        namespace = "azure";
+      }
+      d.kind = kind2;
+      const name2 = `${d.info.prefix}/${d.existing ? "existing." : ""}${d.path}`;
+      let id;
+      try {
+        id = nodeId(namespace, kind2, name2);
+      } catch (e) {
+        this.gap(
+          "error",
+          "identifier-invalid",
+          d.info.file,
+          `${d.path} cannot be used as an id: ${e.message}`,
+          d.raw.span.startLine
+        );
+        continue;
+      }
+      d.id = id;
+      this.addNode(d, id, kind2);
+    }
+  }
+  addNode(d, id, kind2) {
+    const properties = {};
+    if (d.mode === "module") {
+      const source = d.raw.source;
+      if (source !== void 0) properties.source = cleanSource(source);
+      properties.bicep = { symbol: d.path, file: d.info.file };
+    } else {
+      for (const [key, path] of Object.entries(d.def?.props ?? {})) {
+        const v = this.stringOf(
+          dig(d.entries.get(path.split(".")[0]), ...path.split(".").slice(1)),
+          d.info
+        );
+        if (v !== void 0 && v !== "") properties[key] = v;
+      }
+      properties.bicep = { symbol: d.path, resourceType: d.typeDisplay, file: d.info.file };
+      if (d.existing) properties.existing = true;
+    }
+    const name2 = d.mode === "module" ? d.symbol : this.literalName(d) ?? d.symbol;
+    this.nodes.set(id, {
+      id,
+      type: kind2,
+      name: name2,
+      scope: "infrastructure",
+      properties,
+      evidence: [this.evidence(d.info.file, d.raw.span)],
+      verification: d.conditional ? "inferred" : "verified"
+    });
+  }
+  // --- 参照 ---
+  /** 参照の指す宣言。var は、1 つの参照だけの式のときその参照へ辿る。 */
+  resolve(ref, info, seen = /* @__PURE__ */ new Set()) {
+    const hit = this.lookup(ref, info);
+    if (hit) return [{ decl: hit, line: ref.line }];
+    if (seen.has(ref.root)) return [];
+    const only = info.vars.get(ref.root)?.refs;
+    if (only?.length !== 1) return [];
+    return only.flatMap((r) => this.resolve(r, info, /* @__PURE__ */ new Set([...seen, ref.root]))).map((l) => ({ ...l, line: ref.line }));
+  }
+  /** 宣言から、要素になっている一番近い宣言（子リソースは親へたどる）。 */
+  elementOf(d) {
+    for (let cur = d; cur; cur = cur.parent) {
+      if (cur.id !== void 0 && this.nodes.has(cur.id)) return cur;
+    }
+    return void 0;
+  }
+  targets(refs, info) {
+    return unique(
+      refs.flatMap((r) => this.resolve(r, info)).map((l) => this.elementOf(l.decl)).filter((d) => d !== void 0 && !isResourceGroup(d))
+    );
+  }
+  configChildren(d) {
+    return this.decls().filter((c) => c.parent === d && c.type === SITES_CONFIG);
+  }
+  addEdge(source, relation, target, file2, span, options = {}) {
+    if (source === target) return;
+    const id = edgeId(source, relation, target);
+    const evidence = this.evidence(file2, span);
+    const prev = this.edges.get(id);
+    if (prev) {
+      if (!prev.evidence.some((e) => sameSpan(e, evidence))) prev.evidence.push(evidence);
+      if (!options.inferred) prev.verification = "verified";
+      if (options.binding !== void 0) {
+        const properties = prev.properties ?? {};
+        const list2 = properties.bindings ?? [];
+        if (!list2.includes(options.binding)) list2.push(options.binding);
+        properties.bindings = list2;
+        prev.properties = properties;
+      }
+      return;
+    }
+    this.edges.set(id, {
+      id,
+      source,
+      target,
+      relation,
+      ...options.binding !== void 0 ? { properties: { bindings: [options.binding] } } : {},
+      evidence: [evidence],
+      verification: options.inferred ? "inferred" : "verified"
+    });
+  }
+  buildEdges() {
+    for (const d of this.decls()) {
+      if (d.mode === "resource" && d.type === ROLE_ASSIGNMENT) this.roleAssignmentEdges(d);
+      else if (d.id !== void 0 && this.nodes.has(d.id)) this.declEdges(d);
+    }
+  }
+  declEdges(d) {
+    const consumed = /* @__PURE__ */ new Set();
+    if (d.def?.role === "azure-app") this.appEdges(d, consumed);
+    const body = d.raw.body;
+    this.dependsOn(d, body?.refs ?? [], consumed);
+    const owner = d.parent ? this.elementOf(d.parent) : void 0;
+    if (owner && !isResourceGroup(owner)) {
+      this.addEdge(d.id, "DEPENDS_ON", owner.id, d.info.file, d.raw.span, {
+        inferred: d.conditional || owner.conditional
+      });
+    }
+  }
+  /** 設定で結んでいない参照・dependsOn・parent は DEPENDS_ON。 */
+  dependsOn(d, refs, consumed) {
+    for (const ref of refs) {
+      if (consumed.has(ref)) continue;
+      for (const t of this.targets([ref], d.info)) {
+        this.addEdge(
+          d.id,
+          "DEPENDS_ON",
+          t.id,
+          d.info.file,
+          { startLine: ref.line, endLine: ref.line },
+          {
+            inferred: d.conditional || t.conditional
+          }
+        );
+      }
+    }
+  }
+  /** 設定が他のリソースを使う関係は BINDS_TO。子リソース（Key Vault のシークレットなど）への参照は、親の要素へたどる。 */
+  bind(d, refs, span, consumed, binding) {
+    for (const r of refs) consumed.add(r);
+    for (const t of this.targets(refs, d.info)) {
+      this.addEdge(d.id, "BINDS_TO", t.id, d.info.file, span, {
+        inferred: d.conditional || t.conditional,
+        ...binding !== void 0 && binding !== "" ? { binding } : {}
+      });
+    }
+  }
+  appEdges(d, consumed) {
+    const properties = d.entries.get("properties");
+    const nameOf2 = (item) => this.stringOf(dig(item, "name"), d.info);
+    if (d.type === "microsoft.web/sites") {
+      for (const item of itemsOf(dig(properties, "siteConfig", "appSettings"))) {
+        const value2 = dig(item, "value");
+        if (value2) this.bind(d, value2.refs, item.span, consumed, nameOf2(item));
+      }
+      for (const item of itemsOf(dig(properties, "siteConfig", "connectionStrings"))) {
+        const value2 = dig(item, "connectionString") ?? dig(item, "value");
+        if (value2) this.bind(d, value2.refs, item.span, consumed, nameOf2(item));
+      }
+      const storage = dig(properties, "functionAppConfig", "deployment", "storage", "value");
+      if (storage) this.bind(d, storage.refs, storage.span, consumed);
+      for (const c of this.configChildren(d)) this.configEdges(d, c, consumed);
+    } else if (d.type === "microsoft.app/containerapps") {
+      const secrets = /* @__PURE__ */ new Map();
+      for (const s of itemsOf(dig(properties, "configuration", "secrets"))) {
+        const n = nameOf2(s);
+        if (n !== void 0) secrets.set(n, s);
+      }
+      const containers = [
+        ...itemsOf(dig(properties, "template", "containers")),
+        ...itemsOf(dig(properties, "template", "initContainers"))
+      ];
+      for (const container of containers) {
+        for (const item of itemsOf(dig(container, "env"))) {
+          const name2 = nameOf2(item);
+          const secretRef = this.stringOf(dig(item, "secretRef"), d.info);
+          const secret = secretRef === void 0 ? void 0 : secrets.get(secretRef);
+          if (secret) {
+            const refs = [...dig(secret, "value")?.refs ?? [], ...dig(secret, "keyVaultUrl")?.refs ?? []];
+            this.bind(d, refs, item.span, consumed, name2);
+          } else {
+            const value2 = dig(item, "value");
+            if (value2) this.bind(d, value2.refs, item.span, consumed, name2);
+          }
+        }
+      }
+    }
+  }
+  /** `sites/config` の子リソース: appsettings / connectionstrings の各項目は BINDS_TO、それ以外の設定が指すものは DEPENDS_ON。 */
+  configEdges(site, config2, consumed) {
+    const props = config2.entries.get("properties");
+    const kind2 = (this.stringOf(config2.entries.get("name"), config2.info) ?? "").toLowerCase();
+    if (props?.kind === "object" && (kind2 === "appsettings" || kind2 === "connectionstrings")) {
+      for (const entry of props.entries) {
+        const value2 = kind2 === "connectionstrings" ? dig(entry.value, "value") ?? entry.value : entry.value;
+        this.bind(site, value2.refs, entry.span, consumed, entry.key);
+      }
+    }
+    this.dependsOn(site, config2.raw.body?.refs ?? [], consumed);
+  }
+  /** ロールの割り当て: 主体（properties.principalId）が、スコープ（scope）のリソースを使えるようにする。 */
+  roleAssignmentEdges(d) {
+    const principals = dig(d.entries.get("properties"), "principalId")?.refs ?? [];
+    const scopes = d.entries.get("scope")?.refs ?? [];
+    const sources = this.targets(principals, d.info);
+    const targets = this.targets(scopes, d.info);
+    for (const s of sources) {
+      for (const t of targets) {
+        this.addEdge(s.id, "BINDS_TO", t.id, d.info.file, d.raw.span, {
+          inferred: d.conditional || s.conditional || t.conditional
+        });
+      }
+    }
+  }
+};
+function entriesOf(body) {
+  const m = /* @__PURE__ */ new Map();
+  if (body?.kind === "object") {
+    for (const e of body.entries) if (!m.has(e.key)) m.set(e.key, e.value);
+  }
+  return m;
+}
+var isResourceGroup = (d) => d.def?.kind === "resource-group";
+var byLocation = (a, b) => compare(a.info.file, b.info.file) || a.raw.span.startLine - b.raw.span.startLine;
+var bicepParser = {
+  id: PARSER_ID3,
+  version: BICEP_PARSER_VERSION,
+  async detect(ctx) {
+    return (await ctx.fs.listFiles()).some(isBicepFile);
+  },
+  async parse(ctx) {
+    const files = (await ctx.fs.listFiles()).filter(isBicepFile).sort(compare);
+    const a = new Analysis(ctx);
+    await a.load(files);
+    a.buildNodes();
+    a.buildEdges();
+    a.reportUnsupported();
+    return {
+      nodes: [...a.nodes.values()].sort((x, y) => compare(x.id, y.id)),
+      edges: [...a.edges.values()].sort((x, y) => compare(x.id, y.id)),
+      diagnostics: a.diagnostics,
+      unverified: a.unverified
+    };
+  }
+};
+
+// ../../packages/parsers/cloudflare/src/bindingRelation.ts
+var R_READ = /* @__PURE__ */ new Set(["get", "head", "list", "getWithMetadata"]);
+var R_WRITE = /* @__PURE__ */ new Set(["put", "delete", "createMultipartUpload", "resumeMultipartUpload"]);
+function relationOf(type, usage) {
+  const m = usage.method;
+  switch (type) {
+    case "d1":
+      if (m === "prepare")
+        return usage.sql === "read" ? "READS_FROM" : usage.sql === "write" ? "WRITES_TO" : "DEPENDS_ON";
+      return "DEPENDS_ON";
+    case "r2":
+    case "kv":
+      return m && R_READ.has(m) ? "READS_FROM" : m && R_WRITE.has(m) ? "WRITES_TO" : "DEPENDS_ON";
+    case "queue-producer":
+      return m === "send" || m === "sendBatch" ? "PUBLISHES_TO" : "DEPENDS_ON";
+    case "service":
+      return m === "fetch" ? "CALLS" : "DEPENDS_ON";
+    case "analytics-engine":
+      return m === "writeDataPoint" ? "WRITES_TO" : "DEPENDS_ON";
+    default:
+      return "DEPENDS_ON";
+  }
+}
+var dirOf = (path) => path.includes("/") ? path.slice(0, path.lastIndexOf("/")) : "";
+function joinNormalized(dir, rel) {
+  const out = [];
+  for (const seg of `${dir}/${rel}`.split("/")) {
+    if (seg === "" || seg === ".") continue;
+    if (seg === "..") {
+      if (out.length === 0) return void 0;
+      out.pop();
+    } else out.push(seg);
+  }
+  return out.join("/");
+}
+
 // ../../packages/parsers/cloudflare/src/toml.ts
 var BARE_KEY = /[A-Za-z0-9_-]/;
-var NUMBER2 = /^[+-]?(?:0|[1-9][\d_]*)(?:\.\d[\d_]*)?(?:[eE][+-]?\d[\d_]*)?$/;
+var NUMBER3 = /^[+-]?(?:0|[1-9][\d_]*)(?:\.\d[\d_]*)?(?:[eE][+-]?\d[\d_]*)?$/;
 var DATE = /^\d{4}-\d{2}-\d{2}(?:[Tt ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:[Zz]|[+-]\d{2}:\d{2})?)?$/;
 var BASIC_ESCAPES = {
   b: "\b",
@@ -21890,7 +23298,7 @@ function parseToml(text4) {
       const token = src.slice(start, pos);
       if (token === "true") scalar3 = true;
       else if (token === "false") scalar3 = false;
-      else if (NUMBER2.test(token)) scalar3 = Number(token.replace(/_/g, ""));
+      else if (NUMBER3.test(token)) scalar3 = Number(token.replace(/_/g, ""));
       else if (DATE.test(token)) scalar3 = token;
       else return fail(token === "" ? "expected a value" : `invalid value: ${token}`);
     }
@@ -22035,7 +23443,7 @@ function finalize2(v) {
 }
 
 // ../../packages/parsers/cloudflare/src/cloudflareParser.ts
-var PARSER_ID3 = "cloudflare";
+var PARSER_ID4 = "cloudflare";
 var CLOUDFLARE_PARSER_VERSION = "0.3.3";
 var CONFIG_FILE = /(^|\/)wrangler\.(toml|json|jsonc)$/;
 var isConfigFile = (path) => CONFIG_FILE.test(path) && !isIgnoredPath(path);
@@ -22323,19 +23731,19 @@ function analyze(ctx, file2, root) {
       level,
       code: code2,
       message: `${file2}: ${message}`,
-      parserId: PARSER_ID3,
+      parserId: PARSER_ID4,
       file: file2,
       ...line2 !== void 0 ? { line: line2 } : {}
     });
   };
   const skipFile = (code2, message, line2) => {
     diag("error", code2, message, line2);
-    out.unverified.push({ parserId: PARSER_ID3, file: file2, reason: message });
+    out.unverified.push({ parserId: PARSER_ID4, file: file2, reason: message });
     return out;
   };
   const skip = (code2, message, span) => {
     diag("warning", code2, message, span.startLine);
-    out.unverified.push({ parserId: PARSER_ID3, file: file2, reason: message });
+    out.unverified.push({ parserId: PARSER_ID4, file: file2, reason: message });
   };
   if (root.kind !== "object") return skipFile("config-invalid", "the top level is not an object");
   const nameEntry = getEntry(root, "name");
@@ -22359,7 +23767,7 @@ function analyze(ctx, file2, root) {
     } catch (e) {
       const message = `${d.type} "${d.name}" cannot be used as an id: ${e.message}`;
       diag("error", "identifier-invalid", message, d.span.startLine);
-      out.unverified.push({ parserId: PARSER_ID3, file: file2, reason: message });
+      out.unverified.push({ parserId: PARSER_ID4, file: file2, reason: message });
       return void 0;
     }
   };
@@ -22479,12 +23887,12 @@ async function parseFile(ctx, file2) {
         level: "error",
         code: "config-syntax",
         message: `${file2}: ${message}`,
-        parserId: PARSER_ID3,
+        parserId: PARSER_ID4,
         file: file2,
         ...line2 !== void 0 ? { line: line2 } : {}
       }
     ],
-    unverified: [{ parserId: PARSER_ID3, file: file2, reason: message }]
+    unverified: [{ parserId: PARSER_ID4, file: file2, reason: message }]
   });
   try {
     const text4 = await ctx.fs.readText(file2);
@@ -22520,14 +23928,14 @@ function mergeDuplicateWorkers(nodes, diagnostics) {
       level: "warning",
       code: "worker-duplicate",
       message: `Worker ${n.name} is declared in several config files: ${files}`,
-      parserId: PARSER_ID3,
+      parserId: PARSER_ID4,
       target: n.id
     });
   }
   return [...rest, ...merged.values()];
 }
 var cloudflareParser = {
-  id: PARSER_ID3,
+  id: PARSER_ID4,
   version: CLOUDFLARE_PARSER_VERSION,
   async detect(ctx) {
     return (await ctx.fs.listFiles()).some(isConfigFile);
@@ -22549,8 +23957,8 @@ var cloudflareParser = {
 };
 
 // ../../packages/parsers/cloudflare/src/entries.ts
-var dirOf = (path) => path.includes("/") ? path.slice(0, path.lastIndexOf("/")) : "";
-function joinNormalized(dir, rel) {
+var dirOf2 = (path) => path.includes("/") ? path.slice(0, path.lastIndexOf("/")) : "";
+function joinNormalized2(dir, rel) {
   const out = [];
   for (const seg of `${dir}/${rel}`.split("/")) {
     if (seg === "" || seg === ".") continue;
@@ -22593,7 +24001,7 @@ async function readWorkerEntries(fs) {
       problem(`main "${main.value}" of Worker ${name2.value} is an absolute path; its code is not read`);
       continue;
     }
-    const entryFile = joinNormalized(dirOf(configFile), main.value);
+    const entryFile = joinNormalized2(dirOf2(configFile), main.value);
     if (entryFile === void 0) {
       problem(
         `main "${main.value}" of Worker ${name2.value} points outside the repository; its code is not read`
@@ -23723,41 +25131,10 @@ function resolveRelativeImport(fromFile, specifier, files) {
   return candidates.find((c) => files.has(c));
 }
 
-// ../../packages/parsers/hono/src/extract.ts
-var HTTP_METHODS = ["get", "post", "put", "delete", "patch", "options", "head"];
-var ROUTE_METHODS = /* @__PURE__ */ new Set([...HTTP_METHODS, "all"]);
-var APP_RETURNING = /* @__PURE__ */ new Set([
-  ...ROUTE_METHODS,
-  "basePath",
-  "route",
-  "use",
-  "on",
-  "onError",
-  "notFound",
-  "mount"
-]);
-var isCall = (n) => n.type === "CallExpression";
+// ../../packages/parsers/typescript/src/envUsage.ts
 var isFunction = (n) => n.type === "ArrowFunctionExpression" || n.type === "FunctionExpression";
 function identName(n) {
   return n?.type === "Identifier" ? n.name : void 0;
-}
-function flattenChain(expr) {
-  const calls = [];
-  let node2 = unwrapExpression(expr);
-  while (isCall(node2)) {
-    const callee = unwrapExpression(node2.callee);
-    if (callee.type !== "MemberExpression" || callee.computed === true) break;
-    const prop = callee.property;
-    const name2 = identName(prop);
-    if (!name2) break;
-    calls.push({ name: name2, call: node2, prop });
-    node2 = unwrapExpression(callee.object);
-  }
-  return { root: node2, calls: calls.reverse() };
-}
-function joinPath2(a, b) {
-  const joined = `/${a}/${b}`.replace(/\/+/g, "/");
-  return joined.length > 1 && joined.endsWith("/") ? joined.slice(0, -1) : joined;
 }
 var SQL_READ = /* @__PURE__ */ new Set(["select"]);
 var SQL_WRITE = /* @__PURE__ */ new Set(["insert", "update", "delete", "replace"]);
@@ -23804,24 +25181,24 @@ function isEnvOf(node2, ctxName) {
   if (node2.type !== "MemberExpression" || node2.computed === true) return false;
   return identName(unwrapExpression(node2.object)) === ctxName && identName(node2.property) === "env";
 }
-function boundNames(pattern, out) {
+function boundNames2(pattern, out) {
   if (!pattern) return;
   switch (pattern.type) {
     case "Identifier":
       out.add(pattern.name);
       break;
     case "AssignmentPattern":
-      boundNames(pattern.left, out);
+      boundNames2(pattern.left, out);
       break;
     case "RestElement":
-      boundNames(pattern.argument, out);
+      boundNames2(pattern.argument, out);
       break;
     case "ArrayPattern":
-      for (const el of pattern.elements) boundNames(el ?? void 0, out);
+      for (const el of pattern.elements) boundNames2(el ?? void 0, out);
       break;
     case "ObjectPattern":
       for (const p of pattern.properties) {
-        boundNames(p.type === "Property" ? p.value : p.argument, out);
+        boundNames2(p.type === "Property" ? p.value : p.argument, out);
       }
       break;
   }
@@ -23830,11 +25207,11 @@ function bindingCount(body, name2) {
   let count = 0;
   walk2(body, (n) => {
     const names = /* @__PURE__ */ new Set();
-    if (n.type === "VariableDeclarator") boundNames(n.id, names);
+    if (n.type === "VariableDeclarator") boundNames2(n.id, names);
     else if (isFunction(n) || n.type === "FunctionDeclaration") {
-      for (const p of n.params ?? []) boundNames(p, names);
-      if (n.type === "FunctionDeclaration" && n.id) boundNames(n.id, names);
-    } else if (n.type === "CatchClause") boundNames(n.param, names);
+      for (const p of n.params ?? []) boundNames2(p, names);
+      if (n.type === "FunctionDeclaration" && n.id) boundNames2(n.id, names);
+    } else if (n.type === "CatchClause") boundNames2(n.param, names);
     if (names.has(name2)) count++;
   });
   return count;
@@ -23951,26 +25328,6 @@ function scanEnv(body, module, root, outerBound) {
   });
   return out;
 }
-function scanHandler(fn, module, app, envPassed, gap) {
-  const param = fn.params[0];
-  const ctxName = identName(param);
-  if (!ctxName) {
-    if (param?.type === "ObjectPattern") {
-      gap("context-destructured", "handler destructures its context parameter; c.env uses are not traced", fn);
-    }
-    return;
-  }
-  if (isRebound(fn.body, ctxName)) {
-    gap("context-rebound", `"${ctxName}" is rebound inside the handler; its c.env uses are not traced`, fn);
-    return;
-  }
-  const bound = /* @__PURE__ */ new Set();
-  for (const p of fn.params) boundNames(p, bound);
-  const scan2 = scanEnv(fn.body, module, { kind: "ctx", name: ctxName }, bound);
-  app.usages.push(...scan2.usages);
-  app.envFlows.push(...scan2.flows);
-  envPassed.push(...scan2.opaque);
-}
 function scanParam(fn, index, module) {
   let param = fn.params[index];
   if (param?.type === "AssignmentPattern") param = param.left;
@@ -23978,7 +25335,7 @@ function scanParam(fn, index, module) {
   const body = fn.body;
   if (param.type === "ObjectPattern") {
     const names = /* @__PURE__ */ new Set();
-    boundNames(param, names);
+    boundNames2(param, names);
     for (const name3 of names) {
       if (isRebound(body, name3)) return { broken: `"${name3}" is rebound inside the function` };
     }
@@ -23998,8 +25355,65 @@ function scanParam(fn, index, module) {
   if (!name2) return void 0;
   if (isRebound(body, name2)) return { broken: `"${name2}" is rebound inside the function` };
   const bound = /* @__PURE__ */ new Set();
-  for (const p of fn.params) boundNames(p, bound);
+  for (const p of fn.params) boundNames2(p, bound);
   return scanEnv(body, module, { kind: "param", name: name2 }, bound);
+}
+
+// ../../packages/parsers/hono/src/extract.ts
+var HTTP_METHODS = ["get", "post", "put", "delete", "patch", "options", "head"];
+var ROUTE_METHODS = /* @__PURE__ */ new Set([...HTTP_METHODS, "all"]);
+var APP_RETURNING = /* @__PURE__ */ new Set([
+  ...ROUTE_METHODS,
+  "basePath",
+  "route",
+  "use",
+  "on",
+  "onError",
+  "notFound",
+  "mount"
+]);
+var isCall = (n) => n.type === "CallExpression";
+var isFunction2 = (n) => n.type === "ArrowFunctionExpression" || n.type === "FunctionExpression";
+function identName2(n) {
+  return n?.type === "Identifier" ? n.name : void 0;
+}
+function flattenChain(expr) {
+  const calls = [];
+  let node2 = unwrapExpression(expr);
+  while (isCall(node2)) {
+    const callee = unwrapExpression(node2.callee);
+    if (callee.type !== "MemberExpression" || callee.computed === true) break;
+    const prop = callee.property;
+    const name2 = identName2(prop);
+    if (!name2) break;
+    calls.push({ name: name2, call: node2, prop });
+    node2 = unwrapExpression(callee.object);
+  }
+  return { root: node2, calls: calls.reverse() };
+}
+function joinPath2(a, b) {
+  const joined = `/${a}/${b}`.replace(/\/+/g, "/");
+  return joined.length > 1 && joined.endsWith("/") ? joined.slice(0, -1) : joined;
+}
+function scanHandler(fn, module, app, envPassed, gap) {
+  const param = fn.params[0];
+  const ctxName = identName2(param);
+  if (!ctxName) {
+    if (param?.type === "ObjectPattern") {
+      gap("context-destructured", "handler destructures its context parameter; c.env uses are not traced", fn);
+    }
+    return;
+  }
+  if (isRebound(fn.body, ctxName)) {
+    gap("context-rebound", `"${ctxName}" is rebound inside the handler; its c.env uses are not traced`, fn);
+    return;
+  }
+  const bound = /* @__PURE__ */ new Set();
+  for (const p of fn.params) boundNames2(p, bound);
+  const scan2 = scanEnv(fn.body, module, { kind: "ctx", name: ctxName }, bound);
+  app.usages.push(...scan2.usages);
+  app.envFlows.push(...scan2.flows);
+  envPassed.push(...scan2.opaque);
 }
 function extractFile(module, honoLocals) {
   const model = {
@@ -24017,8 +25431,8 @@ function extractFile(module, honoLocals) {
   };
   walk2(module.program, (n) => {
     if (n.type !== "MemberExpression" || n.computed === true) return;
-    if (identName(n.property) !== "fetch") return;
-    const name2 = identName(unwrapExpression(n.object));
+    if (identName2(n.property) !== "fetch") return;
+    const name2 = identName2(unwrapExpression(n.object));
     if (name2) model.fetchRefs.push({ name: name2, lines: module.lines(n) });
   });
   const gap = (code2, message, node2) => {
@@ -24035,20 +25449,20 @@ function extractFile(module, honoLocals) {
   for (const stmt of module.program.body) {
     const decl = (stmt.type === "ExportNamedDeclaration" || stmt.type === "ExportDefaultDeclaration") && stmt.declaration ? stmt.declaration : stmt;
     declarations.push(decl);
-    if (decl.type === "ClassDeclaration" && decl.id) declare(identName(decl.id));
+    if (decl.type === "ClassDeclaration" && decl.id) declare(identName2(decl.id));
     if (decl.type === "FunctionDeclaration" && decl.id) {
-      declare(identName(decl.id));
-      functions.set(identName(decl.id), decl);
-      topLevel.set(identName(decl.id), decl);
+      declare(identName2(decl.id));
+      functions.set(identName2(decl.id), decl);
+      topLevel.set(identName2(decl.id), decl);
     }
     if (decl.type === "VariableDeclaration") {
       for (const d of decl.declarations) {
         const declared = /* @__PURE__ */ new Set();
-        boundNames(d.id, declared);
+        boundNames2(d.id, declared);
         for (const n of declared) declare(n);
-        const name2 = identName(d.id);
+        const name2 = identName2(d.id);
         const init = d.init ? unwrapExpression(d.init) : void 0;
-        if (name2 && init && isFunction(init)) functions.set(name2, init);
+        if (name2 && init && isFunction2(init)) functions.set(name2, init);
         if (name2 && init) topLevel.set(name2, init);
       }
     }
@@ -24056,7 +25470,7 @@ function extractFile(module, honoLocals) {
   const assigned = /* @__PURE__ */ new Set();
   walk2(module.program, (n) => {
     if (n.type === "AssignmentExpression") {
-      const target = identName(n.left);
+      const target = identName2(n.left);
       if (target) assigned.add(target);
     }
   });
@@ -24074,13 +25488,13 @@ function extractFile(module, honoLocals) {
   for (const stmt of module.program.body) {
     if (stmt.type !== "ExpressionStatement") continue;
     const e = unwrapExpression(stmt.expression);
-    const target = e.type === "AssignmentExpression" ? identName(e.left) : void 0;
+    const target = e.type === "AssignmentExpression" ? identName2(e.left) : void 0;
     if (target && !reassigned.has(target)) reassigned.set(target, e);
   }
   const scanArgs = (args, app) => {
     for (const raw of args) {
       const arg = unwrapExpression(raw);
-      const fn = isFunction(arg) ? arg : arg.type === "Identifier" ? functions.get(arg.name) : void 0;
+      const fn = isFunction2(arg) ? arg : arg.type === "Identifier" ? functions.get(arg.name) : void 0;
       if (fn) scanHandler(fn, module, app, model.envPassedLines, gap);
     }
   };
@@ -24088,7 +25502,7 @@ function extractFile(module, honoLocals) {
     const { root, calls } = flattenChain(expr);
     let app;
     let base = "";
-    if (root.type === "NewExpression" && honoLocals.has(identName(root.callee) ?? "")) {
+    if (root.type === "NewExpression" && honoLocals.has(identName2(root.callee) ?? "")) {
       if (!declName) return;
       const again = reassigned.get(declName);
       if (again) {
@@ -24128,7 +25542,7 @@ function extractFile(module, honoLocals) {
         } else base = joinPath2(base, p);
       } else if (ROUTE_METHODS.has(name2)) {
         const first = args[0] ? unwrapExpression(args[0]) : void 0;
-        if (first && !isFunction(first)) {
+        if (first && !isFunction2(first)) {
           const p = stringValue(first);
           if (p === void 0) {
             gap("dynamic-route-path", `${name2.toUpperCase()} route with a non-literal path; not recorded`, at);
@@ -24174,13 +25588,13 @@ function extractFile(module, honoLocals) {
     const decl = exported && stmt.declaration ? stmt.declaration : stmt;
     if (decl.type === "VariableDeclaration") {
       for (const d of decl.declarations) {
-        const name2 = identName(d.id);
+        const name2 = identName2(d.id);
         if (!name2 || !d.init) continue;
         analyze2(d.init, name2);
         if (exported) model.exports.set(name2, { kind: "local", name: name2 });
       }
     } else if (exported && decl.type === "FunctionDeclaration" && decl.id) {
-      const name2 = identName(decl.id);
+      const name2 = identName2(decl.id);
       model.exports.set(name2, { kind: "local", name: name2 });
     } else if (exported && stmt.type === "ExportNamedDeclaration" && !stmt.declaration) {
       const source = stmt.source ? stmt.source.value : void 0;
@@ -24195,7 +25609,7 @@ function extractFile(module, honoLocals) {
       }
     } else if (stmt.type === "ExportDefaultDeclaration") {
       const target = unwrapExpression(stmt.declaration);
-      const name2 = identName(target);
+      const name2 = identName2(target);
       if (name2) model.defaultExport = { name: name2, lines: module.lines(stmt) };
       else if (target.type === "ObjectExpression") {
         for (const use of fetchUses(target, topLevel)) {
@@ -24208,10 +25622,10 @@ function extractFile(module, honoLocals) {
 }
 function fetchOwner(n) {
   const m = unwrapExpression(n);
-  if (m.type !== "MemberExpression" || m.computed === true || identName(m.property) !== "fetch") {
+  if (m.type !== "MemberExpression" || m.computed === true || identName2(m.property) !== "fetch") {
     return void 0;
   }
-  return identName(unwrapExpression(m.object));
+  return identName2(unwrapExpression(m.object));
 }
 function fetchUses(obj, topLevel) {
   const out = [];
@@ -24219,10 +25633,10 @@ function fetchUses(obj, topLevel) {
   const scan2 = (node2) => {
     if (visited.has(node2)) return;
     visited.add(node2);
-    const isFn = isFunction(node2) || node2.type === "FunctionDeclaration";
+    const isFn = isFunction2(node2) || node2.type === "FunctionDeclaration";
     const body = isFn ? node2.body : node2;
     const bound = /* @__PURE__ */ new Set();
-    for (const p of isFn ? node2.params ?? [] : []) boundNames(p, bound);
+    for (const p of isFn ? node2.params ?? [] : []) boundNames2(p, bound);
     const usable = (name2) => !bound.has(name2) && !isRebound(body, name2);
     walk2(body, (n, parent) => {
       if (n.type === "Identifier") {
@@ -24240,7 +25654,7 @@ function fetchUses(obj, topLevel) {
     });
   };
   for (const prop of obj.properties) {
-    if (prop.type !== "Property" || identName(prop.key) !== "fetch") continue;
+    if (prop.type !== "Property" || identName2(prop.key) !== "fetch") continue;
     const value2 = unwrapExpression(prop.value);
     const direct = fetchOwner(value2);
     if (direct) {
@@ -24249,19 +25663,19 @@ function fetchUses(obj, topLevel) {
     }
     if (value2.type === "CallExpression") {
       const callee = unwrapExpression(value2.callee);
-      if (callee.type === "MemberExpression" && identName(callee.property) === "bind") {
+      if (callee.type === "MemberExpression" && identName2(callee.property) === "bind") {
         const owner = fetchOwner(callee.object);
         if (owner) out.push({ name: owner, node: value2, via: "fetch-property" });
       }
       continue;
     }
-    const target = isFunction(value2) ? value2 : topLevel.get(identName(value2) ?? "");
+    const target = isFunction2(value2) ? value2 : topLevel.get(identName2(value2) ?? "");
     if (target) scan2(target);
   }
   return out;
 }
 function exportName(n) {
-  return identName(n) ?? (n?.type === "Literal" ? String(n.value) : void 0);
+  return identName2(n) ?? (n?.type === "Literal" ? String(n.value) : void 0);
 }
 function onMethods(arg) {
   if (!arg) return void 0;
@@ -24692,40 +26106,6 @@ var honoParser = {
 // ../../packages/parsers/hono/src/linker.ts
 var HONO_LINKER_ID = "hono-bindings";
 var VIA_ORDER = ["default-export", "fetch-property", "wrapped-call", "wrapped-ref"];
-var R_READ = /* @__PURE__ */ new Set(["get", "head", "list", "getWithMetadata"]);
-var R_WRITE = /* @__PURE__ */ new Set(["put", "delete", "createMultipartUpload", "resumeMultipartUpload"]);
-function relationOf(type, usage) {
-  const m = usage.method;
-  switch (type) {
-    case "d1":
-      if (m === "prepare")
-        return usage.sql === "read" ? "READS_FROM" : usage.sql === "write" ? "WRITES_TO" : "DEPENDS_ON";
-      return "DEPENDS_ON";
-    case "r2":
-    case "kv":
-      return m && R_READ.has(m) ? "READS_FROM" : m && R_WRITE.has(m) ? "WRITES_TO" : "DEPENDS_ON";
-    case "queue-producer":
-      return m === "send" || m === "sendBatch" ? "PUBLISHES_TO" : "DEPENDS_ON";
-    case "service":
-      return m === "fetch" ? "CALLS" : "DEPENDS_ON";
-    case "analytics-engine":
-      return m === "writeDataPoint" ? "WRITES_TO" : "DEPENDS_ON";
-    default:
-      return "DEPENDS_ON";
-  }
-}
-var dirOf2 = (path) => path.includes("/") ? path.slice(0, path.lastIndexOf("/")) : "";
-function joinNormalized2(dir, rel) {
-  const out = [];
-  for (const seg of `${dir}/${rel}`.split("/")) {
-    if (seg === "" || seg === ".") continue;
-    if (seg === "..") {
-      if (out.length === 0) return void 0;
-      out.pop();
-    } else out.push(seg);
-  }
-  return out.join("/");
-}
 var isHonoService = (n) => n.type === "service" && n.scope === "application" && n.properties.framework === "hono";
 var strings2 = (v) => Array.isArray(v) ? v.filter((x) => typeof x === "string") : [];
 var locationsOf = (v) => Array.isArray(v) ? v : [];
@@ -24763,7 +26143,7 @@ var honoBindingLinker = {
           });
           continue;
         }
-        const entryPath = joinNormalized2(dirOf2(configFile), main);
+        const entryPath = joinNormalized(dirOf(configFile), main);
         if (entryPath === void 0) continue;
         const configEvidence = worker.evidence.filter((e) => e.file === configFile);
         const bindings = /* @__PURE__ */ new Map();
@@ -24889,47 +26269,11 @@ var honoBindingLinker = {
   }
 };
 
-// ../../packages/parsers/mcp/src/linker.ts
-var MCP_LINKER_ID = "mcp-routes";
-var isHandoff = (v) => {
-  const h = v;
-  return typeof h === "object" && h !== null && typeof h.file === "string" && typeof h.startLine === "number" && typeof h.endLine === "number" && typeof h.method === "string" && typeof h.path === "string";
-};
-var mcpRouteLinker = {
-  id: MCP_LINKER_ID,
-  link({ nodes }, ctx) {
-    const edges = [];
-    const routes = nodes.filter((n) => n.type === "route" && n.scope === "application");
-    for (const server of nodes.filter((n) => n.type === "mcp-server" && n.scope === "application")) {
-      const handoffs = Array.isArray(server.properties.routeHandoffs) ? server.properties.routeHandoffs.filter(isHandoff) : [];
-      for (const h of handoffs) {
-        const sameSpot = (e) => e.file === h.file && e.startLine === h.startLine && e.endLine === h.endLine;
-        for (const route of routes) {
-          const path = route.properties.path;
-          if (String(route.properties.method).toUpperCase() !== h.method || typeof path !== "string" || !path.endsWith(h.path))
-            continue;
-          const written = route.evidence.filter(sameSpot);
-          if (written.length === 0) continue;
-          edges.push({
-            id: edgeId(route.id, "EXPOSES", server.id),
-            source: route.id,
-            target: server.id,
-            relation: "EXPOSES",
-            evidence: [staticEvidence(ctx, h.file, h.startLine, h.endLine), ...written],
-            verification: "verified"
-          });
-        }
-      }
-    }
-    return { nodes: [], edges, diagnostics: [], unverified: [] };
-  }
-};
-
 // ../../packages/parsers/mcp/src/project.ts
 var MCP_IMPORT = /["'](?:@modelcontextprotocol\/(?:sdk|server)(?:\/[^"']*)?|agents\/mcp(?:\/[^"']*)?)["']/;
 var importsMcp = (text4) => MCP_IMPORT.test(text4);
 var isFunctionNode = (n) => n.type === "FunctionDeclaration" || n.type === "FunctionExpression" || n.type === "ArrowFunctionExpression";
-var identName2 = (n) => n?.type === "Identifier" ? n.name : void 0;
+var identName3 = (n) => n?.type === "Identifier" ? n.name : void 0;
 var keyName = (key) => key?.type === "Identifier" ? key.name : key?.type === "Literal" ? String(key.value) : void 0;
 var exportName2 = (n) => keyName(n);
 function buildModel(module) {
@@ -24941,9 +26285,9 @@ function buildModel(module) {
   };
   walk2(module.program, (n, parent) => {
     if (parent) parents.set(n, parent);
-    if (n.type === "FunctionDeclaration" && n.id) add(fns, identName2(n.id) ?? "", n);
+    if (n.type === "FunctionDeclaration" && n.id) add(fns, identName3(n.id) ?? "", n);
     if (n.type === "VariableDeclarator") {
-      const name2 = identName2(n.id);
+      const name2 = identName3(n.id);
       if (name2 && n.init) {
         const init = unwrapExpression(n.init);
         add(vars, name2, init);
@@ -24958,11 +26302,11 @@ function buildModel(module) {
     if (stmt.type === "ExportNamedDeclaration") {
       const decl = stmt.declaration;
       if (decl?.type === "FunctionDeclaration" && decl.id) {
-        const name2 = identName2(decl.id);
+        const name2 = identName3(decl.id);
         exports.set(name2, { kind: "local", name: name2 });
       } else if (decl?.type === "VariableDeclaration") {
         for (const d of decl.declarations) {
-          const name2 = identName2(d.id);
+          const name2 = identName3(d.id);
           if (name2) exports.set(name2, { kind: "local", name: name2 });
         }
       } else if (!decl) {
@@ -24976,7 +26320,7 @@ function buildModel(module) {
       }
     } else if (stmt.type === "ExportDefaultDeclaration") {
       const d = unwrapExpression(stmt.declaration);
-      defaultExport = identName2(d) ?? (d.type === "FunctionDeclaration" ? identName2(d.id) : void 0);
+      defaultExport = identName3(d) ?? (d.type === "FunctionDeclaration" ? identName3(d.id) : void 0);
     }
   }
   return {
@@ -25094,7 +26438,7 @@ var Project2 = class {
   resolveString(model, node2) {
     const direct = stringValue(node2);
     if (direct !== void 0) return { value: direct };
-    const id = identName2(unwrapExpression(node2));
+    const id = identName3(unwrapExpression(node2));
     if (!id) return { why: "it is not a string literal or a constant" };
     const r = this.resolveVar(model, id);
     if ("why" in r) return r;
@@ -25118,13 +26462,282 @@ function propertyOf(obj, name2) {
   return void 0;
 }
 
+// ../../packages/parsers/mcp/src/bindingsLinker.ts
+var MCP_BINDINGS_LINKER_ID = "mcp-bindings";
+async function closureOf(entry, files, fs) {
+  const seen = /* @__PURE__ */ new Set();
+  const queue = [entry];
+  while (queue.length > 0) {
+    const file2 = queue.pop();
+    if (seen.has(file2) || !files.has(file2) || !isAnalyzableSource(file2)) continue;
+    seen.add(file2);
+    let program;
+    try {
+      const parsed = parseModule(file2, await fs.readText(file2));
+      if (!parsed.ok) continue;
+      program = parsed.module.program;
+    } catch {
+      continue;
+    }
+    walk2(program, (n) => {
+      let source;
+      if (n.type === "ImportDeclaration" || n.type === "ExportAllDeclaration") {
+        if (n.importKind !== "type" && n.exportKind !== "type") source = stringValue(n.source);
+      } else if (n.type === "ExportNamedDeclaration" && n.source && n.exportKind !== "type") {
+        source = stringValue(n.source);
+      } else if (n.type === "ImportExpression") {
+        source = stringValue(n.source);
+      }
+      if (source === void 0) return void 0;
+      const target = resolveRelativeImport(file2, source, files);
+      if (target) queue.push(target);
+      return void 0;
+    });
+  }
+  return seen;
+}
+var MAX_FUNCTIONS = 400;
+async function regionsOf(entry, files, fs) {
+  const project = new Project2(fs, [...files]);
+  const loaded = await project.load(entry);
+  if ("error" in loaded) return [];
+  await project.loadImports(loaded);
+  const regions = [];
+  const seen = /* @__PURE__ */ new Set();
+  const explore = (model, node2) => {
+    const key = `${model.file}#${node2.start}`;
+    if (seen.has(key) || seen.size >= MAX_FUNCTIONS) return;
+    seen.add(key);
+    regions.push({ file: model.file, start: node2.start, end: node2.end });
+    const follow = (id) => {
+      const name2 = identName3(id ? unwrapExpression(id) : void 0);
+      if (!name2) return;
+      const fn = project.resolveFn(model, name2);
+      if (!("why" in fn)) explore(fn.model, fn.node);
+    };
+    walk2(node2, (n) => {
+      if (n.type === "CallExpression" || n.type === "NewExpression") {
+        follow(n.callee);
+        for (const a of n.arguments) follow(a);
+      } else if (n.type === "Property") follow(n.value);
+      return void 0;
+    });
+  };
+  for (const stmt of loaded.module.program.body) {
+    if (stmt.type !== "ExportDefaultDeclaration") continue;
+    const decl = unwrapExpression(stmt.declaration);
+    const name2 = identName3(decl);
+    if (name2) {
+      const v = project.resolveVar(loaded, name2);
+      if (!("why" in v)) explore(v.model, v.node);
+      const fn = project.resolveFn(loaded, name2);
+      if (!("why" in fn)) explore(fn.model, fn.node);
+    } else explore(loaded, decl);
+  }
+  return regions;
+}
+var servedAtOf = (server) => Array.isArray(server.properties.servedAt) ? server.properties.servedAt : [];
+var usagesOf = (server) => Array.isArray(server.properties.bindingUsages) ? server.properties.bindingUsages : [];
+var mcpBindingLinker = {
+  id: MCP_BINDINGS_LINKER_ID,
+  async link({ nodes }, ctx) {
+    const edges = /* @__PURE__ */ new Map();
+    const diagnostics = [];
+    const unverified = [];
+    const servers = nodes.filter((n) => n.type === "mcp-server" && n.scope === "application");
+    const workers = nodes.filter((n) => n.type === "worker");
+    if (servers.length === 0 || workers.length === 0) return { nodes: [], edges: [], diagnostics, unverified };
+    const byId = new Map(nodes.map((n) => [n.id, n]));
+    const files = new Set(await ctx.fs.listFiles());
+    const regionCache = /* @__PURE__ */ new Map();
+    const regions = async (entry) => {
+      const hit = regionCache.get(entry);
+      if (hit) return hit;
+      const made = await regionsOf(entry, files, ctx.fs);
+      regionCache.set(entry, made);
+      return made;
+    };
+    const closureCache = /* @__PURE__ */ new Map();
+    const closure = async (entry) => {
+      const hit = closureCache.get(entry);
+      if (hit) return hit;
+      const made = await closureOf(entry, files, ctx.fs);
+      closureCache.set(entry, made);
+      return made;
+    };
+    const add = (edge) => {
+      const same = edges.get(edge.id);
+      if (same) same.evidence.push(...edge.evidence);
+      else edges.set(edge.id, edge);
+    };
+    const reported = /* @__PURE__ */ new Set();
+    const run = /* @__PURE__ */ new Set();
+    for (const worker of workers) {
+      const configs = worker.properties.configs ?? {};
+      for (const [configFile, cfg] of Object.entries(configs).sort(([a], [b]) => a < b ? -1 : 1)) {
+        const main = typeof cfg.main === "string" ? cfg.main : void 0;
+        if (!main) continue;
+        if (main.startsWith("/")) {
+          unverified.push({
+            parserId: MCP_BINDINGS_LINKER_ID,
+            file: configFile,
+            reason: `main "${main}" of Worker ${worker.name} is an absolute path; MCP servers are not linked to this Worker`
+          });
+          continue;
+        }
+        const entryPath = joinNormalized(dirOf(configFile), main);
+        if (entryPath === void 0) continue;
+        const runs = await regions(entryPath);
+        const configEvidence = worker.evidence.filter((e) => e.file === configFile);
+        const bindings = /* @__PURE__ */ new Map();
+        for (const b of cfg.bindings ?? []) {
+          if (typeof b.binding === "string" && !bindings.has(b.binding)) bindings.set(b.binding, b);
+        }
+        const declaredNames = new Set(
+          [cfg.declaredBindings, cfg.envDeclaredBindings].flatMap(
+            (v) => Array.isArray(v) ? v.filter((x) => typeof x === "string") : []
+          )
+        );
+        for (const server of servers) {
+          const file2 = server.properties.file;
+          if (typeof file2 !== "string") continue;
+          const sites = servedAtOf(server).filter(
+            (site) => runs.some((r) => r.file === site.file && r.start <= site.start && site.end <= r.end)
+          );
+          if (sites.length === 0) {
+            if ((await closure(entryPath)).has(file2)) {
+              const key = `${server.id}\0${worker.id}`;
+              if (!reported.has(key)) {
+                reported.add(key);
+                unverified.push({
+                  parserId: MCP_BINDINGS_LINKER_ID,
+                  file: file2,
+                  reason: `${server.name} is bundled into Worker ${worker.name} (imported from ${entryPath}), but the Worker's handler is not shown to reach where it is served; not linked`
+                });
+              }
+            }
+            continue;
+          }
+          run.add(server.id);
+          const why = [
+            ...sites.map((site) => staticEvidence(ctx, site.file, site.startLine, site.endLine)),
+            ...server.evidence.slice(0, 1)
+          ];
+          add({
+            id: edgeId(server.id, "DEPLOYED_ON", worker.id),
+            source: server.id,
+            target: worker.id,
+            relation: "DEPLOYED_ON",
+            evidence: [...why, ...configEvidence],
+            verification: "verified"
+          });
+          const byRelation = /* @__PURE__ */ new Map();
+          const unresolved = /* @__PURE__ */ new Set();
+          const unreadable = /* @__PURE__ */ new Set();
+          for (const u of usagesOf(server)) {
+            const b = bindings.get(u.binding);
+            if (!b) {
+              if (!u.passed) unresolved.add(u.binding);
+              else if (declaredNames.has(u.binding)) unreadable.add(u.binding);
+              continue;
+            }
+            const relation = relationOf(b.type, u);
+            const key = `${b.resource}\0${relation}`;
+            const entry = byRelation.get(key) ?? { resource: b.resource, relation, ev: [] };
+            entry.ev.push(staticEvidence(ctx, u.file ?? file2, u.startLine, u.endLine));
+            byRelation.set(key, entry);
+          }
+          const specific2 = new Set(
+            [...byRelation.values()].filter((e) => e.relation !== "DEPENDS_ON").map((e) => e.resource)
+          );
+          for (const e of byRelation.values()) {
+            if (e.relation === "DEPENDS_ON" && specific2.has(e.resource)) continue;
+            const declared = (byId.get(e.resource)?.evidence ?? []).filter((x) => x.file === configFile);
+            add({
+              id: edgeId(server.id, e.relation, e.resource),
+              source: server.id,
+              target: e.resource,
+              relation: e.relation,
+              evidence: [...e.ev, ...why, ...declared.length > 0 ? declared : configEvidence],
+              verification: "verified"
+            });
+          }
+          if (unreadable.size > 0) {
+            unverified.push({
+              parserId: MCP_BINDINGS_LINKER_ID,
+              file: file2,
+              reason: `env.${[...unreadable].sort().join(", env.")} used through a function in ${server.name} are declared in ${configFile} but not read as bindings of this Worker (an env block, an unsupported kind or a skipped entry); not linked`
+            });
+          }
+          if (unresolved.size > 0) {
+            unverified.push({
+              parserId: MCP_BINDINGS_LINKER_ID,
+              file: file2,
+              reason: `env.${[...unresolved].sort().join(", env.")} in ${server.name} are not bindings declared in ${configFile} (variables, secrets or bindings declared elsewhere); not linked`
+            });
+          }
+        }
+      }
+    }
+    for (const s of servers) {
+      if (run.has(s.id)) continue;
+      const used = usagesOf(s);
+      if (used.length === 0) continue;
+      const names = [...new Set(used.map((u) => u.binding))].sort().join(", ");
+      unverified.push({
+        parserId: MCP_BINDINGS_LINKER_ID,
+        file: typeof s.properties.file === "string" ? s.properties.file : "",
+        reason: `no Worker's handler is shown to run ${s.name}, so its env uses (${names}) are not linked to any binding`
+      });
+    }
+    return { nodes: [], edges: [...edges.values()], diagnostics, unverified };
+  }
+};
+
+// ../../packages/parsers/mcp/src/linker.ts
+var MCP_LINKER_ID = "mcp-routes";
+var isHandoff = (v) => {
+  const h = v;
+  return typeof h === "object" && h !== null && typeof h.file === "string" && typeof h.startLine === "number" && typeof h.endLine === "number" && typeof h.method === "string" && typeof h.path === "string";
+};
+var mcpRouteLinker = {
+  id: MCP_LINKER_ID,
+  link({ nodes }, ctx) {
+    const edges = [];
+    const routes = nodes.filter((n) => n.type === "route" && n.scope === "application");
+    for (const server of nodes.filter((n) => n.type === "mcp-server" && n.scope === "application")) {
+      const handoffs = Array.isArray(server.properties.routeHandoffs) ? server.properties.routeHandoffs.filter(isHandoff) : [];
+      for (const h of handoffs) {
+        const sameSpot = (e) => e.file === h.file && e.startLine === h.startLine && e.endLine === h.endLine;
+        for (const route of routes) {
+          const path = route.properties.path;
+          if (String(route.properties.method).toUpperCase() !== h.method || typeof path !== "string" || !path.endsWith(h.path))
+            continue;
+          const written = route.evidence.filter(sameSpot);
+          if (written.length === 0) continue;
+          edges.push({
+            id: edgeId(route.id, "EXPOSES", server.id),
+            source: route.id,
+            target: server.id,
+            relation: "EXPOSES",
+            evidence: [staticEvidence(ctx, h.file, h.startLine, h.endLine), ...written],
+            verification: "verified"
+          });
+        }
+      }
+    }
+    return { nodes: [], edges, diagnostics: [], unverified: [] };
+  }
+};
+
 // ../../packages/parsers/mcp/src/mcpParser.ts
 var MCP_PARSER_ID = "mcp";
-var MCP_PARSER_VERSION = "0.1.0";
+var MCP_PARSER_VERSION = "0.2.0";
 var HONO_IMPORT2 = /["']hono(?:\/[^"']*)?["']/;
+var OAUTH_PROVIDER_IMPORT = /["']@cloudflare\/workers-oauth-provider["']/;
 var TOOL_METHODS = /* @__PURE__ */ new Set(["registerTool", "tool"]);
 var HTTP_METHODS2 = /* @__PURE__ */ new Set(["get", "post", "put", "delete", "patch", "options", "head", "all"]);
-var MAX_DEPTH2 = 8;
+var MAX_DEPTH3 = 8;
 var LOCAL_LOOKING = /^(?:\.|@\/|~\/|#)/;
 var messageOf3 = (e) => e instanceof Error ? e.message : String(e);
 var sanitizeIdPart = (s) => s.replace(/\s+/g, "_");
@@ -25132,19 +26745,19 @@ var baseName = (file2) => file2.slice(file2.lastIndexOf("/") + 1);
 var isToolMember = (n, receiver) => {
   const m = unwrapExpression(n);
   if (m.type !== "MemberExpression" || m.computed === true) return false;
-  if (receiver !== void 0 && identName2(unwrapExpression(m.object)) !== receiver) return false;
-  return TOOL_METHODS.has(identName2(m.property) ?? "");
+  if (receiver !== void 0 && identName3(unwrapExpression(m.object)) !== receiver) return false;
+  return TOOL_METHODS.has(identName3(m.property) ?? "");
 };
 function keepsNameArgument(assign) {
   const fn = unwrapExpression(assign.right);
   if (!isFunctionNode(fn)) return false;
-  const first = identName2(fn.params[0]);
+  const first = identName3(fn.params[0]);
   if (!first) return false;
   let kept = false;
   walk2(fn.body, (n) => {
     if (n.type === "CallExpression") {
       const a0 = n.arguments[0];
-      if (a0 && identName2(unwrapExpression(a0)) === first) kept = true;
+      if (a0 && identName3(unwrapExpression(a0)) === first) kept = true;
     }
     return void 0;
   });
@@ -25165,7 +26778,7 @@ function scan(root, receiver) {
       }
       ;
       n.arguments.forEach((a, i) => {
-        if (identName2(unwrapExpression(a)) === receiver) events.push({ kind: "call", call: n, argIndex: i });
+        if (identName3(unwrapExpression(a)) === receiver) events.push({ kind: "call", call: n, argIndex: i });
       });
     }
     return void 0;
@@ -25199,7 +26812,7 @@ async function analyzeMcp(ctx) {
   const project = new Project2(ctx.fs, all);
   const sources = all.filter(isAnalyzableSource).sort();
   const targets = [];
-  const honoFiles = [];
+  const routeFiles = [];
   for (const file2 of sources) {
     let text4;
     try {
@@ -25209,7 +26822,7 @@ async function analyzeMcp(ctx) {
       continue;
     }
     const mcp = importsMcp(text4);
-    if (!mcp && !HONO_IMPORT2.test(text4)) continue;
+    if (!mcp && !HONO_IMPORT2.test(text4) && !OAUTH_PROVIDER_IMPORT.test(text4)) continue;
     const loaded = await project.load(file2);
     if ("error" in loaded) {
       if (mcp) {
@@ -25223,9 +26836,9 @@ async function analyzeMcp(ctx) {
       continue;
     }
     if (mcp) targets.push(loaded);
-    else honoFiles.push(loaded);
+    else routeFiles.push(loaded);
   }
-  for (const model of [...targets, ...honoFiles]) await project.loadImports(model);
+  for (const model of [...targets, ...routeFiles]) await project.loadImports(model);
   const evidenceOf = (p) => staticEvidence(ctx, p.file, p.startLine, p.endLine);
   const servers = [];
   const serverByKey = /* @__PURE__ */ new Map();
@@ -25235,18 +26848,18 @@ async function analyzeMcp(ctx) {
     );
     if (locals.size === 0) continue;
     walk2(model.module.program, (n) => {
-      if (n.type !== "NewExpression" || !locals.has(identName2(n.callee) ?? "")) return void 0;
+      if (n.type !== "NewExpression" || !locals.has(identName3(n.callee) ?? "")) return void 0;
       let holder = model.parents.get(n);
       while (holder && ["TSAsExpression", "TSSatisfiesExpression", "TSNonNullExpression"].includes(holder.type)) {
         holder = model.parents.get(holder);
       }
-      const varName = holder?.type === "VariableDeclarator" ? identName2(holder.id) : void 0;
+      const varName = holder?.type === "VariableDeclarator" ? identName3(holder.id) : void 0;
       const info = n.arguments[0];
       let name2;
       if (info) {
         const obj = unwrapExpression(info);
         const resolved = obj.type === "ObjectExpression" ? obj : (() => {
-          const id = identName2(obj);
+          const id = identName3(obj);
           if (!id) return void 0;
           const r = project.resolveVar(model, id);
           return "why" in r ? void 0 : r.node;
@@ -25266,7 +26879,9 @@ async function analyzeMcp(ctx) {
         name: name2 ?? baseName(model.file),
         lines: model.module.lines({ start: n.start, end: info?.end ?? n.end }),
         tools: [],
-        handoffs: []
+        handoffs: [],
+        usages: [],
+        servedAt: []
       };
       servers.push(server);
       serverByKey.set(server.key, server);
@@ -25288,18 +26903,18 @@ async function analyzeMcp(ctx) {
       if (cur.type === "ForOfStatement") {
         const left = cur.left;
         const d = left.type === "VariableDeclaration" ? left.declarations[0] : void 0;
-        if (d && identName2(d.id) === variable && child === cur.body) source = cur.right;
+        if (d && identName3(d.id) === variable && child === cur.body) source = cur.right;
       } else if (cur.type === "CallExpression") {
         const callee = unwrapExpression(cur.callee);
         const fn = cur.arguments[0];
-        if (callee.type === "MemberExpression" && callee.computed !== true && ["forEach", "map", "flatMap"].includes(identName2(callee.property) ?? "") && fn && fn === child && isFunctionNode(fn) && identName2(fn.params[0]) === variable) {
+        if (callee.type === "MemberExpression" && callee.computed !== true && ["forEach", "map", "flatMap"].includes(identName3(callee.property) ?? "") && fn && fn === child && isFunctionNode(fn) && identName3(fn.params[0]) === variable) {
           source = callee.object;
         }
       }
       if (source) {
         const s = unwrapExpression(source);
         if (s.type === "ArrayExpression") return { array: s, model };
-        const id = identName2(s);
+        const id = identName3(s);
         if (!id) return { why: "the array looped over is not a name" };
         const r = project.resolveVar(model, id);
         if ("why" in r) return { why: r.why };
@@ -25317,8 +26932,8 @@ async function analyzeMcp(ctx) {
     const s = project.resolveString(model, arg);
     if ("value" in s) return { names: [{ name: s.value, evidence: [here] }] };
     const m = unwrapExpression(arg);
-    if (m.type === "MemberExpression" && m.computed !== true && identName2(m.property) === "name" && identName2(unwrapExpression(m.object))) {
-      const variable = identName2(unwrapExpression(m.object));
+    if (m.type === "MemberExpression" && m.computed !== true && identName3(m.property) === "name" && identName3(unwrapExpression(m.object))) {
+      const variable = identName3(unwrapExpression(m.object));
       const source = loopArray(model, call, variable);
       if (source) {
         if ("why" in source) return { why: source.why };
@@ -25329,7 +26944,7 @@ async function analyzeMcp(ctx) {
           let obj;
           if (u.type === "ObjectExpression") obj = { model: source.model, node: u };
           else {
-            const id = identName2(u);
+            const id = identName3(u);
             if (!id) return { why: "an element of the array is not an object or a name" };
             const r = project.resolveVar(source.model, id);
             obj = "why" in r ? r : { model: r.model, node: r.node };
@@ -25356,7 +26971,7 @@ async function analyzeMcp(ctx) {
     const out = new Set(servers.filter((s) => s.scopeFn === fn));
     walk2(fn.body, (n) => {
       if (n.type !== "CallExpression") return void 0;
-      const callee = identName2(unwrapExpression(n.callee));
+      const callee = identName3(unwrapExpression(n.callee));
       if (!callee) return void 0;
       const r = project.resolveFn(fnModel, callee);
       if ("why" in r) return void 0;
@@ -25378,7 +26993,7 @@ async function analyzeMcp(ctx) {
         const s = serverByKey.get(`${model.file}#${n.start}`);
         if (s) out.add(s);
       } else if (n.type === "CallExpression") {
-        const callee = identName2(unwrapExpression(n.callee));
+        const callee = identName3(unwrapExpression(n.callee));
         const r = callee ? project.resolveFn(model, callee) : void 0;
         if (r && !("why" in r)) for (const s of serversMadeBy(r.model, r.node)) out.add(s);
       } else if (n.type === "Identifier") {
@@ -25428,7 +27043,7 @@ async function analyzeMcp(ctx) {
         for (const n of r2.names) addTool(server, n.name, n.evidence);
         continue;
       }
-      const calleeName = identName2(unwrapExpression(ev.call.callee));
+      const calleeName = identName3(unwrapExpression(ev.call.callee));
       if (!calleeName) continue;
       const r = project.resolveFn(model, calleeName);
       if ("why" in r) {
@@ -25446,7 +27061,7 @@ async function analyzeMcp(ctx) {
       }
       const fn = r.node;
       const param = fn.params[ev.argIndex];
-      const pname = identName2(param?.type === "AssignmentPattern" ? param.left : param);
+      const pname = identName3(param?.type === "AssignmentPattern" ? param.left : param);
       if (!pname) {
         note(
           "warning",
@@ -25459,12 +27074,12 @@ async function analyzeMcp(ctx) {
       }
       const key = `${r.model.file}\0${fn.start}\0${ev.argIndex}`;
       if (path.has(key)) continue;
-      if (depth >= MAX_DEPTH2) {
+      if (depth >= MAX_DEPTH3) {
         note(
           "warning",
           "server-handed-on",
           model.file,
-          `${calleeName}() is more than ${MAX_DEPTH2} calls away from the server (too deep); the tools it registers are not recorded`,
+          `${calleeName}() is more than ${MAX_DEPTH3} calls away from the server (too deep); the tools it registers are not recorded`,
           line2
         );
         continue;
@@ -25477,11 +27092,96 @@ async function analyzeMcp(ctx) {
     const root = server.scopeFn ? server.scopeFn.body : server.model.module.program;
     expand(server, server.model, root, server.varName, 0, /* @__PURE__ */ new Set());
   }
+  const isEnvParam = (param) => {
+    const p = param?.type === "AssignmentPattern" ? param.left : param;
+    if (p?.type !== "Identifier") return false;
+    if (p.name === "env") return true;
+    const ref = p.typeAnnotation?.typeAnnotation;
+    const typeName = ref?.type === "TSTypeReference" ? ref.typeName : void 0;
+    const last = typeName?.type === "TSQualifiedName" ? typeName.right : typeName;
+    return identName3(last) === "Env";
+  };
+  const MAX_ENV_DEPTH2 = 8;
+  for (const server of servers) {
+    const fn = server.scopeFn;
+    if (!fn) continue;
+    const model = server.model;
+    const found = [];
+    const untraced = /* @__PURE__ */ new Set();
+    const seen = /* @__PURE__ */ new Set();
+    const follow = (m, flows, depth, path) => {
+      for (const flow2 of flows) {
+        if (depth >= MAX_ENV_DEPTH2) {
+          untraced.add(`${flow2.callee}() is more than ${MAX_ENV_DEPTH2} calls away from the server (too deep)`);
+          continue;
+        }
+        const r = project.resolveFn(m, flow2.callee);
+        if ("why" in r) {
+          untraced.add(`${flow2.callee}() cannot be followed: ${r.why}`);
+          continue;
+        }
+        const key = `${r.model.file}\0${r.node.start}\0${flow2.argIndex}`;
+        if (path.has(key)) continue;
+        const scan2 = scanParam(r.node, flow2.argIndex, r.model.module);
+        if (!scan2) {
+          untraced.add(
+            `${flow2.callee}() takes the env in a parameter that is not a plain name or object pattern`
+          );
+          continue;
+        }
+        if ("broken" in scan2) {
+          untraced.add(`${flow2.callee}() in ${r.model.file}: ${scan2.broken}`);
+          continue;
+        }
+        for (const line2 of scan2.opaque)
+          untraced.add(`the env is used in ${r.model.file} line ${line2} in a way that is not followed`);
+        for (const u of scan2.usages) found.push({ ...u, file: r.model.file, passed: true });
+        follow(r.model, scan2.flows, depth + 1, new Set(path).add(key));
+      }
+    };
+    const bound = /* @__PURE__ */ new Set();
+    for (const p of fn.params) boundNames2(p, bound);
+    const body = fn.body;
+    fn.params.forEach((param, index) => {
+      const plain = param.type === "AssignmentPattern" ? param.left : param;
+      const name2 = identName3(plain);
+      if (!name2) return;
+      const scans = [];
+      if (isEnvParam(param)) {
+        const s = scanParam(fn, index, model.module);
+        if (s && "broken" in s) untraced.add(`"${name2}" is rebound inside the function that makes the server`);
+        else if (s) scans.push(s);
+      } else if (!isRebound(body, name2)) {
+        scans.push(scanEnv(body, model.module, { kind: "ctx", name: name2 }, bound));
+      }
+      for (const s of scans) {
+        for (const u of s.usages) found.push({ ...u, file: model.file });
+        for (const line2 of s.opaque)
+          untraced.add(`the env is used in ${model.file} line ${line2} in a way that is not followed`);
+        follow(model, s.flows, 0, /* @__PURE__ */ new Set());
+      }
+    });
+    for (const u of found) {
+      const key = `${u.file}\0${u.binding}\0${u.method ?? ""}\0${u.sql ?? ""}\0${u.startLine}\0${u.endLine}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      server.usages.push(u);
+    }
+    if (untraced.size > 0) {
+      note(
+        "warning",
+        "env-untraced",
+        model.file,
+        `the env of MCP server ${server.name} is passed on or used in a way that is not followed, so the bindings used there are not recorded (${[...untraced].sort().join("; ")})`,
+        server.lines.startLine
+      );
+    }
+  }
   for (const model of targets) {
     walk2(model.module.program, (n) => {
       if (n.type !== "CallExpression") return void 0;
       const callee = unwrapExpression(n.callee);
-      if (callee.type === "MemberExpression" && callee.computed !== true && identName2(callee.property) === "registerTool" && !reached.has(`${model.file}#${n.start}`)) {
+      if (callee.type === "MemberExpression" && callee.computed !== true && identName3(callee.property) === "registerTool" && !reached.has(`${model.file}#${n.start}`)) {
         note(
           "warning",
           "tool-unattached",
@@ -25495,26 +27195,102 @@ async function analyzeMcp(ctx) {
   }
   const routeNodes = /* @__PURE__ */ new Map();
   const servedRoutes = [];
-  for (const model of [...targets, ...honoFiles]) {
+  const recordServedAt = (model, site, reachedServers) => {
+    const at = { file: model.file, start: site.start, end: site.end, ...model.module.lines(site) };
+    for (const s of reachedServers) {
+      if (!s.servedAt.some((x) => x.file === at.file && x.start === at.start)) s.servedAt.push(at);
+    }
+  };
+  const serveRoute = (path, at, reachedServers) => {
+    let id;
+    try {
+      id = routeNodeId("ALL", path);
+    } catch {
+      return;
+    }
+    const route = routeNodes.get(id);
+    if (route) route.evidence.push(at);
+    else {
+      routeNodes.set(id, {
+        id,
+        type: "route",
+        name: `ALL ${path}`,
+        scope: "application",
+        properties: { method: "ALL", path },
+        evidence: [at],
+        verification: "verified"
+      });
+    }
+    for (const s of reachedServers) servedRoutes.push({ routeId: id, server: s, evidence: at });
+  };
+  const serversOfHandler = (model, arg) => {
+    const value2 = unwrapExpression(arg);
+    const name2 = identName3(value2);
+    if (!name2) return serversIn(model, value2);
+    const known = topLevelServers.get(`${model.file}\0${name2}`);
+    if (known) return [known];
+    const r = project.resolveVar(model, name2);
+    if (!("why" in r)) return serversIn(r.model, r.node);
+    const fn = project.resolveFn(model, name2);
+    return "why" in fn ? [] : serversMadeBy(fn.model, fn.node);
+  };
+  for (const model of [...targets, ...routeFiles]) {
     const handlerLocals = new Set(
       model.imports.filter((i) => i.imported === "createMcpHandler" && !i.typeOnly).map((i) => i.local)
     );
+    const providerLocals = new Set(
+      model.imports.filter(
+        (i) => (i.imported === "OAuthProvider" || i.imported === "default") && !i.typeOnly && OAUTH_PROVIDER_IMPORT.test(`"${i.source}"`)
+      ).map((i) => i.local)
+    );
     walk2(model.module.program, (n) => {
+      if (n.type === "NewExpression" && providerLocals.has(identName3(n.callee) ?? "")) {
+        const first = n.arguments[0];
+        const options2 = first ? unwrapExpression(first) : void 0;
+        const routeArg2 = options2 ? propertyOf(options2, "apiRoute") : void 0;
+        const handlerArg = options2 ? propertyOf(options2, "apiHandler") : void 0;
+        if (!routeArg2 || !handlerArg) return void 0;
+        const reachedServers2 = serversOfHandler(model, handlerArg);
+        if (reachedServers2.length === 0) return void 0;
+        recordServedAt(model, n, reachedServers2);
+        const routeValue = unwrapExpression(routeArg2);
+        const parts = routeValue.type === "ArrayExpression" ? routeValue.elements : [routeValue];
+        const at = evidenceOf({
+          file: model.file,
+          ...model.module.lines({ start: routeArg2.start, end: handlerArg.end })
+        });
+        const line2 = model.module.lines(routeArg2).startLine;
+        for (const part2 of parts) {
+          const r = part2 && part2.type !== "SpreadElement" ? project.resolveString(model, part2) : void 0;
+          if (!r || !("value" in r) || !r.value.startsWith("/")) {
+            note(
+              "warning",
+              "oauth-api-route-dynamic",
+              model.file,
+              `the apiRoute of the OAuthProvider is not a path written out as a string, so the route to the MCP server it serves is not recorded${r && "why" in r ? ` (${r.why})` : ""}`,
+              line2
+            );
+            continue;
+          }
+          serveRoute(r.value, at, reachedServers2);
+        }
+        return void 0;
+      }
       if (n.type !== "CallExpression") return void 0;
       const callee = unwrapExpression(n.callee);
       const args = n.arguments;
       if (callee.type === "MemberExpression" && callee.computed !== true) {
-        const method = identName2(callee.property);
+        const method = identName3(callee.property);
         const path2 = stringValue(args[0]);
         if (method && HTTP_METHODS2.has(method) && path2 !== void 0 && path2.startsWith("/")) {
           const handlers = args.slice(1).map(unwrapExpression).filter(isFunctionNode);
-          const at2 = model.module.lines({
+          const at = model.module.lines({
             start: callee.property.start,
             end: args[0].end
           });
           for (const h of handlers) {
             for (const s of serversIn(model, h)) {
-              const handoff2 = { file: model.file, ...at2, method: method.toUpperCase(), path: path2 };
+              const handoff2 = { file: model.file, ...at, method: method.toUpperCase(), path: path2 };
               if (!s.handoffs.some((x) => JSON.stringify(x) === JSON.stringify(handoff2)))
                 s.handoffs.push(handoff2);
             }
@@ -25522,7 +27298,7 @@ async function analyzeMcp(ctx) {
         }
         return void 0;
       }
-      const local = identName2(callee);
+      const local = identName3(callee);
       if (!local || !handlerLocals.has(local) || !args[0]) return void 0;
       const options = args[1] ? unwrapExpression(args[1]) : void 0;
       const routeArg = options ? propertyOf(options, "route") : void 0;
@@ -25535,27 +27311,8 @@ async function analyzeMcp(ctx) {
       if (!path.startsWith("/")) return void 0;
       const reachedServers = serversIn(model, args[0]);
       if (reachedServers.length === 0) return void 0;
-      let id;
-      try {
-        id = routeNodeId("ALL", path);
-      } catch {
-        return void 0;
-      }
-      const at = evidenceOf({ file: model.file, ...model.module.lines(callee) });
-      const route = routeNodes.get(id);
-      if (route) route.evidence.push(at);
-      else {
-        routeNodes.set(id, {
-          id,
-          type: "route",
-          name: `ALL ${path}`,
-          scope: "application",
-          properties: { method: "ALL", path },
-          evidence: [at],
-          verification: "verified"
-        });
-      }
-      for (const s of reachedServers) servedRoutes.push({ routeId: id, server: s, evidence: at });
+      recordServedAt(model, n, reachedServers);
+      serveRoute(path, evidenceOf({ file: model.file, ...model.module.lines(callee) }), reachedServers);
       return void 0;
     });
   }
@@ -25592,7 +27349,9 @@ async function analyzeMcp(ctx) {
       properties: {
         file: s.model.file,
         declaration: here,
-        ...s.handoffs.length > 0 ? { routeHandoffs: s.handoffs } : {}
+        ...s.handoffs.length > 0 ? { routeHandoffs: s.handoffs } : {},
+        ...s.usages.length > 0 ? { bindingUsages: s.usages } : {},
+        ...s.servedAt.length > 0 ? { servedAt: s.servedAt } : {}
       },
       evidence: [evidenceOf(here)],
       verification: "verified"
@@ -25665,16 +27424,16 @@ var mcpParser = {
 };
 
 // ../../packages/parsers/terraform/src/hcl.ts
-var PUNCT2 = /* @__PURE__ */ new Set(["==", "!=", "<=", ">=", "&&", "||", "=>"]);
-var PUNCT1 = new Set("{}[]().,:?=!<>+-*/%&|^~;".split(""));
-var ID_START = /[A-Za-z_]/;
-var ID_PART = /[A-Za-z0-9_-]/;
-var NUMBER3 = /^\d+(?:\.\d+)?(?:[eE][+-]?\d+)?/;
+var PUNCT22 = /* @__PURE__ */ new Set(["==", "!=", "<=", ">=", "&&", "||", "=>"]);
+var PUNCT12 = new Set("{}[]().,:?=!<>+-*/%&|^~;".split(""));
+var ID_START2 = /[A-Za-z_]/;
+var ID_PART2 = /[A-Za-z0-9_-]/;
+var NUMBER4 = /^\d+(?:\.\d+)?(?:[eE][+-]?\d+)?/;
 var HEREDOC = /^<<(-?)([A-Za-z_][A-Za-z0-9_]*)[ \t]*\r?\n/;
-var MAX_DEPTH3 = 200;
+var MAX_DEPTH4 = 200;
 var INDENT = /^[ \t]*/;
 var indentOf = (line2) => INDENT.exec(line2)[0].length;
-var Lexer = class {
+var Lexer2 = class {
   constructor(src) {
     this.src = src;
   }
@@ -25741,26 +27500,26 @@ var Lexer = class {
         }
       }
       if (c >= "0" && c <= "9") {
-        const m = NUMBER3.exec(src.slice(this.pos, this.pos + 64));
+        const m = NUMBER4.exec(src.slice(this.pos, this.pos + 64));
         const text4 = m?.[0] ?? c;
         out.push({ t: "num", v: text4, line: line2, endLine: line2, col });
         this.pos += text4.length;
         continue;
       }
-      if (ID_START.test(c)) {
+      if (ID_START2.test(c)) {
         let end = this.pos + 1;
-        while (end < src.length && ID_PART.test(src[end])) end++;
+        while (end < src.length && ID_PART2.test(src[end])) end++;
         out.push({ t: "id", v: src.slice(this.pos, end), line: line2, endLine: line2, col });
         this.pos = end;
         continue;
       }
       const two = src.slice(this.pos, this.pos + 2);
-      if (PUNCT2.has(two)) {
+      if (PUNCT22.has(two)) {
         out.push({ t: "p", v: two, line: line2, endLine: line2, col });
         this.pos += 2;
         continue;
       }
-      if (PUNCT1.has(c)) {
+      if (PUNCT12.has(c)) {
         if (stopAtBrace) {
           if (c === "{") depth++;
           else if (c === "}") {
@@ -25782,7 +27541,7 @@ var Lexer = class {
   interpDepth = 0;
   /** `${ }` の中を読んで inner に足す。エラーのトークンがあればそれを返す（走査は新しく読んだ分だけ）。 */
   interpolation(inner, line2, col) {
-    if (this.interpDepth >= MAX_DEPTH3) return this.err("\u88DC\u9593\u306E\u5165\u308C\u5B50\u304C\u6DF1\u3059\u304E\u307E\u3059", line2, col);
+    if (this.interpDepth >= MAX_DEPTH4) return this.err("\u88DC\u9593\u306E\u5165\u308C\u5B50\u304C\u6DF1\u3059\u304E\u307E\u3059", line2, col);
     this.interpDepth++;
     const read = this.tokens(true);
     this.interpDepth--;
@@ -25931,7 +27690,7 @@ var HclParseError = class extends Error {
   line;
   atEof;
 };
-var TOP_LEVEL = /* @__PURE__ */ new Set([
+var TOP_LEVEL2 = /* @__PURE__ */ new Set([
   "resource",
   "data",
   "module",
@@ -25945,8 +27704,8 @@ var TOP_LEVEL = /* @__PURE__ */ new Set([
   "removed",
   "check"
 ]);
-var KEYWORDS = /* @__PURE__ */ new Set(["for", "in", "if", "else", "endif", "endfor", "true", "false", "null"]);
-function describeTok(t) {
+var KEYWORDS2 = /* @__PURE__ */ new Set(["for", "in", "if", "else", "endif", "endfor", "true", "false", "null"]);
+function describeTok2(t) {
   switch (t.t) {
     case "id":
       return "\u8B58\u5225\u5B50";
@@ -25964,23 +27723,23 @@ function describeTok(t) {
       return t.v;
   }
 }
-var isP = (t, v) => t?.t === "p" && t.v === v;
-var isTerminator = (t) => t.t === "nl" || t.t === "eof" || t.t === "p" && (t.v === "}" || t.v === "]" || t.v === ")" || t.v === ",");
-function refsOfTokens(tokens) {
+var isP2 = (t, v) => t?.t === "p" && t.v === v;
+var isTerminator2 = (t) => t.t === "nl" || t.t === "eof" || t.t === "p" && (t.v === "}" || t.v === "]" || t.v === ")" || t.v === ",");
+function refsOfTokens2(tokens) {
   const refs = [];
   for (let i = 0; i < tokens.length; i++) {
     const t = tokens[i];
     if (t.t === "str" && t.inner) {
-      refs.push(...refsOfTokens(t.inner));
+      refs.push(...refsOfTokens2(t.inner));
       continue;
     }
-    if (t.t !== "id" || KEYWORDS.has(t.v)) continue;
-    if (isP(tokens[i - 1], ".")) continue;
-    if (isP(tokens[i + 1], "(")) continue;
-    if (!isP(tokens[i + 1], ".")) continue;
+    if (t.t !== "id" || KEYWORDS2.has(t.v)) continue;
+    if (isP2(tokens[i - 1], ".")) continue;
+    if (isP2(tokens[i + 1], "(")) continue;
+    if (!isP2(tokens[i + 1], ".")) continue;
     const parts = [t.v];
     let j = i + 1;
-    while (isP(tokens[j], ".") && tokens[j + 1]?.t === "id") {
+    while (isP2(tokens[j], ".") && tokens[j + 1]?.t === "id") {
       parts.push(tokens[j + 1].v);
       j += 2;
     }
@@ -25989,7 +27748,7 @@ function refsOfTokens(tokens) {
   }
   return refs;
 }
-function isTraversal(toks) {
+function isTraversal2(toks) {
   if (toks[0]?.t !== "id") return false;
   let depth = 0;
   for (const t of toks) {
@@ -26002,7 +27761,7 @@ function isTraversal(toks) {
   }
   return depth === 0;
 }
-var Parser = class {
+var Parser2 = class {
   constructor(toks) {
     this.toks = toks;
   }
@@ -26011,7 +27770,7 @@ var Parser = class {
   depth = 0;
   /** 入れ子に入る。深すぎたら読み進めない。 */
   nest(f) {
-    if (this.depth >= MAX_DEPTH3) this.fail("\u5165\u308C\u5B50\u304C\u6DF1\u3059\u304E\u307E\u3059");
+    if (this.depth >= MAX_DEPTH4) this.fail("\u5165\u308C\u5B50\u304C\u6DF1\u3059\u304E\u307E\u3059");
     this.depth++;
     try {
       return f();
@@ -26039,8 +27798,8 @@ var Parser = class {
   parseItem() {
     const head = this.cur;
     if (head.t === "err") this.fail("");
-    if (head.t !== "id") this.fail(`\u3053\u3053\u306B\u306F\u66F8\u3051\u307E\u305B\u3093: ${describeTok(head)}`);
-    if (isP(this.peek(1), "=")) {
+    if (head.t !== "id") this.fail(`\u3053\u3053\u306B\u306F\u66F8\u3051\u307E\u305B\u3093: ${describeTok2(head)}`);
+    if (isP2(this.peek(1), "=")) {
       this.pos += 2;
       const value2 = this.parseExpr();
       this.expectEnd();
@@ -26057,7 +27816,7 @@ var Parser = class {
       else break;
       this.pos++;
     }
-    if (!isP(this.cur, "{")) this.fail("\u30D6\u30ED\u30C3\u30AF\u306E { \u304C\u3042\u308A\u307E\u305B\u3093");
+    if (!isP2(this.cur, "{")) this.fail("\u30D6\u30ED\u30C3\u30AF\u306E { \u304C\u3042\u308A\u307E\u305B\u3093");
     this.pos++;
     const body = this.nest(() => this.parseBody(head.line));
     return {
@@ -26072,7 +27831,7 @@ var Parser = class {
       this.skipNewlines();
       const t = this.cur;
       if (t.t === "eof") throw new HclParseError("\u9589\u3058\u3066\u3044\u306A\u3044\u30D6\u30ED\u30C3\u30AF\u3067\u3059", openLine, true);
-      if (isP(t, "}")) {
+      if (isP2(t, "}")) {
         this.pos++;
         return { content: { attributes, blocks }, endLine: t.endLine };
       }
@@ -26087,8 +27846,8 @@ var Parser = class {
   /** 属性・ブロックの後ろは改行、`}`（1 行ブロック）、ファイルの終わりのどれか。 */
   expectEnd() {
     const t = this.cur;
-    if (t.t === "nl" || t.t === "eof" || isP(t, "}")) return;
-    this.fail(`\u3053\u3053\u3067\u884C\u304C\u7D42\u308F\u308B\u306F\u305A\u3067\u3059: ${describeTok(t)}`);
+    if (t.t === "nl" || t.t === "eof" || isP2(t, "}")) return;
+    this.fail(`\u3053\u3053\u3067\u884C\u304C\u7D42\u308F\u308B\u306F\u305A\u3067\u3059: ${describeTok2(t)}`);
   }
   // --- 式 ---
   parseExpr() {
@@ -26097,10 +27856,10 @@ var Parser = class {
     if (first.t === "err") this.fail("");
     const next = this.peek(1);
     const isFor = next.t === "id" && next.v === "for";
-    if ((isP(first, "{") || isP(first, "[")) && !isFor) {
+    if ((isP2(first, "{") || isP2(first, "[")) && !isFor) {
       try {
-        const e = this.nest(() => isP(first, "[") ? this.parseArray() : this.parseObject());
-        if (isTerminator(this.cur)) return e;
+        const e = this.nest(() => isP2(first, "[") ? this.parseArray() : this.parseObject());
+        if (isTerminator2(this.cur)) return e;
       } catch (e) {
         if (!(e instanceof HclParseError)) throw e;
       }
@@ -26113,17 +27872,17 @@ var Parser = class {
     this.pos++;
     const items2 = [];
     for (; ; ) {
-      while (this.cur.t === "nl" || isP(this.cur, ",")) this.pos++;
+      while (this.cur.t === "nl" || isP2(this.cur, ",")) this.pos++;
       const t = this.cur;
       if (t.t === "eof") throw new HclParseError("\u9589\u3058\u3066\u3044\u306A\u3044 [ \u304C\u3042\u308A\u307E\u3059", open2.line, true);
-      if (isP(t, "]")) {
+      if (isP2(t, "]")) {
         this.pos++;
         break;
       }
       items2.push(this.parseExpr());
       const n = this.cur;
-      if (!(n.t === "nl" || isP(n, ",") || isP(n, "]")))
-        this.fail(`\u914D\u5217\u306E\u8981\u7D20\u306E\u5F8C\u308D\u306B ${describeTok(n)} \u306F\u66F8\u3051\u307E\u305B\u3093`);
+      if (!(n.t === "nl" || isP2(n, ",") || isP2(n, "]")))
+        this.fail(`\u914D\u5217\u306E\u8981\u7D20\u306E\u5F8C\u308D\u306B ${describeTok2(n)} \u306F\u66F8\u3051\u307E\u305B\u3093`);
     }
     return {
       kind: "array",
@@ -26138,14 +27897,14 @@ var Parser = class {
     const entries = [];
     const keyRefs = [];
     for (; ; ) {
-      while (this.cur.t === "nl" || isP(this.cur, ",")) this.pos++;
+      while (this.cur.t === "nl" || isP2(this.cur, ",")) this.pos++;
       const t = this.cur;
       if (t.t === "eof") throw new HclParseError("\u9589\u3058\u3066\u3044\u306A\u3044 { \u304C\u3042\u308A\u307E\u3059", open2.line, true);
-      if (isP(t, "}")) {
+      if (isP2(t, "}")) {
         this.pos++;
         break;
       }
-      const sep2 = isP(this.peek(1), "=") || isP(this.peek(1), ":");
+      const sep2 = isP2(this.peek(1), "=") || isP2(this.peek(1), ":");
       let key;
       if ((t.t === "id" || t.t === "num") && sep2) {
         key = t.v;
@@ -26153,22 +27912,22 @@ var Parser = class {
       } else if (t.t === "str" && t.sval !== void 0 && sep2) {
         key = t.sval;
         this.pos++;
-      } else if (isP(t, "(")) {
+      } else if (isP2(t, "(")) {
         const from = this.pos;
         this.skipBalanced();
-        keyRefs.push(...refsOfTokens(this.toks.slice(from, this.pos)));
+        keyRefs.push(...refsOfTokens2(this.toks.slice(from, this.pos)));
         key = "";
-        if (!(isP(this.cur, "=") || isP(this.cur, ":")))
+        if (!(isP2(this.cur, "=") || isP2(this.cur, ":")))
           this.fail("\u30AA\u30D6\u30B8\u30A7\u30AF\u30C8\u306E\u30AD\u30FC\u306E\u5F8C\u308D\u306B = \u304C\u3042\u308A\u307E\u305B\u3093");
       } else {
-        return this.fail(`\u30AA\u30D6\u30B8\u30A7\u30AF\u30C8\u306E\u30AD\u30FC\u3068\u3057\u3066\u8AAD\u3081\u307E\u305B\u3093: ${describeTok(t)}`);
+        return this.fail(`\u30AA\u30D6\u30B8\u30A7\u30AF\u30C8\u306E\u30AD\u30FC\u3068\u3057\u3066\u8AAD\u3081\u307E\u305B\u3093: ${describeTok2(t)}`);
       }
       this.pos++;
       const value2 = this.parseExpr();
       entries.push({ key, value: value2, span: { startLine: t.line, endLine: value2.span.endLine } });
       const n = this.cur;
-      if (!(n.t === "nl" || isP(n, ",") || isP(n, "}")))
-        this.fail(`\u30AA\u30D6\u30B8\u30A7\u30AF\u30C8\u306E\u5024\u306E\u5F8C\u308D\u306B ${describeTok(n)} \u306F\u66F8\u3051\u307E\u305B\u3093`);
+      if (!(n.t === "nl" || isP2(n, ",") || isP2(n, "}")))
+        this.fail(`\u30AA\u30D6\u30B8\u30A7\u30AF\u30C8\u306E\u5024\u306E\u5F8C\u308D\u306B ${describeTok2(n)} \u306F\u66F8\u3051\u307E\u305B\u3093`);
     }
     return {
       kind: "object",
@@ -26200,7 +27959,7 @@ var Parser = class {
         if (open2.length > 0) this.fail("\u62EC\u5F27\u304C\u9589\u3058\u3066\u3044\u307E\u305B\u3093");
         break;
       }
-      if (open2.length === 0 && isTerminator(t)) break;
+      if (open2.length === 0 && isTerminator2(t)) break;
       if (t.t === "p") {
         if (t.v === "(" || t.v === "[" || t.v === "{") open2.push(t.v);
         else if (t.v === ")" || t.v === "]" || t.v === "}") open2.pop();
@@ -26213,7 +27972,7 @@ var Parser = class {
     const lastTok = toks[toks.length - 1];
     if (!firstTok || !lastTok) return this.fail("\u5F0F\u304C\u3042\u308A\u307E\u305B\u3093");
     const span = { startLine: firstTok.line, endLine: lastTok.endLine };
-    const refs = refsOfTokens(toks);
+    const refs = refsOfTokens2(toks);
     if (toks.length === 1) {
       if (firstTok.t === "str") return { kind: "string", value: firstTok.sval, span, refs };
       if (firstTok.t === "num") return { kind: "number", value: Number(firstTok.v), span, refs };
@@ -26222,22 +27981,22 @@ var Parser = class {
       }
       if (firstTok.t === "id" && firstTok.v === "null") return { kind: "null", span, refs };
     }
-    return { kind: isTraversal(toks) && refs.length === 1 ? "ref" : "expr", span, refs };
+    return { kind: isTraversal2(toks) && refs.length === 1 ? "ref" : "expr", span, refs };
   }
 };
-function resync(parser, startIndex) {
+function resync2(parser, startIndex) {
   parser.pos = startIndex + 1;
   while (!parser.atEof()) {
     const t = parser.cur;
-    if (t.t === "id" && t.col === 1 && TOP_LEVEL.has(t.v) && parser.toks[parser.pos - 1]?.t === "nl") break;
+    if (t.t === "id" && t.col === 1 && TOP_LEVEL2.has(t.v) && parser.toks[parser.pos - 1]?.t === "nl") break;
     parser.pos++;
   }
 }
 function parseHcl(text4) {
-  const lexer = new Lexer(text4);
+  const lexer = new Lexer2(text4);
   const toks = lexer.tokens(false);
   toks.push({ t: "eof", v: "", line: lexer.line, endLine: lexer.line, col: lexer.pos - lexer.lineStart + 1 });
-  const parser = new Parser(toks);
+  const parser = new Parser2(toks);
   const blocks = [];
   const errors = [];
   for (; ; ) {
@@ -26254,11 +28013,11 @@ function parseHcl(text4) {
     } catch (e) {
       if (!(e instanceof HclParseError)) {
         errors.push({ line: startLine, message: "\u8AAD\u3081\u307E\u305B\u3093\u3067\u3057\u305F" });
-        resync(parser, startIndex);
+        resync2(parser, startIndex);
         continue;
       }
       errors.push({ line: e.atEof ? startLine : e.line, message: e.message });
-      resync(parser, startIndex);
+      resync2(parser, startIndex);
     }
   }
   return { blocks, errors };
@@ -26636,22 +28395,22 @@ function bindingKindOf(typeOrBlock) {
 }
 
 // ../../packages/parsers/terraform/src/terraformParser.ts
-var PARSER_ID4 = "terraform";
+var PARSER_ID5 = "terraform";
 var TERRAFORM_PARSER_VERSION = "0.2.0";
 var isTerraformFile = (path) => path.endsWith(".tf") && !isIgnoredPath(path) && !path.split("/").slice(0, -1).includes(".terraform");
-var compare = (a, b) => a < b ? -1 : a > b ? 1 : 0;
+var compare2 = (a, b) => a < b ? -1 : a > b ? 1 : 0;
 var dirOf3 = (file2) => {
   const i = file2.lastIndexOf("/");
   return i < 0 ? "." : file2.slice(0, i);
 };
 var NON_RESOURCE_ROOTS = /* @__PURE__ */ new Set(["var", "each", "count", "path", "terraform", "self"]);
-var unique = (list2) => [...new Set(list2)];
+var unique2 = (list2) => [...new Set(list2)];
 function allAttributes(block) {
   return [...block.attributes, ...block.blocks.flatMap(allAttributes)];
 }
-var sameSpan = (a, b) => a.file === b.file && a.startLine === b.startLine && a.endLine === b.endLine;
-var cleanSource = (s) => s.replace(/[?#].*$/s, "").replace(/\/\/[^/@\s]*@/g, "//");
-var Analysis = class {
+var sameSpan2 = (a, b) => a.file === b.file && a.startLine === b.startLine && a.endLine === b.endLine;
+var cleanSource2 = (s) => s.replace(/[?#].*$/s, "").replace(/\/\/[^/@\s]*@/g, "//");
+var Analysis2 = class {
   constructor(ctx) {
     this.ctx = ctx;
   }
@@ -26672,7 +28431,7 @@ var Analysis = class {
       level,
       code: code2,
       message: `${file2}: ${message}`,
-      parserId: PARSER_ID4,
+      parserId: PARSER_ID5,
       file: file2,
       ...line2 !== void 0 ? { line: line2 } : {}
     });
@@ -26680,7 +28439,7 @@ var Analysis = class {
   /** 一部が読めなかった・要素にできなかった: 診断（warning/error）と unverified に残す。 */
   gap(level, code2, file2, message, line2) {
     this.diag(level, code2, file2, message, line2);
-    this.unverified.push({ parserId: PARSER_ID4, file: file2, reason: message });
+    this.unverified.push({ parserId: PARSER_ID5, file: file2, reason: message });
   }
   evidence(file2, span) {
     return staticEvidence(this.ctx, file2, span.startLine, span.endLine);
@@ -26774,12 +28533,12 @@ var Analysis = class {
   }
   /** 要素にできなかった型の報告。未知のプロバイダは読めなかったこと（unverified）、AWS/Cloudflare の表にない型は読み飛ばし（info）。 */
   reportUnmapped() {
-    const list2 = (m) => [...m.entries()].sort(([a], [b]) => compare(a, b)).map(([type, n]) => `${type} (${n})`).join(", ");
-    for (const file2 of [...this.unknownProvider.keys()].sort(compare)) {
+    const list2 = (m) => [...m.entries()].sort(([a], [b]) => compare2(a, b)).map(([type, n]) => `${type} (${n})`).join(", ");
+    for (const file2 of [...this.unknownProvider.keys()].sort(compare2)) {
       const m = this.unknownProvider.get(file2);
       this.gap("warning", "resource-provider-unsupported", file2, `resource types not supported: ${list2(m)}`);
     }
-    for (const file2 of [...this.unmapped.keys()].sort(compare)) {
+    for (const file2 of [...this.unmapped.keys()].sort(compare2)) {
       const m = this.unmapped.get(file2);
       this.diag(
         "info",
@@ -26814,7 +28573,7 @@ var Analysis = class {
     return `${decl.dir}/${decl.mode === "data" ? "data." : ""}${decl.label}`;
   }
   buildNodes() {
-    const all = [...this.decls.values()].flatMap((m) => [...m.values()]).sort(byLocation);
+    const all = [...this.decls.values()].flatMap((m) => [...m.values()]).sort(byLocation2);
     const targets = all.filter(
       (d) => d.mode === "module" || d.def !== void 0 && d.def.role !== "worker-version"
     );
@@ -26865,7 +28624,7 @@ var Analysis = class {
     const properties = {};
     if (d.mode === "module") {
       const source = literalOf(d.block, "source");
-      if (typeof source === "string") properties.source = cleanSource(source);
+      if (typeof source === "string") properties.source = cleanSource2(source);
       const version2 = literalOf(d.block, "version");
       if (typeof version2 === "string") properties.version = version2;
     } else {
@@ -26937,7 +28696,7 @@ var Analysis = class {
   }
   /** ノードになった宣言だけ。 */
   nodesOf(located) {
-    return unique(located.map((l) => l.decl).filter((d) => d.id !== void 0 && this.nodes.has(d.id)));
+    return unique2(located.map((l) => l.decl).filter((d) => d.id !== void 0 && this.nodes.has(d.id)));
   }
   addEdge(source, relation, target, file2, span, options = {}) {
     if (source === target) return;
@@ -26945,7 +28704,7 @@ var Analysis = class {
     const evidence = this.evidence(file2, span);
     const prev = this.edges.get(id);
     if (prev) {
-      if (!prev.evidence.some((e) => sameSpan(e, evidence))) prev.evidence.push(evidence);
+      if (!prev.evidence.some((e) => sameSpan2(e, evidence))) prev.evidence.push(evidence);
       if (!options.inferred) prev.verification = "verified";
       if (options.binding !== void 0) {
         const properties = prev.properties ?? {};
@@ -26970,7 +28729,7 @@ var Analysis = class {
     return a.conditional || (b?.conditional ?? false);
   }
   buildEdges() {
-    const all = [...this.decls.values()].flatMap((m) => [...m.values()]).sort(byLocation);
+    const all = [...this.decls.values()].flatMap((m) => [...m.values()]).sort(byLocation2);
     for (const d of all) {
       if (d.glue) this.glueEdges(d, d.glue);
       else if (d.def?.role === "worker-version") this.workerVersionEdges(d);
@@ -26989,7 +28748,7 @@ var Analysis = class {
       for (const ref of attr.value.refs) {
         if (consumed.has(ref)) continue;
         for (const target of this.nodesOf(this.resolve(ref, d.dir))) {
-          if (isResourceGroup(target)) continue;
+          if (isResourceGroup2(target)) continue;
           this.addEdge(
             d.id,
             "DEPENDS_ON",
@@ -27153,8 +28912,8 @@ var Analysis = class {
       const vaults = this.nodesOf(this.resolveAll(vaultRefs, d.dir)).filter(
         (v) => v.def?.kind === "key-vault"
       );
-      for (const t of unique([...this.nodesOf(located), ...vaults])) {
-        if (isResourceGroup(t)) continue;
+      for (const t of unique2([...this.nodesOf(located), ...vaults])) {
+        if (isResourceGroup2(t)) continue;
         this.addEdge(d.id, "BINDS_TO", t.id, d.file, span, {
           inferred: this.inferred(d, t),
           ...binding !== void 0 && binding !== "" ? { binding } : {}
@@ -27190,7 +28949,7 @@ var Analysis = class {
   glueEdges(d, rule) {
     const sources = this.nodesOf(this.resolveAll(this.select(d.block, rule.source), d.dir));
     const targets = this.nodesOf(this.resolveAll(this.select(d.block, rule.target), d.dir)).filter(
-      (t) => !isResourceGroup(t)
+      (t) => !isResourceGroup2(t)
     );
     const sourceIds = sources.map((s) => s.id);
     if (sources.length === 0 && rule.literalSource && "attrs" in rule.source) {
@@ -27218,7 +28977,7 @@ var Analysis = class {
     }
   }
 };
-var isResourceGroup = (d) => d.def?.namespace === "azure" && d.def.kind === "resource-group";
+var isResourceGroup2 = (d) => d.def?.namespace === "azure" && d.def.kind === "resource-group";
 var KEY_VAULT_CHILDREN = /* @__PURE__ */ new Set([
   "azurerm_key_vault_secret",
   "azurerm_key_vault_key",
@@ -27230,23 +28989,23 @@ var AZURE_STORAGE_ATTRS = /* @__PURE__ */ new Set([
   "storage_account_id",
   "storage_container_endpoint"
 ]);
-var byLocation = (a, b) => compare(a.file, b.file) || a.block.span.startLine - b.block.span.startLine;
+var byLocation2 = (a, b) => compare2(a.file, b.file) || a.block.span.startLine - b.block.span.startLine;
 var terraformParser = {
-  id: PARSER_ID4,
+  id: PARSER_ID5,
   version: TERRAFORM_PARSER_VERSION,
   async detect(ctx) {
     return (await ctx.fs.listFiles()).some(isTerraformFile);
   },
   async parse(ctx) {
-    const files = (await ctx.fs.listFiles()).filter(isTerraformFile).sort(compare);
-    const a = new Analysis(ctx);
+    const files = (await ctx.fs.listFiles()).filter(isTerraformFile).sort(compare2);
+    const a = new Analysis2(ctx);
     await a.load(files);
     a.buildNodes();
     a.buildEdges();
     a.reportUnmapped();
     return {
-      nodes: [...a.nodes.values()].sort((x, y) => compare(x.id, y.id)),
-      edges: [...a.edges.values()].sort((x, y) => compare(x.id, y.id)),
+      nodes: [...a.nodes.values()].sort((x, y) => compare2(x.id, y.id)),
+      edges: [...a.edges.values()].sort((x, y) => compare2(x.id, y.id)),
       diagnostics: a.diagnostics,
       unverified: a.unverified
     };
@@ -27741,8 +29500,8 @@ var viteReactParser = {
     );
     const key = (c) => `${c.file}\0${c.startLine}\0${c.method}\0${c.path}`;
     for (const f of frontends) {
-      const unique2 = new Map(f.calls.map((c) => [key(c), c]));
-      f.node.properties.apiCalls = [...unique2.values()].sort(
+      const unique3 = new Map(f.calls.map((c) => [key(c), c]));
+      f.node.properties.apiCalls = [...unique3.values()].sort(
         (a, b) => (a.file < b.file ? -1 : a.file > b.file ? 1 : 0) || a.startLine - b.startLine || (a.method + a.path < b.method + b.path ? -1 : 1)
       );
     }
@@ -27753,30 +29512,30 @@ var viteReactParser = {
 
 // ../../packages/parsers/worker-fetch/src/extract.ts
 var HANDLER_NAMES = /* @__PURE__ */ new Set(["fetch", "scheduled", "queue", "email", "tail", "trace", "tailStream"]);
-var MAX_DEPTH4 = 4;
-var isFunction2 = (n) => n.type === "ArrowFunctionExpression" || n.type === "FunctionExpression" || n.type === "FunctionDeclaration";
-var identName3 = (n) => n?.type === "Identifier" ? n.name : void 0;
+var MAX_DEPTH5 = 4;
+var isFunction3 = (n) => n.type === "ArrowFunctionExpression" || n.type === "FunctionExpression" || n.type === "FunctionDeclaration";
+var identName4 = (n) => n?.type === "Identifier" ? n.name : void 0;
 function keyName2(key, computed) {
   if (!key || computed === true) return void 0;
-  return identName3(key) ?? (key.type === "Literal" && typeof key.value === "string" ? key.value : void 0);
+  return identName4(key) ?? (key.type === "Literal" && typeof key.value === "string" ? key.value : void 0);
 }
 function isAppFetch(value2) {
-  const member = (n) => n.type === "MemberExpression" && n.computed !== true && identName3(n.property) === "fetch";
+  const member = (n) => n.type === "MemberExpression" && n.computed !== true && identName4(n.property) === "fetch";
   if (member(value2)) return true;
   if (value2.type !== "CallExpression") return false;
   const callee = unwrapExpression(value2.callee);
-  return callee.type === "MemberExpression" && identName3(callee.property) === "bind" && member(unwrapExpression(callee.object));
+  return callee.type === "MemberExpression" && identName4(callee.property) === "bind" && member(unwrapExpression(callee.object));
 }
 function delegatesToApp(fn) {
   const first = fn.params?.[0];
-  const request = identName3(first);
+  const request = identName4(first);
   if (!request) return false;
   let found = false;
   walk2(fn.body, (n) => {
     if (found) return false;
     if (n.type !== "CallExpression") return;
     const callee = unwrapExpression(n.callee);
-    if (callee.type === "MemberExpression" && callee.computed !== true && identName3(callee.property) === "fetch" && identName3(unwrapExpression(callee.object)) !== void 0 && n.arguments.some((a) => identName3(unwrapExpression(a)) === request)) {
+    if (callee.type === "MemberExpression" && callee.computed !== true && identName4(callee.property) === "fetch" && identName4(unwrapExpression(callee.object)) !== void 0 && n.arguments.some((a) => identName4(unwrapExpression(a)) === request)) {
       found = true;
     }
   });
@@ -27789,11 +29548,11 @@ function extractModule(module) {
   for (const stmt of module.program.body) {
     const decl = (stmt.type === "ExportNamedDeclaration" || stmt.type === "ExportDefaultDeclaration") && stmt.declaration ? stmt.declaration : stmt;
     if ((decl.type === "FunctionDeclaration" || decl.type === "ClassDeclaration") && decl.id) {
-      topLevel.set(identName3(decl.id), decl);
+      topLevel.set(identName4(decl.id), decl);
     }
     if (decl.type === "VariableDeclaration") {
       for (const d of decl.declarations) {
-        const name2 = identName3(d.id);
+        const name2 = identName4(d.id);
         if (!name2 || !d.init) continue;
         const init = unwrapExpression(d.init);
         topLevel.set(name2, init);
@@ -27811,7 +29570,7 @@ function extractModule(module) {
   }
   const declaration = module.lines(exportStmt);
   let target = unwrapExpression(exportStmt.declaration);
-  const viaName = identName3(target);
+  const viaName = identName4(target);
   if (viaName && !topLevel.has(viaName)) return { ok: false };
   if (viaName) target = topLevel.get(viaName) ?? target;
   const isClass = target.type === "ClassDeclaration" || target.type === "ClassExpression";
@@ -27837,8 +29596,8 @@ function extractModule(module) {
       if (name2 !== "fetch") continue;
       const value2 = unwrapExpression(prop.value);
       if (isAppFetch(value2)) return { ok: false };
-      const fn = isFunction2(value2) ? value2 : topLevel.get(identName3(value2) ?? "");
-      if (fn && isFunction2(fn)) fetchFn = fn;
+      const fn = isFunction3(value2) ? value2 : topLevel.get(identName4(value2) ?? "");
+      if (fn && isFunction3(fn)) fetchFn = fn;
       else fetchNotFollowed = prop;
     }
   } else {
@@ -27858,7 +29617,7 @@ function extractModule(module) {
   const resolveString = (n) => {
     if (!n) return void 0;
     const u = unwrapExpression(n);
-    const name2 = identName3(u);
+    const name2 = identName4(u);
     return name2 ? constStrings.get(name2) : stringValue(u);
   };
   const addPath = (value2, match, node2, what) => {
@@ -27874,12 +29633,12 @@ function extractModule(module) {
   };
   const visited = /* @__PURE__ */ new Set();
   const analyze2 = (fn, paramIndex, depth) => {
-    if (visited.has(fn) || depth > MAX_DEPTH4) return;
+    if (visited.has(fn) || depth > MAX_DEPTH5) return;
     visited.add(fn);
     const params = fn.params ?? [];
     const first = params[paramIndex];
     if (!first) return;
-    const request = identName3(first);
+    const request = identName4(first);
     if (!request) {
       gap(
         "request-untraceable",
@@ -27892,7 +29651,7 @@ function extractModule(module) {
     const isRequestMember = (n, prop) => {
       if (!n) return false;
       const m = unwrapExpression(n);
-      return m.type === "MemberExpression" && m.computed !== true && identName3(m.property) === prop && identName3(unwrapExpression(m.object)) === request;
+      return m.type === "MemberExpression" && m.computed !== true && identName4(m.property) === prop && identName4(unwrapExpression(m.object)) === request;
     };
     const urlVars = /* @__PURE__ */ new Set();
     const pathVars = /* @__PURE__ */ new Set();
@@ -27900,18 +29659,18 @@ function extractModule(module) {
       if (!n) return false;
       const u = unwrapExpression(n);
       if (u.type === "NewExpression") {
-        return identName3(u.callee) === "URL" && isRequestMember(u.arguments[0], "url");
+        return identName4(u.callee) === "URL" && isRequestMember(u.arguments[0], "url");
       }
-      const name2 = identName3(u);
+      const name2 = identName4(u);
       return name2 !== void 0 && urlVars.has(name2);
     };
     const isPath = (n) => {
       if (!n) return false;
       const u = unwrapExpression(n);
       if (u.type === "MemberExpression") {
-        return u.computed !== true && identName3(u.property) === "pathname" && isUrl(u.object);
+        return u.computed !== true && identName4(u.property) === "pathname" && isUrl(u.object);
       }
-      const name2 = identName3(u);
+      const name2 = identName4(u);
       return name2 !== void 0 && pathVars.has(name2);
     };
     walk2(body, (n) => {
@@ -27924,7 +29683,7 @@ function extractModule(module) {
       } else if (id.type === "ObjectPattern" && isUrl(init)) {
         for (const p of id.properties) {
           if (p.type === "Property" && keyName2(p.key, p.computed) === "pathname") {
-            const local = identName3(p.value);
+            const local = identName4(p.value);
             if (local) pathVars.add(local);
           }
         }
@@ -27941,7 +29700,7 @@ function extractModule(module) {
       }
       if (u.type === "CallExpression") {
         const callee = unwrapExpression(u.callee);
-        if (callee.type === "MemberExpression" && identName3(callee.property) === "includes" && isRequestMember(u.arguments[0], "method")) {
+        if (callee.type === "MemberExpression" && identName4(callee.property) === "includes" && isRequestMember(u.arguments[0], "method")) {
           const list2 = literalList(callee.object);
           return list2?.map((m) => m.toUpperCase());
         }
@@ -27987,7 +29746,7 @@ function extractModule(module) {
       } else if (n.type === "CallExpression") {
         const callee = unwrapExpression(n.callee);
         const args = n.arguments;
-        const calleeName = callee.type === "MemberExpression" ? identName3(callee.property) : void 0;
+        const calleeName = callee.type === "MemberExpression" ? identName4(callee.property) : void 0;
         if (callee.type === "MemberExpression" && isPath(callee.object)) {
           if (calleeName === "startsWith")
             addPath(resolveString(args[0]), "prefix", n, "pathname.startsWith()");
@@ -28007,10 +29766,10 @@ function extractModule(module) {
               n
             );
         }
-        const calleeFn = topLevel.get(identName3(callee) ?? "");
-        if (calleeFn && isFunction2(calleeFn)) {
+        const calleeFn = topLevel.get(identName4(callee) ?? "");
+        if (calleeFn && isFunction3(calleeFn)) {
           args.forEach((a, i) => {
-            if (identName3(unwrapExpression(a)) === request) analyze2(calleeFn, i, depth + 1);
+            if (identName4(unwrapExpression(a)) === request) analyze2(calleeFn, i, depth + 1);
           });
         }
       }
@@ -28297,6 +30056,17 @@ var PARSERS = [
     }
   },
   {
+    id: bicepParser.id,
+    version: bicepParser.version,
+    analysisKey: "azure",
+    requires: [],
+    description: "Bicep (*.bicep): resources and modules of Azure, and the references between them (modules are not expanded)",
+    parser: bicepParser,
+    async targets(_fs, files) {
+      return files.filter(isBicepFile);
+    }
+  },
+  {
     id: cloudflareParser.id,
     version: cloudflareParser.version,
     analysisKey: "cloudflare",
@@ -28406,6 +30176,14 @@ var LINKERS = [
     requires: ["hono", "cloudflare", "typescript"],
     description: "Connects Hono handlers to the Cloudflare resources they use through c.env bindings",
     linker: honoBindingLinker
+  },
+  {
+    id: mcpBindingLinker.id,
+    // The linker ships in the MCP package: bump MCP_PARSER_VERSION when it changes.
+    version: MCP_PARSER_VERSION,
+    requires: ["mcp", "cloudflare", "typescript"],
+    description: "Connects an MCP server to the Worker whose main module leads to it and to the Cloudflare resources its code uses through env bindings",
+    linker: mcpBindingLinker
   },
   {
     id: mcpRouteLinker.id,
@@ -28575,7 +30353,7 @@ function splitKey(text4, no) {
   if (after !== "" && !/^\s/.test(after) && text4[0] !== "'" && text4[0] !== '"') after = ` ${after}`;
   return { key, rest: after.trim() };
 }
-var MAX_DEPTH5 = 32;
+var MAX_DEPTH6 = 32;
 var Reader = class {
   constructor(lines) {
     this.lines = lines;
@@ -28599,7 +30377,7 @@ var Reader = class {
   }
   /** Runs a nested block, refusing to go deeper than MAX_DEPTH (so hostile input cannot overflow the stack). */
   #nested(no, read) {
-    if (++this.#depth > MAX_DEPTH5) throw new YamlSyntaxError(`nesting is deeper than ${MAX_DEPTH5} levels`, no);
+    if (++this.#depth > MAX_DEPTH6) throw new YamlSyntaxError(`nesting is deeper than ${MAX_DEPTH6} levels`, no);
     try {
       return read();
     } finally {
@@ -28759,7 +30537,7 @@ var FILENAME_TYPES = [
   [/^vite\.config\.(?:ts|js|mjs|mts)$/, "vite.config"],
   [/^kustomization\.ya?ml$/, "kustomization.yaml"]
 ];
-var NO_HINT_FILE = /(?:\.tfvars|(?:^|\/)\.terraform\.lock\.hcl|(?:^|\/)\.tflint\.hcl)$/;
+var NO_HINT_FILE = /(?:\.tfvars|\.bicepparam|(?:^|\/)\.terraform\.lock\.hcl|(?:^|\/)\.tflint\.hcl|(?:^|\/)bicepconfig\.json)$/;
 var IMPORT = /(?:\bfrom\s*|\bimport\s*\(?\s*|\brequire\s*\(\s*)["']([^"'\n]+)["']/g;
 function packageOf(specifier) {
   if (specifier.startsWith(".") || specifier.startsWith("/") || specifier.startsWith("node:"))
@@ -28769,7 +30547,7 @@ function packageOf(specifier) {
   return NPM_NAME.test(name2) ? name2 : void 0;
 }
 var NPM_NAME = /^(?:@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*$/i;
-var compare2 = (a, b) => a < b ? -1 : a > b ? 1 : 0;
+var compare3 = (a, b) => a < b ? -1 : a > b ? 1 : 0;
 async function technologyHints(path, read, ignorePackages = /* @__PURE__ */ new Set()) {
   if (NO_HINT_FILE.test(path)) return [];
   const base = path.slice(path.lastIndexOf("/") + 1);
@@ -28793,7 +30571,7 @@ async function technologyHints(path, read, ignorePackages = /* @__PURE__ */ new 
     }
     return [
       ...named,
-      ...[...packages].sort(compare2).slice(0, MAX_PACKAGE_HINTS).map((value2) => ({ kind: "package", value: value2 }))
+      ...[...packages].sort(compare3).slice(0, MAX_PACKAGE_HINTS).map((value2) => ({ kind: "package", value: value2 }))
     ];
   }
   const dot = base.lastIndexOf(".");
@@ -28837,7 +30615,7 @@ async function computeCoverage(input3) {
   const unsupported = [];
   const failed = [];
   let other = 0;
-  for (const file2 of [...input3.files].sort(compare2)) {
+  for (const file2 of [...input3.files].sort(compare3)) {
     const claimants = input3.entries.filter((e) => e.targets.includes(file2));
     const active = claimants.find(
       (e) => e.enabled && runOf.get(e.id) !== void 0 && runOf.get(e.id)?.status !== "not-detected"
@@ -29481,11 +31259,11 @@ function isCandidate(u) {
   return u.hints.some((h) => h.kind === "parser" || h.kind === "package" && IAC_PACKAGE.test(h.value));
 }
 var tier = (path) => path.endsWith(".tf") ? 0 : SCRIPT.test(path) ? 1 : 2;
-var compare3 = (a, b) => a < b ? -1 : a > b ? 1 : 0;
+var compare4 = (a, b) => a < b ? -1 : a > b ? 1 : 0;
 async function selectInferenceFiles(coverage, read, graph) {
   const covered = filesWithVerifiedNodes(graph);
   const all = [...new Set(coverage.unsupported.filter(isCandidate).map((u) => u.file))];
-  const candidates = all.filter((f) => !covered.has(f)).sort((a, b) => tier(a) - tier(b) || compare3(a, b));
+  const candidates = all.filter((f) => !covered.has(f)).sort((a, b) => tier(a) - tier(b) || compare4(a, b));
   const staticCovered = all.length - candidates.length;
   const files = [];
   let skipped = 0;
