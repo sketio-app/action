@@ -14,11 +14,17 @@ inputs:
     description: Base URL of Sketio Arch, e.g. https://arch.sketio.app. Required by sync and diff. Its origin is the OIDC audience.
     required: false
     default: ""
+  diagram-view:
+    description: "Which view the mermaid output draws: infrastructure, application, deployment or overview."
+    required: false
+    default: infrastructure
 outputs:
   artifact-path:
     description: Path of the Architecture Artifact JSON file.
   status:
     description: "Result of the analysis: ok, partial, empty, nothing-detected or failed."
+  mermaid:
+    description: "The diagram of the view diagram-view names, as Mermaid text (several lines, without the code fence). Made on the runner in every mode, so analyze and fork pull requests get it too. Empty when the analysis has no graph. Drawn as the Sketio Arch screen draws it (official service names, stacks, regions and VPCs as subgraphs, binding labels, inferred relations dotted), in English. Writing it somewhere (a README, a wiki) is up to a later step of your workflow: the Action writes no file and makes no commit. Pass it to a script through env, not by putting the expression inside the script."
   outcome:
     description: "sync and diff: what Arch did with it (created, duplicate or recorded)."
   snapshot-id:

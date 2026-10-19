@@ -986,13 +986,13 @@ var require_Collection = __commonJS({
 var require_stringifyComment = __commonJS({
   "../../node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/dist/stringify/stringifyComment.js"(exports) {
     "use strict";
-    var stringifyComment = (str2) => str2.replace(/^(?!$)(?: $)?/gm, "#");
+    var stringifyComment = (str4) => str4.replace(/^(?!$)(?: $)?/gm, "#");
     function indentComment(comment, indent) {
       if (/^\n+$/.test(comment))
         return comment.substring(1);
       return indent ? comment.replace(/^(?! *$)/gm, indent) : comment;
     }
-    var lineComment = (str2, indent, comment) => str2.endsWith("\n") ? indentComment(comment, indent) : comment.includes("\n") ? "\n" + indentComment(comment, indent) : (str2.endsWith(" ") ? "" : " ") + comment;
+    var lineComment = (str4, indent, comment) => str4.endsWith("\n") ? indentComment(comment, indent) : comment.includes("\n") ? "\n" + indentComment(comment, indent) : (str4.endsWith(" ") ? "" : " ") + comment;
     exports.indentComment = indentComment;
     exports.lineComment = lineComment;
     exports.stringifyComment = stringifyComment;
@@ -1006,14 +1006,14 @@ var require_foldFlowLines = __commonJS({
     var FOLD_FLOW = "flow";
     var FOLD_BLOCK = "block";
     var FOLD_QUOTED = "quoted";
-    function foldFlowLines(text5, indent, mode = "flow", { indentAtStart, lineWidth = 80, minContentWidth = 20, onFold, onOverflow } = {}) {
+    function foldFlowLines(text6, indent, mode = "flow", { indentAtStart, lineWidth = 80, minContentWidth = 20, onFold, onOverflow } = {}) {
       if (!lineWidth || lineWidth < 0)
-        return text5;
+        return text6;
       if (lineWidth < minContentWidth)
         minContentWidth = 0;
       const endStep = Math.max(1 + minContentWidth, 1 + lineWidth - indent.length);
-      if (text5.length <= endStep)
-        return text5;
+      if (text6.length <= endStep)
+        return text6;
       const folds = [];
       const escapedFolds = {};
       let end = lineWidth - indent.length;
@@ -1030,14 +1030,14 @@ var require_foldFlowLines = __commonJS({
       let escStart = -1;
       let escEnd = -1;
       if (mode === FOLD_BLOCK) {
-        i = consumeMoreIndentedLines(text5, i, indent.length);
+        i = consumeMoreIndentedLines(text6, i, indent.length);
         if (i !== -1)
           end = i + endStep;
       }
-      for (let ch; ch = text5[i += 1]; ) {
+      for (let ch; ch = text6[i += 1]; ) {
         if (mode === FOLD_QUOTED && ch === "\\") {
           escStart = i;
-          switch (text5[i + 1]) {
+          switch (text6[i + 1]) {
             case "x":
               i += 3;
               break;
@@ -1054,12 +1054,12 @@ var require_foldFlowLines = __commonJS({
         }
         if (ch === "\n") {
           if (mode === FOLD_BLOCK)
-            i = consumeMoreIndentedLines(text5, i, indent.length);
+            i = consumeMoreIndentedLines(text6, i, indent.length);
           end = i + indent.length + endStep;
           split = void 0;
         } else {
           if (ch === " " && prev && prev !== " " && prev !== "\n" && prev !== "	") {
-            const next = text5[i + 1];
+            const next = text6[i + 1];
             if (next && next !== " " && next !== "\n" && next !== "	")
               split = i;
           }
@@ -1071,12 +1071,12 @@ var require_foldFlowLines = __commonJS({
             } else if (mode === FOLD_QUOTED) {
               while (prev === " " || prev === "	") {
                 prev = ch;
-                ch = text5[i += 1];
+                ch = text6[i += 1];
                 overflow = true;
               }
               const j = i > escEnd + 1 ? i - 2 : escStart - 1;
               if (escapedFolds[j])
-                return text5;
+                return text6;
               folds.push(j);
               escapedFolds[j] = true;
               end = j + endStep;
@@ -1091,39 +1091,39 @@ var require_foldFlowLines = __commonJS({
       if (overflow && onOverflow)
         onOverflow();
       if (folds.length === 0)
-        return text5;
+        return text6;
       if (onFold)
         onFold();
-      let res = text5.slice(0, folds[0]);
+      let res = text6.slice(0, folds[0]);
       for (let i2 = 0; i2 < folds.length; ++i2) {
         const fold = folds[i2];
-        const end2 = folds[i2 + 1] || text5.length;
+        const end2 = folds[i2 + 1] || text6.length;
         if (fold === 0)
           res = `
-${indent}${text5.slice(0, end2)}`;
+${indent}${text6.slice(0, end2)}`;
         else {
           if (mode === FOLD_QUOTED && escapedFolds[fold])
-            res += `${text5[fold]}\\`;
+            res += `${text6[fold]}\\`;
           res += `
-${indent}${text5.slice(fold + 1, end2)}`;
+${indent}${text6.slice(fold + 1, end2)}`;
         }
       }
       return res;
     }
-    function consumeMoreIndentedLines(text5, i, indent) {
+    function consumeMoreIndentedLines(text6, i, indent) {
       let end = i;
       let start = i + 1;
-      let ch = text5[start];
+      let ch = text6[start];
       while (ch === " " || ch === "	") {
         if (i < start + indent) {
-          ch = text5[++i];
+          ch = text6[++i];
         } else {
           do {
-            ch = text5[++i];
+            ch = text6[++i];
           } while (ch && ch !== "\n");
           end = i;
           start = i + 1;
-          ch = text5[start];
+          ch = text6[start];
         }
       }
       return end;
@@ -1146,16 +1146,16 @@ var require_stringifyString = __commonJS({
       lineWidth: ctx.options.lineWidth,
       minContentWidth: ctx.options.minContentWidth
     });
-    var containsDocumentMarker = (str2) => /^(%|---|\.\.\.)/m.test(str2);
-    function lineLengthOverLimit(str2, lineWidth, indentLength) {
+    var containsDocumentMarker = (str4) => /^(%|---|\.\.\.)/m.test(str4);
+    function lineLengthOverLimit(str4, lineWidth, indentLength) {
       if (!lineWidth || lineWidth < 0)
         return false;
       const limit = lineWidth - indentLength;
-      const strLen = str2.length;
+      const strLen = str4.length;
       if (strLen <= limit)
         return false;
       for (let i = 0, start = 0; i < strLen; ++i) {
-        if (str2[i] === "\n") {
+        if (str4[i] === "\n") {
           if (i - start > limit)
             return true;
           start = i + 1;
@@ -1172,11 +1172,11 @@ var require_stringifyString = __commonJS({
       const { implicitKey } = ctx;
       const minMultiLineLength = ctx.options.doubleQuotedMinMultiLineLength;
       const indent = ctx.indent || (containsDocumentMarker(value2) ? "  " : "");
-      let str2 = "";
+      let str4 = "";
       let start = 0;
       for (let i = 0, ch = json3[i]; ch; ch = json3[++i]) {
         if (ch === " " && json3[i + 1] === "\\" && json3[i + 2] === "n") {
-          str2 += json3.slice(start, i) + "\\ ";
+          str4 += json3.slice(start, i) + "\\ ";
           i += 1;
           start = i;
           ch = "\\";
@@ -1185,38 +1185,38 @@ var require_stringifyString = __commonJS({
           switch (json3[i + 1]) {
             case "u":
               {
-                str2 += json3.slice(start, i);
+                str4 += json3.slice(start, i);
                 const code2 = json3.substr(i + 2, 4);
                 switch (code2) {
                   case "0000":
-                    str2 += "\\0";
+                    str4 += "\\0";
                     break;
                   case "0007":
-                    str2 += "\\a";
+                    str4 += "\\a";
                     break;
                   case "000b":
-                    str2 += "\\v";
+                    str4 += "\\v";
                     break;
                   case "001b":
-                    str2 += "\\e";
+                    str4 += "\\e";
                     break;
                   case "0085":
-                    str2 += "\\N";
+                    str4 += "\\N";
                     break;
                   case "00a0":
-                    str2 += "\\_";
+                    str4 += "\\_";
                     break;
                   case "2028":
-                    str2 += "\\L";
+                    str4 += "\\L";
                     break;
                   case "2029":
-                    str2 += "\\P";
+                    str4 += "\\P";
                     break;
                   default:
                     if (code2.substr(0, 2) === "00")
-                      str2 += "\\x" + code2.substr(2);
+                      str4 += "\\x" + code2.substr(2);
                     else
-                      str2 += json3.substr(i, 6);
+                      str4 += json3.substr(i, 6);
                 }
                 i += 5;
                 start = i + 1;
@@ -1226,14 +1226,14 @@ var require_stringifyString = __commonJS({
               if (implicitKey || json3[i + 2] === '"' || json3.length < minMultiLineLength) {
                 i += 1;
               } else {
-                str2 += json3.slice(start, i) + "\n\n";
+                str4 += json3.slice(start, i) + "\n\n";
                 while (json3[i + 2] === "\\" && json3[i + 3] === "n" && json3[i + 4] !== '"') {
-                  str2 += "\n";
+                  str4 += "\n";
                   i += 2;
                 }
-                str2 += indent;
+                str4 += indent;
                 if (json3[i + 2] === " ")
-                  str2 += "\\";
+                  str4 += "\\";
                 i += 1;
                 start = i + 1;
               }
@@ -1242,8 +1242,8 @@ var require_stringifyString = __commonJS({
               i += 1;
           }
       }
-      str2 = start ? str2 + json3.slice(start) : json3;
-      return implicitKey ? str2 : foldFlowLines.foldFlowLines(str2, indent, foldFlowLines.FOLD_QUOTED, getFoldOptions(ctx, false));
+      str4 = start ? str4 + json3.slice(start) : json3;
+      return implicitKey ? str4 : foldFlowLines.foldFlowLines(str4, indent, foldFlowLines.FOLD_QUOTED, getFoldOptions(ctx, false));
     }
     function singleQuotedString(value2, ctx) {
       if (ctx.options.singleQuote === false || ctx.implicitKey && value2.includes("\n") || /[ \t]\n|\n[ \t]/.test(value2))
@@ -1371,15 +1371,15 @@ ${indent}${start}${value2}${end}`;
           return quotedString(value2, ctx);
         }
       }
-      const str2 = value2.replace(/\n+/g, `$&
+      const str4 = value2.replace(/\n+/g, `$&
 ${indent}`);
       if (actualString) {
-        const test = (tag) => tag.default && tag.tag !== "tag:yaml.org,2002:str" && tag.test?.test(str2);
+        const test = (tag) => tag.default && tag.tag !== "tag:yaml.org,2002:str" && tag.test?.test(str4);
         const { compat, tags } = ctx.doc.schema;
         if (tags.some(test) || compat?.some(test))
           return quotedString(value2, ctx);
       }
-      return implicitKey ? str2 : foldFlowLines.foldFlowLines(str2, indent, foldFlowLines.FOLD_FLOW, getFoldOptions(ctx, false));
+      return implicitKey ? str4 : foldFlowLines.foldFlowLines(str4, indent, foldFlowLines.FOLD_FLOW, getFoldOptions(ctx, false));
     }
     function stringifyString(item, ctx, onComment, onChompKeep) {
       const { implicitKey, inFlow } = ctx;
@@ -1531,11 +1531,11 @@ var require_stringify = __commonJS({
       const props = stringifyProps(node2, tagObj, ctx);
       if (props.length > 0)
         ctx.indentAtStart = (ctx.indentAtStart ?? 0) + props.length + 1;
-      const str2 = typeof tagObj.stringify === "function" ? tagObj.stringify(node2, ctx, onComment, onChompKeep) : identity.isScalar(node2) ? stringifyString.stringifyString(node2, ctx, onComment, onChompKeep) : node2.toString(ctx, onComment, onChompKeep);
+      const str4 = typeof tagObj.stringify === "function" ? tagObj.stringify(node2, ctx, onComment, onChompKeep) : identity.isScalar(node2) ? stringifyString.stringifyString(node2, ctx, onComment, onChompKeep) : node2.toString(ctx, onComment, onChompKeep);
       if (!props)
-        return str2;
-      return identity.isScalar(node2) || str2[0] === "{" || str2[0] === "[" ? `${props} ${str2}` : `${props}
-${ctx.indent}${str2}`;
+        return str4;
+      return identity.isScalar(node2) || str4[0] === "{" || str4[0] === "[" ? `${props} ${str4}` : `${props}
+${ctx.indent}${str4}`;
     }
     exports.createStringifyContext = createStringifyContext;
     exports.stringify = stringify;
@@ -1570,8 +1570,8 @@ var require_stringifyPair = __commonJS({
       });
       let keyCommentDone = false;
       let chompKeep = false;
-      let str2 = stringify.stringify(key2, ctx, () => keyCommentDone = true, () => chompKeep = true);
-      if (!explicitKey && !ctx.inFlow && str2.length > 1024) {
+      let str4 = stringify.stringify(key2, ctx, () => keyCommentDone = true, () => chompKeep = true);
+      if (!explicitKey && !ctx.inFlow && str4.length > 1024) {
         if (simpleKeys)
           throw new Error("With simple keys, single line scalar must not span more than 1024 characters");
         explicitKey = true;
@@ -1580,27 +1580,27 @@ var require_stringifyPair = __commonJS({
         if (allNullValues || value2 == null) {
           if (keyCommentDone && onComment)
             onComment();
-          return str2 === "" ? "?" : explicitKey ? `? ${str2}` : str2;
+          return str4 === "" ? "?" : explicitKey ? `? ${str4}` : str4;
         }
       } else if (allNullValues && !simpleKeys || value2 == null && explicitKey) {
-        str2 = `? ${str2}`;
+        str4 = `? ${str4}`;
         if (keyComment && !keyCommentDone) {
-          str2 += stringifyComment.lineComment(str2, ctx.indent, commentString(keyComment));
+          str4 += stringifyComment.lineComment(str4, ctx.indent, commentString(keyComment));
         } else if (chompKeep && onChompKeep)
           onChompKeep();
-        return str2;
+        return str4;
       }
       if (keyCommentDone)
         keyComment = null;
       if (explicitKey) {
         if (keyComment)
-          str2 += stringifyComment.lineComment(str2, ctx.indent, commentString(keyComment));
-        str2 = `? ${str2}
+          str4 += stringifyComment.lineComment(str4, ctx.indent, commentString(keyComment));
+        str4 = `? ${str4}
 ${indent}:`;
       } else {
-        str2 = `${str2}:`;
+        str4 = `${str4}:`;
         if (keyComment)
-          str2 += stringifyComment.lineComment(str2, ctx.indent, commentString(keyComment));
+          str4 += stringifyComment.lineComment(str4, ctx.indent, commentString(keyComment));
       }
       let vsb, vcb, valueComment;
       if (identity.isNode(value2)) {
@@ -1616,7 +1616,7 @@ ${indent}:`;
       }
       ctx.implicitKey = false;
       if (!explicitKey && !keyComment && identity.isScalar(value2))
-        ctx.indentAtStart = str2.length + 1;
+        ctx.indentAtStart = str4.length + 1;
       chompKeep = false;
       if (!indentSeq && indentStep.length >= 2 && !ctx.inFlow && !explicitKey && identity.isSeq(value2) && !value2.flow && !value2.tag && !value2.anchor) {
         ctx.indent = ctx.indent.substring(2);
@@ -1660,16 +1660,16 @@ ${ctx.indent}`;
       } else if (valueStr === "" || valueStr[0] === "\n") {
         ws = "";
       }
-      str2 += ws + valueStr;
+      str4 += ws + valueStr;
       if (ctx.inFlow) {
         if (valueCommentDone && onComment)
           onComment();
       } else if (valueComment && !valueCommentDone) {
-        str2 += stringifyComment.lineComment(str2, ctx.indent, commentString(valueComment));
+        str4 += stringifyComment.lineComment(str4, ctx.indent, commentString(valueComment));
       } else if (chompKeep && onChompKeep) {
         onChompKeep();
       }
-      return str2;
+      return str4;
     }
     exports.stringifyPair = stringifyPair;
   }
@@ -1896,31 +1896,31 @@ var require_stringifyCollection = __commonJS({
           }
         }
         chompKeep = false;
-        let str3 = stringify.stringify(item, itemCtx, () => comment2 = null, () => chompKeep = true);
+        let str5 = stringify.stringify(item, itemCtx, () => comment2 = null, () => chompKeep = true);
         if (comment2)
-          str3 += stringifyComment.lineComment(str3, itemIndent, commentString(comment2));
+          str5 += stringifyComment.lineComment(str5, itemIndent, commentString(comment2));
         if (chompKeep && comment2)
           chompKeep = false;
-        lines.push(blockItemPrefix + str3);
+        lines.push(blockItemPrefix + str5);
       }
-      let str2;
+      let str4;
       if (lines.length === 0) {
-        str2 = flowChars.start + flowChars.end;
+        str4 = flowChars.start + flowChars.end;
       } else {
-        str2 = lines[0];
+        str4 = lines[0];
         for (let i = 1; i < lines.length; ++i) {
           const line3 = lines[i];
-          str2 += line3 ? `
+          str4 += line3 ? `
 ${indent}${line3}` : "\n";
         }
       }
       if (comment) {
-        str2 += "\n" + stringifyComment.indentComment(commentString(comment), indent);
+        str4 += "\n" + stringifyComment.indentComment(commentString(comment), indent);
         if (onComment)
           onComment();
       } else if (chompKeep && onChompKeep)
         onChompKeep();
-      return str2;
+      return str4;
     }
     function stringifyFlowCollection({ items: items2 }, ctx, { flowChars, itemIndent }) {
       const { indent, indentStep, flowCollectionPadding: fcPadding, options: { commentString } } = ctx;
@@ -1963,21 +1963,21 @@ ${indent}${line3}` : "\n";
         }
         if (comment)
           reqNewline = true;
-        let str2 = stringify.stringify(item, itemCtx, () => comment = null);
-        reqNewline || (reqNewline = lines.length > linesAtValue || str2.includes("\n"));
+        let str4 = stringify.stringify(item, itemCtx, () => comment = null);
+        reqNewline || (reqNewline = lines.length > linesAtValue || str4.includes("\n"));
         if (i < items2.length - 1) {
-          str2 += ",";
+          str4 += ",";
         } else if (ctx.options.trailingComma) {
           if (ctx.options.lineWidth > 0) {
-            reqNewline || (reqNewline = lines.reduce((sum, line3) => sum + line3.length + 2, 2) + (str2.length + 2) > ctx.options.lineWidth);
+            reqNewline || (reqNewline = lines.reduce((sum, line3) => sum + line3.length + 2, 2) + (str4.length + 2) > ctx.options.lineWidth);
           }
           if (reqNewline) {
-            str2 += ",";
+            str4 += ",";
           }
         }
         if (comment)
-          str2 += stringifyComment.lineComment(str2, itemIndent, commentString(comment));
-        lines.push(str2);
+          str4 += stringifyComment.lineComment(str4, itemIndent, commentString(comment));
+        lines.push(str4);
         linesAtValue = lines.length;
       }
       const { start, end } = flowChars;
@@ -1989,11 +1989,11 @@ ${indent}${line3}` : "\n";
           reqNewline = ctx.options.lineWidth > 0 && len > ctx.options.lineWidth;
         }
         if (reqNewline) {
-          let str2 = start;
+          let str4 = start;
           for (const line3 of lines)
-            str2 += line3 ? `
+            str4 += line3 ? `
 ${indentStep}${indent}${line3}` : "\n";
-          return `${str2}
+          return `${str4}
 ${indent}${end}`;
         } else {
           return `${start}${fcPadding}${lines.join(" ")}${fcPadding}${end}`;
@@ -2325,7 +2325,7 @@ var require_string = __commonJS({
       identify: (value2) => typeof value2 === "string",
       default: true,
       tag: "tag:yaml.org,2002:str",
-      resolve: (str2) => str2,
+      resolve: (str4) => str4,
       stringify(item, ctx, onComment, onChompKeep) {
         ctx = Object.assign({ actualString: true }, ctx);
         return stringifyString.stringifyString(item, ctx, onComment, onChompKeep);
@@ -2363,7 +2363,7 @@ var require_bool = __commonJS({
       default: true,
       tag: "tag:yaml.org,2002:bool",
       test: /^(?:[Tt]rue|TRUE|[Ff]alse|FALSE)$/,
-      resolve: (str2) => new Scalar.Scalar(str2[0] === "t" || str2[0] === "T"),
+      resolve: (str4) => new Scalar.Scalar(str4[0] === "t" || str4[0] === "T"),
       stringify({ source, value: value2 }, ctx) {
         if (source && boolTag.test.test(source)) {
           const sv = source[0] === "t" || source[0] === "T";
@@ -2415,7 +2415,7 @@ var require_float = __commonJS({
       default: true,
       tag: "tag:yaml.org,2002:float",
       test: /^(?:[-+]?\.(?:inf|Inf|INF)|\.nan|\.NaN|\.NAN)$/,
-      resolve: (str2) => str2.slice(-3).toLowerCase() === "nan" ? NaN : str2[0] === "-" ? Number.NEGATIVE_INFINITY : Number.POSITIVE_INFINITY,
+      resolve: (str4) => str4.slice(-3).toLowerCase() === "nan" ? NaN : str4[0] === "-" ? Number.NEGATIVE_INFINITY : Number.POSITIVE_INFINITY,
       stringify: stringifyNumber.stringifyNumber
     };
     var floatExp = {
@@ -2424,7 +2424,7 @@ var require_float = __commonJS({
       tag: "tag:yaml.org,2002:float",
       format: "EXP",
       test: /^[-+]?(?:\.[0-9]+|[0-9]+(?:\.[0-9]*)?)[eE][-+]?[0-9]+$/,
-      resolve: (str2) => parseFloat(str2),
+      resolve: (str4) => parseFloat(str4),
       stringify(node2) {
         const num3 = Number(node2.value);
         return isFinite(num3) ? num3.toExponential() : stringifyNumber.stringifyNumber(node2);
@@ -2435,11 +2435,11 @@ var require_float = __commonJS({
       default: true,
       tag: "tag:yaml.org,2002:float",
       test: /^[-+]?(?:\.[0-9]+|[0-9]+\.[0-9]*)$/,
-      resolve(str2) {
-        const node2 = new Scalar.Scalar(parseFloat(str2));
-        const dot = str2.indexOf(".");
-        if (dot !== -1 && str2[str2.length - 1] === "0")
-          node2.minFractionDigits = str2.length - dot - 1;
+      resolve(str4) {
+        const node2 = new Scalar.Scalar(parseFloat(str4));
+        const dot = str4.indexOf(".");
+        if (dot !== -1 && str4[str4.length - 1] === "0")
+          node2.minFractionDigits = str4.length - dot - 1;
         return node2;
       },
       stringify: stringifyNumber.stringifyNumber
@@ -2456,7 +2456,7 @@ var require_int = __commonJS({
     "use strict";
     var stringifyNumber = require_stringifyNumber();
     var intIdentify = (value2) => typeof value2 === "bigint" || Number.isInteger(value2);
-    var intResolve = (str2, offset, radix, { intAsBigInt }) => intAsBigInt ? BigInt(str2) : parseInt(str2.substring(offset), radix);
+    var intResolve = (str4, offset, radix, { intAsBigInt }) => intAsBigInt ? BigInt(str4) : parseInt(str4.substring(offset), radix);
     function intStringify(node2, radix, prefix) {
       const { value: value2 } = node2;
       if (intIdentify(value2) && value2 >= 0)
@@ -2469,7 +2469,7 @@ var require_int = __commonJS({
       tag: "tag:yaml.org,2002:int",
       format: "OCT",
       test: /^0o[0-7]+$/,
-      resolve: (str2, _onError, opt) => intResolve(str2, 2, 8, opt),
+      resolve: (str4, _onError, opt) => intResolve(str4, 2, 8, opt),
       stringify: (node2) => intStringify(node2, 8, "0o")
     };
     var int2 = {
@@ -2477,7 +2477,7 @@ var require_int = __commonJS({
       default: true,
       tag: "tag:yaml.org,2002:int",
       test: /^[-+]?[0-9]+$/,
-      resolve: (str2, _onError, opt) => intResolve(str2, 0, 10, opt),
+      resolve: (str4, _onError, opt) => intResolve(str4, 0, 10, opt),
       stringify: stringifyNumber.stringifyNumber
     };
     var intHex = {
@@ -2486,7 +2486,7 @@ var require_int = __commonJS({
       tag: "tag:yaml.org,2002:int",
       format: "HEX",
       test: /^0x[0-9a-fA-F]+$/,
-      resolve: (str2, _onError, opt) => intResolve(str2, 2, 16, opt),
+      resolve: (str4, _onError, opt) => intResolve(str4, 2, 16, opt),
       stringify: (node2) => intStringify(node2, 16, "0x")
     };
     exports.int = int2;
@@ -2539,7 +2539,7 @@ var require_schema2 = __commonJS({
         identify: (value2) => typeof value2 === "string",
         default: true,
         tag: "tag:yaml.org,2002:str",
-        resolve: (str2) => str2,
+        resolve: (str4) => str4,
         stringify: stringifyJSON
       },
       {
@@ -2556,7 +2556,7 @@ var require_schema2 = __commonJS({
         default: true,
         tag: "tag:yaml.org,2002:bool",
         test: /^true$|^false$/,
-        resolve: (str2) => str2 === "true",
+        resolve: (str4) => str4 === "true",
         stringify: stringifyJSON
       },
       {
@@ -2564,7 +2564,7 @@ var require_schema2 = __commonJS({
         default: true,
         tag: "tag:yaml.org,2002:int",
         test: /^-?(?:0|[1-9][0-9]*)$/,
-        resolve: (str2, _onError, { intAsBigInt }) => intAsBigInt ? BigInt(str2) : parseInt(str2, 10),
+        resolve: (str4, _onError, { intAsBigInt }) => intAsBigInt ? BigInt(str4) : parseInt(str4, 10),
         stringify: ({ value: value2 }) => intIdentify(value2) ? value2.toString() : JSON.stringify(value2)
       },
       {
@@ -2572,7 +2572,7 @@ var require_schema2 = __commonJS({
         default: true,
         tag: "tag:yaml.org,2002:float",
         test: /^-?(?:0|[1-9][0-9]*)(?:\.[0-9]*)?(?:[eE][-+]?[0-9]+)?$/,
-        resolve: (str2) => parseFloat(str2),
+        resolve: (str4) => parseFloat(str4),
         stringify: stringifyJSON
       }
     ];
@@ -2580,9 +2580,9 @@ var require_schema2 = __commonJS({
       default: true,
       tag: "",
       test: /^/,
-      resolve(str2, onError) {
-        onError(`Unresolved plain scalar ${JSON.stringify(str2)}`);
-        return str2;
+      resolve(str4, onError) {
+        onError(`Unresolved plain scalar ${JSON.stringify(str4)}`);
+        return str4;
       }
     };
     var schema2 = [map2.map, seq.seq].concat(jsonScalars, jsonError);
@@ -2614,10 +2614,10 @@ var require_binary = __commonJS({
         if (typeof node_buffer.Buffer === "function") {
           return node_buffer.Buffer.from(src, "base64");
         } else if (typeof atob === "function") {
-          const str2 = atob(src.replace(/[\n\r]/g, ""));
-          const buffer = new Uint8Array(str2.length);
-          for (let i = 0; i < str2.length; ++i)
-            buffer[i] = str2.charCodeAt(i);
+          const str4 = atob(src.replace(/[\n\r]/g, ""));
+          const buffer = new Uint8Array(str4.length);
+          for (let i = 0; i < str4.length; ++i)
+            buffer[i] = str4.charCodeAt(i);
           return buffer;
         } else {
           onError("This environment does not support reading binary tags; either Buffer or atob is required");
@@ -2628,28 +2628,28 @@ var require_binary = __commonJS({
         if (!value2)
           return "";
         const buf = value2;
-        let str2;
+        let str4;
         if (typeof node_buffer.Buffer === "function") {
-          str2 = buf instanceof node_buffer.Buffer ? buf.toString("base64") : node_buffer.Buffer.from(buf.buffer).toString("base64");
+          str4 = buf instanceof node_buffer.Buffer ? buf.toString("base64") : node_buffer.Buffer.from(buf.buffer).toString("base64");
         } else if (typeof btoa === "function") {
           let s = "";
           for (let i = 0; i < buf.length; ++i)
             s += String.fromCharCode(buf[i]);
-          str2 = btoa(s);
+          str4 = btoa(s);
         } else {
           throw new Error("This environment does not support writing binary tags; either Buffer or btoa is required");
         }
         type ?? (type = Scalar.Scalar.BLOCK_LITERAL);
         if (type !== Scalar.Scalar.QUOTE_DOUBLE) {
           const lineWidth = Math.max(ctx.options.lineWidth - ctx.indent.length, ctx.options.minContentWidth);
-          const n = Math.ceil(str2.length / lineWidth);
+          const n = Math.ceil(str4.length / lineWidth);
           const lines = new Array(n);
           for (let i = 0, o = 0; i < n; ++i, o += lineWidth) {
-            lines[i] = str2.substr(o, lineWidth);
+            lines[i] = str4.substr(o, lineWidth);
           }
-          str2 = lines.join(type === Scalar.Scalar.BLOCK_LITERAL ? "\n" : " ");
+          str4 = lines.join(type === Scalar.Scalar.BLOCK_LITERAL ? "\n" : " ");
         }
-        return stringifyString.stringifyString({ comment, type, value: str2 }, ctx, onComment, onChompKeep);
+        return stringifyString.stringifyString({ comment, type, value: str4 }, ctx, onComment, onChompKeep);
       }
     };
     exports.binary = binary;
@@ -2855,7 +2855,7 @@ var require_float2 = __commonJS({
       default: true,
       tag: "tag:yaml.org,2002:float",
       test: /^(?:[-+]?\.(?:inf|Inf|INF)|\.nan|\.NaN|\.NAN)$/,
-      resolve: (str2) => str2.slice(-3).toLowerCase() === "nan" ? NaN : str2[0] === "-" ? Number.NEGATIVE_INFINITY : Number.POSITIVE_INFINITY,
+      resolve: (str4) => str4.slice(-3).toLowerCase() === "nan" ? NaN : str4[0] === "-" ? Number.NEGATIVE_INFINITY : Number.POSITIVE_INFINITY,
       stringify: stringifyNumber.stringifyNumber
     };
     var floatExp = {
@@ -2864,7 +2864,7 @@ var require_float2 = __commonJS({
       tag: "tag:yaml.org,2002:float",
       format: "EXP",
       test: /^[-+]?(?:[0-9][0-9_]*)?(?:\.[0-9_]*)?[eE][-+]?[0-9]+$/,
-      resolve: (str2) => parseFloat(str2.replace(/_/g, "")),
+      resolve: (str4) => parseFloat(str4.replace(/_/g, "")),
       stringify(node2) {
         const num3 = Number(node2.value);
         return isFinite(num3) ? num3.toExponential() : stringifyNumber.stringifyNumber(node2);
@@ -2875,11 +2875,11 @@ var require_float2 = __commonJS({
       default: true,
       tag: "tag:yaml.org,2002:float",
       test: /^[-+]?(?:[0-9][0-9_]*)?\.[0-9_]*$/,
-      resolve(str2) {
-        const node2 = new Scalar.Scalar(parseFloat(str2.replace(/_/g, "")));
-        const dot = str2.indexOf(".");
+      resolve(str4) {
+        const node2 = new Scalar.Scalar(parseFloat(str4.replace(/_/g, "")));
+        const dot = str4.indexOf(".");
         if (dot !== -1) {
-          const f = str2.substring(dot + 1).replace(/_/g, "");
+          const f = str4.substring(dot + 1).replace(/_/g, "");
           if (f[f.length - 1] === "0")
             node2.minFractionDigits = f.length;
         }
@@ -2899,34 +2899,34 @@ var require_int2 = __commonJS({
     "use strict";
     var stringifyNumber = require_stringifyNumber();
     var intIdentify = (value2) => typeof value2 === "bigint" || Number.isInteger(value2);
-    function intResolve(str2, offset, radix, { intAsBigInt }) {
-      const sign = str2[0];
+    function intResolve(str4, offset, radix, { intAsBigInt }) {
+      const sign = str4[0];
       if (sign === "-" || sign === "+")
         offset += 1;
-      str2 = str2.substring(offset).replace(/_/g, "");
+      str4 = str4.substring(offset).replace(/_/g, "");
       if (intAsBigInt) {
         switch (radix) {
           case 2:
-            str2 = `0b${str2}`;
+            str4 = `0b${str4}`;
             break;
           case 8:
-            str2 = `0o${str2}`;
+            str4 = `0o${str4}`;
             break;
           case 16:
-            str2 = `0x${str2}`;
+            str4 = `0x${str4}`;
             break;
         }
-        const n2 = BigInt(str2);
+        const n2 = BigInt(str4);
         return sign === "-" ? BigInt(-1) * n2 : n2;
       }
-      const n = parseInt(str2, radix);
+      const n = parseInt(str4, radix);
       return sign === "-" ? -1 * n : n;
     }
     function intStringify(node2, radix, prefix) {
       const { value: value2 } = node2;
       if (intIdentify(value2)) {
-        const str2 = value2.toString(radix);
-        return value2 < 0 ? "-" + prefix + str2.substr(1) : prefix + str2;
+        const str4 = value2.toString(radix);
+        return value2 < 0 ? "-" + prefix + str4.substr(1) : prefix + str4;
       }
       return stringifyNumber.stringifyNumber(node2);
     }
@@ -2936,7 +2936,7 @@ var require_int2 = __commonJS({
       tag: "tag:yaml.org,2002:int",
       format: "BIN",
       test: /^[-+]?0b[0-1_]+$/,
-      resolve: (str2, _onError, opt) => intResolve(str2, 2, 2, opt),
+      resolve: (str4, _onError, opt) => intResolve(str4, 2, 2, opt),
       stringify: (node2) => intStringify(node2, 2, "0b")
     };
     var intOct = {
@@ -2945,7 +2945,7 @@ var require_int2 = __commonJS({
       tag: "tag:yaml.org,2002:int",
       format: "OCT",
       test: /^[-+]?0[0-7_]+$/,
-      resolve: (str2, _onError, opt) => intResolve(str2, 1, 8, opt),
+      resolve: (str4, _onError, opt) => intResolve(str4, 1, 8, opt),
       stringify: (node2) => intStringify(node2, 8, "0")
     };
     var int2 = {
@@ -2953,7 +2953,7 @@ var require_int2 = __commonJS({
       default: true,
       tag: "tag:yaml.org,2002:int",
       test: /^[-+]?[0-9][0-9_]*$/,
-      resolve: (str2, _onError, opt) => intResolve(str2, 0, 10, opt),
+      resolve: (str4, _onError, opt) => intResolve(str4, 0, 10, opt),
       stringify: stringifyNumber.stringifyNumber
     };
     var intHex = {
@@ -2962,7 +2962,7 @@ var require_int2 = __commonJS({
       tag: "tag:yaml.org,2002:int",
       format: "HEX",
       test: /^[-+]?0x[0-9a-fA-F_]+$/,
-      resolve: (str2, _onError, opt) => intResolve(str2, 2, 16, opt),
+      resolve: (str4, _onError, opt) => intResolve(str4, 2, 16, opt),
       stringify: (node2) => intStringify(node2, 16, "0x")
     };
     exports.int = int2;
@@ -3066,9 +3066,9 @@ var require_timestamp = __commonJS({
   "../../node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/dist/schema/yaml-1.1/timestamp.js"(exports) {
     "use strict";
     var stringifyNumber = require_stringifyNumber();
-    function parseSexagesimal(str2, asBigInt) {
-      const sign = str2[0];
-      const parts = sign === "-" || sign === "+" ? str2.substring(1) : str2;
+    function parseSexagesimal(str4, asBigInt) {
+      const sign = str4[0];
+      const parts = sign === "-" || sign === "+" ? str4.substring(1) : str4;
       const num3 = (n) => asBigInt ? BigInt(n) : Number(n);
       const res = parts.replace(/_/g, "").split(":").reduce((res2, p) => res2 * num3(60) + num3(p), num3(0));
       return sign === "-" ? num3(-1) * res : res;
@@ -3105,7 +3105,7 @@ var require_timestamp = __commonJS({
       tag: "tag:yaml.org,2002:int",
       format: "TIME",
       test: /^[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+$/,
-      resolve: (str2, _onError, { intAsBigInt }) => parseSexagesimal(str2, intAsBigInt),
+      resolve: (str4, _onError, { intAsBigInt }) => parseSexagesimal(str4, intAsBigInt),
       stringify: stringifySexagesimal
     };
     var floatTime = {
@@ -3114,7 +3114,7 @@ var require_timestamp = __commonJS({
       tag: "tag:yaml.org,2002:float",
       format: "TIME",
       test: /^[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+\.[0-9_]*$/,
-      resolve: (str2) => parseSexagesimal(str2, false),
+      resolve: (str4) => parseSexagesimal(str4, false),
       stringify: stringifySexagesimal
     };
     var timestamp = {
@@ -3125,8 +3125,8 @@ var require_timestamp = __commonJS({
       // may be omitted altogether, resulting in a date format. In such a case, the time part is
       // assumed to be 00:00:00Z (start of day, UTC).
       test: RegExp("^([0-9]{4})-([0-9]{1,2})-([0-9]{1,2})(?:(?:t|T|[ \\t]+)([0-9]{1,2}):([0-9]{1,2}):([0-9]{1,2}(\\.[0-9]+)?)(?:[ \\t]*(Z|[-+][012]?[0-9](?::[0-9]{2})?))?)?$"),
-      resolve(str2) {
-        const match = str2.match(timestamp.test);
+      resolve(str4) {
+        const match = str4.match(timestamp.test);
         if (!match)
           throw new Error("!!timestamp expects a date, starting with yyyy-mm-dd");
         const [, year, month, day, hour, minute, second] = match.map(Number);
@@ -7377,13 +7377,13 @@ function issue(level, message, properties = {}) {
   return `::${level}${props ? ` ${props}` : ""}::${escapeData(message)}`;
 }
 var isControl = (code2) => code2 <= 31 || code2 === 127 || code2 === 133 || code2 === 8232 || code2 === 8233;
-var oneLine = (text5) => {
+var oneLine = (text6) => {
   let out = "";
-  for (const ch of text5) out += isControl(ch.codePointAt(0)) ? " " : ch;
+  for (const ch of text6) out += isControl(ch.codePointAt(0)) ? " " : ch;
   return out.replace(/ {2,}/g, " ").trim();
 };
-function plainLine(text5) {
-  const line3 = oneLine(text5);
+function plainLine(text6) {
+  const line3 = oneLine(text6);
   return line3.startsWith("::") ? ` ${line3}` : line3;
 }
 
@@ -7392,670 +7392,6 @@ import { appendFileSync as appendFileSync3, readFileSync as readFileSync2 } from
 import { mkdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join as join3 } from "node:path";
-
-// ../../packages/parsers/core/src/nodeFileSystem.ts
-import { readdir, readFile, realpath } from "node:fs/promises";
-import { join, relative, resolve, sep } from "node:path";
-
-// ../../packages/parsers/core/src/gitignore.ts
-function tokenize(glob) {
-  const out = [];
-  for (let i = 0; i < glob.length; i++) {
-    const ch = glob[i];
-    if (ch === "*" && glob[i + 1] === "*") {
-      if (glob[i + 2] === "/") {
-        out.push({ kind: "dirs" });
-        i += 2;
-      } else {
-        out.push({ kind: "globstar" });
-        i += 1;
-      }
-    } else if (ch === "*") out.push({ kind: "star" });
-    else if (ch === "?") out.push({ kind: "any1" });
-    else out.push({ kind: "char", c: ch });
-  }
-  return out;
-}
-function globMatch(tokens, text5, anchored) {
-  const n = text5.length;
-  let reach = new Array(n + 1).fill(false);
-  if (anchored) reach[0] = true;
-  else for (let i = 0; i <= n; i++) reach[i] = i === 0 || text5[i - 1] === "/";
-  for (const t of tokens) {
-    const next = new Array(n + 1).fill(false);
-    if (t.kind === "char" || t.kind === "any1") {
-      for (let i = 0; i < n; i++) {
-        if (reach[i] && (t.kind === "char" ? text5[i] === t.c : text5[i] !== "/")) next[i + 1] = true;
-      }
-    } else if (t.kind === "star") {
-      let open2 = false;
-      for (let j = 0; j <= n; j++) {
-        if (reach[j]) open2 = true;
-        next[j] = open2;
-        if (text5[j] === "/") open2 = false;
-      }
-    } else if (t.kind === "globstar") {
-      let open2 = false;
-      for (let j = 0; j <= n; j++) {
-        if (reach[j]) open2 = true;
-        next[j] = open2;
-      }
-    } else {
-      let seen = false;
-      for (let j = 0; j <= n; j++) {
-        next[j] = reach[j] || seen && text5[j - 1] === "/";
-        if (reach[j]) seen = true;
-      }
-    }
-    reach = next;
-  }
-  return reach[n];
-}
-function parseRule(raw) {
-  let line3 = raw.replace(/\r$/, "");
-  if (line3.trim() === "" || line3.startsWith("#")) return void 0;
-  line3 = line3.replace(/(?<!\\)\s+$/, "");
-  const negated = line3.startsWith("!");
-  if (negated) line3 = line3.slice(1);
-  const dirOnly = line3.endsWith("/");
-  if (dirOnly) line3 = line3.slice(0, -1);
-  const anchored = line3.includes("/");
-  if (line3.startsWith("/")) line3 = line3.slice(1);
-  if (line3 === "") return void 0;
-  return { negated, dirOnly, tokens: tokenize(line3), anchored };
-}
-function createIgnore(gitignore) {
-  const rules = gitignore.split("\n").flatMap((l) => parseRule(l) ?? []);
-  return (path, isDir) => {
-    let ignored = false;
-    for (const rule of rules) {
-      if (rule.dirOnly && !isDir) continue;
-      if (globMatch(rule.tokens, path, rule.anchored)) ignored = !rule.negated;
-    }
-    return ignored;
-  };
-}
-
-// ../../packages/parsers/core/src/memoryFileSystem.ts
-var IGNORED_DIRS = /* @__PURE__ */ new Set(["node_modules", ".git", "dist", ".wrangler", ".turbo", ".terraform"]);
-function isIgnoredPath(path) {
-  const segments = path.split("/");
-  return segments.slice(0, -1).some((s) => IGNORED_DIRS.has(s));
-}
-function isIgnoredDir(name2) {
-  return IGNORED_DIRS.has(name2);
-}
-
-// ../../packages/parsers/core/src/nodeFileSystem.ts
-var NodeFileSystem = class {
-  #root;
-  constructor(root) {
-    this.#root = resolve(root);
-  }
-  async listFiles() {
-    const out = [];
-    const gitignore = await readFile(join(this.#root, ".gitignore"), "utf8").catch(() => "");
-    const ignored = createIgnore(gitignore);
-    const walk3 = async (dir) => {
-      for (const entry of await readdir(dir, { withFileTypes: true })) {
-        const full = join(dir, entry.name);
-        const rel = relative(this.#root, full).split(sep).join("/");
-        if (entry.isDirectory()) {
-          if (!isIgnoredDir(entry.name) && !ignored(rel, true)) await walk3(full);
-        } else if (entry.isFile() && !ignored(rel, false)) {
-          out.push(rel);
-        }
-      }
-    };
-    await walk3(this.#root);
-    return out.sort();
-  }
-  async readText(path) {
-    const full = resolve(this.#root, path);
-    if (!this.#inside(this.#root, full)) throw new Error(`path is outside the root: ${path}`);
-    const real = await realpath(full);
-    if (!this.#inside(await realpath(this.#root), real)) throw new Error(`path is outside the root: ${path}`);
-    return readFile(real, "utf8");
-  }
-  #inside(root, full) {
-    return full === root || full.startsWith(root + sep);
-  }
-};
-
-// ../../packages/parsers/core/src/cacheKey.ts
-function cacheKey(p) {
-  return [p.repository, p.commit, p.parserId, p.parserVersion, p.configurationHash].map(encodeURIComponent).join(":");
-}
-function canonicalJson(value2) {
-  if (Array.isArray(value2)) return `[${value2.map(canonicalJson).join(",")}]`;
-  if (value2 !== null && typeof value2 === "object") {
-    const entries = Object.entries(value2).filter(([, v]) => v !== void 0).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0);
-    return `{${entries.map(([k, v]) => `${JSON.stringify(k)}:${canonicalJson(v)}`).join(",")}}`;
-  }
-  return JSON.stringify(value2) ?? "null";
-}
-async function configurationHash(configuration) {
-  const bytes = new TextEncoder().encode(canonicalJson(configuration ?? {}));
-  const digest = await crypto.subtle.digest("SHA-256", bytes);
-  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
-}
-
-// ../../packages/parsers/core/src/located.ts
-var ConfigSyntaxError = class extends Error {
-  constructor(message, line3) {
-    super(message);
-    this.line = line3;
-    this.name = "ConfigSyntaxError";
-  }
-  line;
-};
-function getEntry(obj, key2) {
-  if (obj?.kind !== "object") return void 0;
-  return obj.entries.find((e) => e.key === key2);
-}
-function toPlain(v) {
-  if (v.kind === "scalar") return v.value;
-  if (v.kind === "array") return v.items.map(toPlain);
-  const out = {};
-  for (const e of v.entries) out[e.key] = toPlain(e.value);
-  return out;
-}
-var union = (a, b) => ({
-  startLine: Math.min(a.startLine, b.startLine),
-  endLine: Math.max(a.endLine, b.endLine)
-});
-
-// ../../packages/parsers/core/src/jsonc.ts
-var NUMBER = /-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/y;
-var ESCAPES = {
-  '"': '"',
-  "\\": "\\",
-  "/": "/",
-  b: "\b",
-  f: "\f",
-  n: "\n",
-  r: "\r",
-  t: "	"
-};
-function parseJsonc(text5) {
-  const src = text5.charCodeAt(0) === 65279 ? text5.slice(1) : text5;
-  let pos = 0;
-  const lineStarts2 = [0];
-  for (let i = 0; i < src.length; i++) if (src[i] === "\n") lineStarts2.push(i + 1);
-  const lineAt2 = (offset) => {
-    let lo = 0;
-    let hi = lineStarts2.length - 1;
-    while (lo < hi) {
-      const mid = lo + hi + 1 >> 1;
-      if (lineStarts2[mid] <= offset) lo = mid;
-      else hi = mid - 1;
-    }
-    return lo + 1;
-  };
-  const fail = (message, at = pos) => {
-    throw new ConfigSyntaxError(message, lineAt2(Math.min(at, Math.max(src.length - 1, 0))));
-  };
-  function skip() {
-    for (; ; ) {
-      const c = src[pos];
-      if (c === " " || c === "	" || c === "\n" || c === "\r") pos++;
-      else if (c === "/" && src[pos + 1] === "/") {
-        while (pos < src.length && src[pos] !== "\n") pos++;
-      } else if (c === "/" && src[pos + 1] === "*") {
-        const end = src.indexOf("*/", pos + 2);
-        if (end < 0) fail("unterminated block comment");
-        pos = end + 2;
-      } else return;
-    }
-  }
-  function readString() {
-    const start = pos;
-    pos++;
-    let out = "";
-    for (; ; ) {
-      const c = src[pos];
-      if (c === void 0 || c === "\n") return fail("unterminated string", start);
-      if (c === '"') {
-        pos++;
-        return out;
-      }
-      if (c === "\\") {
-        const n = src[pos + 1];
-        if (n === "u") {
-          const hex3 = src.slice(pos + 2, pos + 6);
-          if (!/^[0-9a-fA-F]{4}$/.test(hex3)) fail("invalid \\u escape");
-          out += String.fromCharCode(Number.parseInt(hex3, 16));
-          pos += 6;
-        } else if (n !== void 0 && n in ESCAPES) {
-          out += ESCAPES[n];
-          pos += 2;
-        } else fail("invalid escape");
-      } else {
-        out += c;
-        pos++;
-      }
-    }
-  }
-  function value2() {
-    skip();
-    const start = pos;
-    const c = src[pos];
-    if (c === void 0) return fail("unexpected end of input");
-    if (c === "{") return object2();
-    if (c === "[") return array2();
-    let scalar3;
-    if (c === '"') scalar3 = readString();
-    else if (src.startsWith("true", pos)) {
-      scalar3 = true;
-      pos += 4;
-    } else if (src.startsWith("false", pos)) {
-      scalar3 = false;
-      pos += 5;
-    } else if (src.startsWith("null", pos)) {
-      scalar3 = null;
-      pos += 4;
-    } else {
-      NUMBER.lastIndex = pos;
-      const m = NUMBER.exec(src);
-      if (!m) return fail(`unexpected character "${c}"`);
-      scalar3 = Number(m[0]);
-      pos += m[0].length;
-    }
-    return { kind: "scalar", value: scalar3, span: { startLine: lineAt2(start), endLine: lineAt2(pos - 1) } };
-  }
-  function object2() {
-    const start = pos;
-    pos++;
-    const entries = [];
-    for (; ; ) {
-      skip();
-      if (src[pos] === "}") {
-        pos++;
-        break;
-      }
-      if (src[pos] !== '"') fail("expected a property name");
-      const keyLine = lineAt2(pos);
-      const key2 = readString();
-      if (entries.some((e) => e.key === key2)) fail(`duplicate key: ${key2}`, pos - 1);
-      skip();
-      if (src[pos] !== ":") fail('expected ":"');
-      pos++;
-      const v = value2();
-      entries.push({ key: key2, value: v, span: { startLine: keyLine, endLine: v.span.endLine } });
-      skip();
-      if (src[pos] === ",") pos++;
-      else if (src[pos] !== "}") fail('expected "," or "}"');
-    }
-    return { kind: "object", entries, span: { startLine: lineAt2(start), endLine: lineAt2(pos - 1) } };
-  }
-  function array2() {
-    const start = pos;
-    pos++;
-    const items2 = [];
-    for (; ; ) {
-      skip();
-      if (src[pos] === "]") {
-        pos++;
-        break;
-      }
-      items2.push(value2());
-      skip();
-      if (src[pos] === ",") pos++;
-      else if (src[pos] !== "]") fail('expected "," or "]"');
-    }
-    return { kind: "array", items: items2, span: { startLine: lineAt2(start), endLine: lineAt2(pos - 1) } };
-  }
-  const root = value2();
-  skip();
-  if (pos < src.length) fail("unexpected content after the top-level value");
-  return root;
-}
-
-// ../../packages/architecture-graph/src/issue.ts
-function compareStrings(a, b) {
-  return a < b ? -1 : a > b ? 1 : 0;
-}
-
-// ../../packages/architecture-graph/src/evidence.ts
-function evidenceKey(e) {
-  return [e.repository, e.file, e.startLine ?? "", e.endLine ?? "", e.commit, e.method].join("\0");
-}
-function validateEvidence(e, target2) {
-  const issues = [];
-  const add = (code2, message) => issues.push({ level: "error", code: code2, message, target: target2 });
-  if (e.repository.trim() === "") add("evidence-repository", "repository must not be empty");
-  if (e.commit.trim() === "") add("evidence-commit", "commit must not be empty");
-  if (e.file.trim() === "") add("evidence-file", "file must not be empty");
-  else if (e.file.startsWith("/") || e.file.split("/").includes("..")) {
-    add("evidence-file", `file must be a path inside the repository: ${e.file}`);
-  }
-  const { startLine, endLine } = e;
-  if (startLine !== void 0 && (!Number.isInteger(startLine) || startLine < 1) || endLine !== void 0 && (!Number.isInteger(endLine) || endLine < 1) || startLine !== void 0 && endLine !== void 0 && endLine < startLine) {
-    add("evidence-lines", `invalid line range: ${startLine ?? "?"}-${endLine ?? "?"}`);
-  }
-  if (e.confidence !== void 0 && !(e.confidence >= 0 && e.confidence <= 1)) {
-    add("evidence-confidence", `confidence must be within 0..1: ${e.confidence}`);
-  }
-  return issues;
-}
-function mergeEvidence(list2) {
-  const byKey = /* @__PURE__ */ new Map();
-  for (const e of list2) {
-    const key2 = evidenceKey(e);
-    const prev = byKey.get(key2);
-    if (!prev) {
-      byKey.set(key2, { ...e });
-    } else if (e.confidence !== void 0 && (prev.confidence === void 0 || e.confidence > prev.confidence)) {
-      prev.confidence = e.confidence;
-    }
-  }
-  return [...byKey.entries()].sort(([a], [b]) => compareStrings(a, b)).map(([, e]) => e);
-}
-
-// ../../packages/architecture-graph/src/stableId.ts
-var WHITESPACE = /\s/;
-function part(label, value2, allowColon) {
-  if (value2.length === 0) throw new Error(`stable id: ${label} must not be empty`);
-  if (WHITESPACE.test(value2)) throw new Error(`stable id: ${label} must not contain whitespace: ${value2}`);
-  if (!allowColon && value2.includes(":"))
-    throw new Error(`stable id: ${label} must not contain ":": ${value2}`);
-  return value2;
-}
-function nodeId(namespace2, kind2, name2) {
-  return `${part("namespace", namespace2, false).toLowerCase()}:${part("kind", kind2, false).toLowerCase()}:${part("name", name2, true)}`;
-}
-function routeNodeId(method, path) {
-  if (!path.startsWith("/")) throw new Error(`stable id: route path must start with "/": ${path}`);
-  return nodeId("application", "route", `${part("method", method, false).toUpperCase()}:${path}`);
-}
-function parseNodeId(id) {
-  const first = id.indexOf(":");
-  const second = first < 0 ? -1 : id.indexOf(":", first + 1);
-  if (first <= 0 || second < 0) return void 0;
-  const namespace2 = id.slice(0, first);
-  const kind2 = id.slice(first + 1, second);
-  const name2 = id.slice(second + 1);
-  if (!kind2 || !name2) return void 0;
-  return { namespace: namespace2, kind: kind2, name: name2 };
-}
-function edgeId(source, relation, target2) {
-  return `${source}--${relation}-->${target2}`;
-}
-
-// ../../packages/architecture-graph/src/verification.ts
-var RANK = { inferred: 0, verified: 1, manual: 2 };
-function mergeVerification(levels) {
-  if (levels.length === 0) throw new Error("mergeVerification: no verification levels given");
-  return levels.reduce((best, v) => RANK[v] > RANK[best] ? v : best);
-}
-function enforceVerification(level, evidence) {
-  if (level === "manual") return "manual";
-  if (level === "verified") {
-    return evidence.some((e) => e.method === "static-analysis") ? "verified" : "inferred";
-  }
-  return "inferred";
-}
-
-// ../../packages/architecture-graph/src/normalize.ts
-var RANK2 = { inferred: 0, verified: 1, manual: 2 };
-function canonical(value2) {
-  if (Array.isArray(value2)) return value2.map(canonical);
-  if (value2 !== null && typeof value2 === "object") {
-    const out = {};
-    for (const key2 of Object.keys(value2).sort(compareStrings)) {
-      out[key2] = canonical(value2[key2]);
-    }
-    return out;
-  }
-  return value2;
-}
-var json = (value2) => JSON.stringify(canonical(value2));
-function strongestFirst(items2) {
-  return [...items2].sort(
-    (a, b) => RANK2[b.verification] - RANK2[a.verification] || compareStrings(json(a), json(b))
-  );
-}
-function mergeNodes(id, group, issues) {
-  const ordered = strongestFirst(group);
-  const base = ordered[0];
-  for (const other of ordered.slice(1)) {
-    if (other.type !== base.type || other.scope !== base.scope) {
-      issues.push({
-        level: "error",
-        code: "node-conflict",
-        message: `node ${id} is declared with different type/scope: ${base.scope}/${base.type} vs ${other.scope}/${other.type}`,
-        target: id
-      });
-    } else if (other.name !== base.name) {
-      issues.push({
-        level: "warning",
-        code: "node-name-conflict",
-        message: `node ${id} has different names: "${base.name}" vs "${other.name}"`,
-        target: id
-      });
-    }
-  }
-  const properties = {};
-  const conflicts = /* @__PURE__ */ new Set();
-  for (const n of [...ordered].reverse()) {
-    for (const [key2, value2] of Object.entries(n.properties)) {
-      if (key2 in properties && json(properties[key2]) !== json(value2)) conflicts.add(key2);
-      properties[key2] = value2;
-    }
-  }
-  for (const key2 of [...conflicts].sort(compareStrings)) {
-    issues.push({
-      level: "warning",
-      code: "property-conflict",
-      message: `node ${id} has conflicting values for property "${key2}"; kept the strongest source's value`,
-      target: id
-    });
-  }
-  const evidence = mergeEvidence(group.flatMap((n) => n.evidence));
-  const verification = settle(id, mergeVerification(group.map((n) => n.verification)), evidence, issues);
-  return {
-    id,
-    type: base.type,
-    name: base.name,
-    scope: base.scope,
-    properties: canonical(properties),
-    evidence,
-    verification
-  };
-}
-function settle(target2, claimed, evidence, issues) {
-  const settled = enforceVerification(claimed, evidence);
-  if (settled !== claimed) {
-    issues.push({
-      level: "warning",
-      code: "verification-demoted",
-      message: `${target2} was marked ${claimed} without static-analysis evidence; treated as ${settled}`,
-      target: target2
-    });
-  }
-  return settled;
-}
-function mergeEdgeProperties(group) {
-  const out = {};
-  const bindings = /* @__PURE__ */ new Set();
-  for (const e of strongestFirst(group)) {
-    for (const [key2, value2] of Object.entries(e.properties ?? {})) {
-      if (key2 === "bindings" && Array.isArray(value2)) {
-        for (const b of value2) if (typeof b === "string") bindings.add(b);
-      } else if (!(key2 in out)) out[key2] = value2;
-    }
-  }
-  if (bindings.size > 0) out.bindings = [...bindings].sort(compareStrings);
-  return Object.keys(out).length > 0 ? canonical(out) : void 0;
-}
-function normalizeGraph(input3) {
-  const issues = [];
-  const nodeGroups = /* @__PURE__ */ new Map();
-  for (const n of input3.nodes) {
-    const group = nodeGroups.get(n.id);
-    if (group) group.push(n);
-    else nodeGroups.set(n.id, [n]);
-  }
-  const nodes = [...nodeGroups.entries()].sort(([a], [b]) => compareStrings(a, b)).map(([id, group]) => {
-    if (!parseNodeId(id) || /\s/.test(id)) {
-      issues.push({
-        level: "error",
-        code: "node-id-invalid",
-        message: `invalid node id: "${id}"`,
-        target: id
-      });
-    }
-    return mergeNodes(id, group, issues);
-  });
-  for (const n of nodes) for (const e of n.evidence) issues.push(...validateEvidence(e, n.id));
-  const nodeIds = new Set(nodes.map((n) => n.id));
-  const edgeGroups = /* @__PURE__ */ new Map();
-  for (const e of input3.edges) {
-    const id = edgeId(e.source, e.relation, e.target);
-    const group = edgeGroups.get(id);
-    if (group) group.push(e);
-    else edgeGroups.set(id, [e]);
-  }
-  const edges = [...edgeGroups.entries()].sort(([a], [b]) => compareStrings(a, b)).map(([id, group]) => {
-    const first = group[0];
-    for (const end of [first.source, first.target]) {
-      if (!nodeIds.has(end)) {
-        issues.push({
-          level: "error",
-          code: "edge-dangling",
-          message: `edge ${id} points at a node that does not exist: ${end}`,
-          target: id
-        });
-      }
-    }
-    const evidence = mergeEvidence(group.flatMap((e) => e.evidence));
-    for (const ev of evidence) issues.push(...validateEvidence(ev, id));
-    const properties = mergeEdgeProperties(group);
-    const verification = settle(id, mergeVerification(group.map((e) => e.verification)), evidence, issues);
-    return {
-      id,
-      source: first.source,
-      target: first.target,
-      relation: first.relation,
-      ...properties ? { properties } : {},
-      evidence,
-      verification
-    };
-  });
-  return {
-    graph: {
-      schemaVersion: input3.schemaVersion,
-      repositoryId: input3.repositoryId,
-      commitSha: input3.commitSha,
-      nodes,
-      edges
-    },
-    issues,
-    ok: !issues.some((i) => i.level === "error")
-  };
-}
-
-// ../../packages/parsers/core/src/runParsers.ts
-var GRAPH_SCHEMA_VERSION = "1";
-var messageOf = (e) => e instanceof Error ? e.message : String(e);
-async function runOne(parser, ctx) {
-  try {
-    if (!await parser.detect(ctx)) return { kind: "not-detected" };
-    return { kind: "parsed", result: await parser.parse(ctx) };
-  } catch (e) {
-    return { kind: "failed", message: messageOf(e) };
-  }
-}
-async function runParsers(parsers, ctx, options = {}) {
-  const ordered = [...parsers].sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
-  const outcomes = await Promise.all(ordered.map((p) => runOne(p, ctx)));
-  const diagnostics = [];
-  const unverified = [];
-  const nodes = [];
-  const edges = [];
-  const runs = [];
-  ordered.forEach((parser, i) => {
-    const outcome = outcomes[i];
-    const base = { id: parser.id, version: parser.version };
-    if (outcome.kind === "not-detected") {
-      runs.push({ ...base, status: "not-detected" });
-    } else if (outcome.kind === "failed") {
-      runs.push({ ...base, status: "failed" });
-      diagnostics.push({
-        level: "error",
-        code: "parser-failed",
-        message: `parser ${parser.id} failed: ${outcome.message}`,
-        parserId: parser.id
-      });
-      unverified.push({ parserId: parser.id, reason: `parser failed: ${outcome.message}` });
-    } else {
-      runs.push({ ...base, status: "ok" });
-      nodes.push(...outcome.result.nodes);
-      edges.push(...outcome.result.edges);
-      diagnostics.push(...outcome.result.diagnostics);
-      unverified.push(...outcome.result.unverified);
-    }
-  });
-  const detected = runs.filter((r) => r.status !== "not-detected");
-  if (detected.length === 0) return { status: "nothing-detected", diagnostics, unverified, parsers: runs };
-  if (detected.every((r) => r.status === "failed")) {
-    return { status: "failed", diagnostics, unverified, parsers: runs };
-  }
-  if (nodes.length === 0 && edges.length === 0) {
-    const status = unverified.length > 0 ? "failed" : "empty";
-    return { status, diagnostics, unverified, parsers: runs };
-  }
-  for (const linker of options.linkers ?? []) {
-    try {
-      const linked = await linker.link({ nodes: [...nodes], edges: [...edges] }, ctx);
-      nodes.push(...linked.nodes);
-      edges.push(...linked.edges);
-      diagnostics.push(...linked.diagnostics);
-      unverified.push(...linked.unverified);
-    } catch (e) {
-      const message = messageOf(e);
-      diagnostics.push({
-        level: "error",
-        code: "linker-failed",
-        message: `linker ${linker.id} failed: ${message}`,
-        parserId: linker.id
-      });
-      unverified.push({ parserId: linker.id, reason: `linker failed: ${message}` });
-    }
-  }
-  const normalized = normalizeGraph({
-    schemaVersion: GRAPH_SCHEMA_VERSION,
-    repositoryId: ctx.repository,
-    commitSha: ctx.commit,
-    nodes,
-    edges
-  });
-  for (const issue3 of normalized.issues) {
-    diagnostics.push({
-      level: issue3.level,
-      code: issue3.code,
-      message: issue3.message,
-      ...issue3.target ? { target: issue3.target } : {}
-    });
-  }
-  if (!normalized.ok) return { status: "failed", diagnostics, unverified, parsers: runs };
-  const clean = runs.every((r) => r.status !== "failed") && unverified.length === 0;
-  return {
-    status: clean ? "ok" : "partial",
-    graph: normalized.graph,
-    diagnostics,
-    unverified,
-    parsers: runs
-  };
-}
-
-// ../../packages/parsers/core/src/types.ts
-function staticEvidence(ctx, file2, startLine, endLine) {
-  const e = { repository: ctx.repository, file: file2, commit: ctx.commit, method: "static-analysis" };
-  if (startLine !== void 0) e.startLine = startLine;
-  if (endLine !== void 0) e.endLine = endLine;
-  return e;
-}
 
 // ../../node_modules/.pnpm/zod@4.6.5/node_modules/zod/v4/classic/external.js
 var external_exports = {};
@@ -8215,7 +7551,7 @@ __export(external_exports, {
   ipv4: () => ipv42,
   ipv6: () => ipv62,
   iso: () => iso_exports,
-  json: () => json2,
+  json: () => json,
   jwt: () => jwt,
   keyof: () => keyof,
   ksuid: () => ksuid2,
@@ -8303,7 +7639,7 @@ __export(external_exports, {
   uint64: () => uint64,
   ulid: () => ulid2,
   undefined: () => _undefined3,
-  union: () => union2,
+  union: () => union,
   unknown: () => unknown,
   uppercase: () => _uppercase,
   url: () => url,
@@ -8891,14 +8227,14 @@ function promiseAllObject(promisesObj) {
 }
 function randomString(length = 10) {
   const chars = "abcdefghijklmnopqrstuvwxyz";
-  let str2 = "";
+  let str4 = "";
   for (let i = 0; i < length; i++) {
-    str2 += chars[Math.floor(Math.random() * chars.length)];
+    str4 += chars[Math.floor(Math.random() * chars.length)];
   }
-  return str2;
+  return str4;
 }
-function esc(str2) {
-  return JSON.stringify(str2);
+function esc(str4) {
+  return JSON.stringify(str4);
 }
 function slugify(input3) {
   return input3.toLowerCase().trim().replace(/[^\w\s-]/g, "").replace(/[\s_-]+/g, "-").replace(/^-+|-+$/g, "");
@@ -9012,8 +8348,8 @@ var primitiveTypes = /* @__PURE__ */ new Set([
   "symbol",
   "undefined"
 ]);
-function escapeRegex(str2) {
-  return str2.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+function escapeRegex(str4) {
+  return str4.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 function clone(inst, def, params) {
   const cl = new inst._zod.constr(def ?? inst._zod.def);
@@ -9267,13 +8603,13 @@ function getSizableOrigin(input3) {
   return "unknown";
 }
 var highSurrogate = /[\uD800-\uDBFF]/;
-function codePointLength(str2) {
-  const units = str2.length;
-  if (!highSurrogate.test(str2))
+function codePointLength(str4) {
+  const units = str4.length;
+  if (!highSurrogate.test(str4))
     return units;
   let count = units;
   for (let i = 0; i < units - 1; i++) {
-    if ((str2.charCodeAt(i) & 64512) === 55296 && (str2.charCodeAt(i + 1) & 64512) === 56320) {
+    if ((str4.charCodeAt(i) & 64512) === 55296 && (str4.charCodeAt(i + 1) & 64512) === 56320) {
       count--;
       i++;
     }
@@ -13213,9 +12549,9 @@ function isRecursive(inst, stack, resolve2) {
     }
   }
   stack.delete(inst);
-  return settle2(inst, result);
+  return settle(inst, result);
 }
-function settle2(inst, answer) {
+function settle(inst, answer) {
   if (answer !== ASSUMED)
     recursive.set(inst, answer === PROVEN);
   return answer;
@@ -15756,13 +15092,13 @@ var error20 = () => {
     // no unit
   };
   const typeEntry = (t) => t ? TypeNames[t] : void 0;
-  const typeLabel = (t) => {
+  const typeLabel2 = (t) => {
     const e = typeEntry(t);
     if (e)
       return e.label;
     return t ?? TypeNames.unknown.label;
   };
-  const withDefinite = (t) => `\u05D4${typeLabel(t)}`;
+  const withDefinite = (t) => `\u05D4${typeLabel2(t)}`;
   const verbFor = (t) => {
     const e = typeEntry(t);
     const gender = e?.gender ?? "m";
@@ -15819,7 +15155,7 @@ var error20 = () => {
     switch (issue3.code) {
       case "invalid_type": {
         const expectedKey = issue3.expected;
-        const expected = TypeDictionary[expectedKey ?? ""] ?? typeLabel(expectedKey);
+        const expected = TypeDictionary[expectedKey ?? ""] ?? typeLabel2(expectedKey);
         const receivedType = parsedType(issue3.input);
         const received = TypeDictionary[receivedType] ?? TypeNames[receivedType]?.label ?? receivedType;
         if (/^[A-Z]/.test(issue3.expected)) {
@@ -17366,8 +16702,8 @@ function ko_default() {
 }
 
 // ../../node_modules/.pnpm/zod@4.6.5/node_modules/zod/v4/locales/lt.js
-var capitalizeFirstCharacter = (text5) => {
-  return text5.charAt(0).toUpperCase() + text5.slice(1);
+var capitalizeFirstCharacter = (text6) => {
+  return text6.charAt(0).toUpperCase() + text6.slice(1);
 };
 function getUnitTypeFromNumber(number4) {
   const abs = Math.abs(number4);
@@ -25102,7 +24438,7 @@ __export(schemas_exports2, {
   invertCodec: () => invertCodec,
   ipv4: () => ipv42,
   ipv6: () => ipv62,
-  json: () => json2,
+  json: () => json,
   jwt: () => jwt,
   keyof: () => keyof,
   ksuid: () => ksuid2,
@@ -25147,7 +24483,7 @@ __export(schemas_exports2, {
   uint64: () => uint64,
   ulid: () => ulid2,
   undefined: () => _undefined3,
-  union: () => union2,
+  union: () => union,
   unknown: () => unknown,
   url: () => url,
   uuid: () => uuid2,
@@ -25320,7 +24656,7 @@ var ZodType = /* @__PURE__ */ $constructor("ZodType", (inst, def) => {
     return array(this);
   },
   or(arg) {
-    return union2([this, arg]);
+    return union([this, arg]);
   },
   and(arg) {
     return intersection(this, arg);
@@ -26146,7 +25482,7 @@ var ZodUnion = /* @__PURE__ */ $constructor("ZodUnion", (inst, def) => {
   inst._zod.processJSONSchema = (ctx, json3, params) => unionProcessor(inst, ctx, json3, params);
   inst.options = def.options;
 });
-function union2(options, params) {
+function union(options, params) {
   return new ZodUnion({
     type: "union",
     options,
@@ -26705,9 +26041,9 @@ var stringbool = (...args) => _stringbool({
   Boolean: ZodBoolean,
   String: ZodString
 }, ...args);
-function json2(params) {
+function json(params) {
   const jsonSchema = lazy(() => {
-    return union2([string2(params), number2(), boolean2(), _null3(), array(jsonSchema), record(string2(), jsonSchema)]);
+    return union([string2(params), number2(), boolean2(), _null3(), array(jsonSchema), record(string2(), jsonSchema)]);
   });
   return jsonSchema;
 }
@@ -27665,7 +27001,7 @@ function deepPartial(schema2) {
     // Every partialed option now admits `undefined`, which the constructor rejects as a duplicate.
     union: (s) => {
       const def = s._zod.def;
-      return def.discriminator === void 0 ? s : union2(def.options);
+      return def.discriminator === void 0 ? s : union(def.options);
     }
   });
 }
@@ -28122,6 +27458,1787 @@ var inferenceResponseSchema = external_exports.object({
 var parseInferenceResponse = (input3) => parseWith(inferenceResponseSchema, input3);
 var parseAnalysisResponse = (input3) => parseWith(analysisResponseSchema, input3);
 
+// ../../packages/architecture-diff/src/messages.ts
+var TYPE_NAMES_EN = {
+  worker: "Worker",
+  r2: "R2 bucket",
+  d1: "D1 database",
+  kv: "KV namespace",
+  queue: "Queue",
+  "durable-object": "Durable Object",
+  ai: "Workers AI",
+  "analytics-engine": "Analytics Engine dataset",
+  assets: "Static assets",
+  stream: "Stream",
+  images: "Images",
+  media: "Media Transformations",
+  browser: "Browser Run",
+  "version-metadata": "Version metadata",
+  workflow: "Workflow",
+  "email-sending": "Email Sending",
+  "dispatch-namespace": "Dispatch namespace",
+  "pipelines-stream": "Basin Pipelines stream",
+  "mtls-certificate": "mTLS certificate",
+  "secrets-store-secret": "Secrets Store secret",
+  "rate-limiting": "Rate Limiting configuration",
+  "ai-search-namespace": "AI Search namespace",
+  "ai-search": "AI Search instance",
+  "analytics-sql": "Analytics SQL",
+  route: "Route",
+  "hono-app": "Hono app",
+  service: "Service",
+  frontend: "Frontend",
+  "mcp-server": "MCP server",
+  "mcp-portal": "MCP server portal",
+  "access-application": "Access application",
+  "access-policy": "Access policy",
+  "dns-record": "DNS record",
+  "worker-route": "Workers route",
+  "custom-domain": "Custom Domain",
+  zone: "Zone",
+  "pages-project": "Pages project",
+  tunnel: "Tunnel",
+  hyperdrive: "Hyperdrive configuration",
+  vectorize: "Vectorize index",
+  module: "Terraform module",
+  "bicep-module": "Bicep module",
+  lambda: "AWS Lambda",
+  s3: "Amazon S3",
+  dynamodb: "Amazon DynamoDB",
+  sqs: "Amazon SQS",
+  sns: "Amazon SNS",
+  eventbridge: "Amazon EventBridge",
+  "api-gateway": "Amazon API Gateway",
+  rds: "Amazon RDS",
+  aurora: "Amazon Aurora",
+  ecs: "Amazon ECS",
+  eks: "Amazon EKS",
+  ecr: "Amazon ECR",
+  ec2: "Amazon EC2",
+  "app-runner": "AWS App Runner",
+  batch: "AWS Batch",
+  "elastic-beanstalk": "AWS Elastic Beanstalk",
+  efs: "Amazon EFS",
+  ebs: "Amazon EBS",
+  elasticache: "Amazon ElastiCache",
+  documentdb: "Amazon DocumentDB",
+  neptune: "Amazon Neptune",
+  redshift: "Amazon Redshift",
+  cloudfront: "Amazon CloudFront",
+  route53: "Amazon Route 53",
+  elb: "Elastic Load Balancing",
+  vpc: "Amazon VPC",
+  "step-functions": "AWS Step Functions",
+  appsync: "AWS AppSync",
+  mq: "Amazon MQ",
+  kinesis: "Amazon Kinesis Data Streams",
+  msk: "Amazon MSK",
+  athena: "Amazon Athena",
+  glue: "AWS Glue",
+  opensearch: "Amazon OpenSearch Service",
+  cognito: "Amazon Cognito",
+  iam: "IAM role",
+  kms: "AWS KMS",
+  "secrets-manager": "AWS Secrets Manager",
+  waf: "AWS WAF",
+  cloudwatch: "Amazon CloudWatch",
+  cloudformation: "AWS CloudFormation",
+  codepipeline: "AWS CodePipeline",
+  codebuild: "AWS CodeBuild",
+  amplify: "AWS Amplify",
+  sagemaker: "Amazon SageMaker AI",
+  "resource-group": "Resource group",
+  "azure-functions": "Azure Functions",
+  "app-service": "Azure App Service",
+  "app-service-plan": "App Service plan",
+  "static-web-apps": "Azure Static Web Apps",
+  "container-apps": "Azure Container Apps",
+  aks: "Azure Kubernetes Service (AKS)",
+  "storage-account": "Storage account",
+  "cosmos-db": "Azure Cosmos DB",
+  "sql-database": "Azure SQL Database",
+  "sql-server": "Azure SQL Database logical server",
+  "key-vault": "Azure Key Vault",
+  "service-bus": "Azure Service Bus",
+  "event-hubs": "Azure Event Hubs",
+  "cache-for-redis": "Azure Cache for Redis",
+  "managed-redis": "Azure Managed Redis",
+  "virtual-network": "Azure Virtual Network",
+  subnet: "Subnet",
+  "application-insights": "Application Insights",
+  "log-analytics": "Log Analytics workspace",
+  "api-management": "Azure API Management",
+  "front-door": "Azure Front Door",
+  "mcp-tool": "MCP tool"
+};
+var TYPE_NAMES_JA = {
+  worker: "Worker",
+  r2: "R2 \u30D0\u30B1\u30C3\u30C8",
+  d1: "D1 \u30C7\u30FC\u30BF\u30D9\u30FC\u30B9",
+  kv: "KV \u30CD\u30FC\u30E0\u30B9\u30DA\u30FC\u30B9",
+  queue: "\u30AD\u30E5\u30FC",
+  "durable-object": "Durable Object",
+  ai: "Workers AI",
+  "analytics-engine": "Analytics Engine \u30C7\u30FC\u30BF\u30BB\u30C3\u30C8",
+  assets: "\u9759\u7684\u30A2\u30BB\u30C3\u30C8",
+  stream: "Stream",
+  images: "Images",
+  media: "Media Transformations",
+  browser: "Browser Run",
+  "version-metadata": "\u30D0\u30FC\u30B8\u30E7\u30F3\u30E1\u30BF\u30C7\u30FC\u30BF",
+  workflow: "Workflow",
+  "email-sending": "Email Sending",
+  "dispatch-namespace": "Dispatch \u30CD\u30FC\u30E0\u30B9\u30DA\u30FC\u30B9",
+  "pipelines-stream": "Basin Pipelines \u30B9\u30C8\u30EA\u30FC\u30E0",
+  "mtls-certificate": "mTLS \u8A3C\u660E\u66F8",
+  "secrets-store-secret": "Secrets Store \u30B7\u30FC\u30AF\u30EC\u30C3\u30C8",
+  "rate-limiting": "Rate Limiting \u8A2D\u5B9A",
+  "ai-search-namespace": "AI Search \u30CD\u30FC\u30E0\u30B9\u30DA\u30FC\u30B9",
+  "ai-search": "AI Search \u30A4\u30F3\u30B9\u30BF\u30F3\u30B9",
+  "analytics-sql": "Analytics SQL",
+  route: "\u30EB\u30FC\u30C8",
+  "hono-app": "Hono \u30A2\u30D7\u30EA",
+  service: "\u30B5\u30FC\u30D3\u30B9",
+  frontend: "\u30D5\u30ED\u30F3\u30C8\u30A8\u30F3\u30C9",
+  "mcp-server": "MCP \u30B5\u30FC\u30D0\u30FC",
+  "mcp-portal": "MCP \u30B5\u30FC\u30D0\u30FC\u30DD\u30FC\u30BF\u30EB",
+  "access-application": "Access \u30A2\u30D7\u30EA\u30B1\u30FC\u30B7\u30E7\u30F3",
+  "access-policy": "Access \u30DD\u30EA\u30B7\u30FC",
+  "dns-record": "DNS \u30EC\u30B3\u30FC\u30C9",
+  "worker-route": "Workers \u30EB\u30FC\u30C8",
+  "custom-domain": "\u30AB\u30B9\u30BF\u30E0\u30C9\u30E1\u30A4\u30F3",
+  zone: "\u30BE\u30FC\u30F3",
+  "pages-project": "Pages \u30D7\u30ED\u30B8\u30A7\u30AF\u30C8",
+  tunnel: "\u30C8\u30F3\u30CD\u30EB",
+  hyperdrive: "Hyperdrive \u8A2D\u5B9A",
+  vectorize: "Vectorize \u30A4\u30F3\u30C7\u30C3\u30AF\u30B9",
+  module: "Terraform \u30E2\u30B8\u30E5\u30FC\u30EB",
+  "bicep-module": "Bicep \u30E2\u30B8\u30E5\u30FC\u30EB",
+  lambda: "AWS Lambda",
+  s3: "Amazon S3",
+  dynamodb: "Amazon DynamoDB",
+  sqs: "Amazon SQS",
+  sns: "Amazon SNS",
+  eventbridge: "Amazon EventBridge",
+  "api-gateway": "Amazon API Gateway",
+  rds: "Amazon RDS",
+  aurora: "Amazon Aurora",
+  ecs: "Amazon ECS",
+  eks: "Amazon EKS",
+  ecr: "Amazon ECR",
+  ec2: "Amazon EC2",
+  "app-runner": "AWS App Runner",
+  batch: "AWS Batch",
+  "elastic-beanstalk": "AWS Elastic Beanstalk",
+  efs: "Amazon EFS",
+  ebs: "Amazon EBS",
+  elasticache: "Amazon ElastiCache",
+  documentdb: "Amazon DocumentDB",
+  neptune: "Amazon Neptune",
+  redshift: "Amazon Redshift",
+  cloudfront: "Amazon CloudFront",
+  route53: "Amazon Route 53",
+  elb: "Elastic Load Balancing",
+  vpc: "Amazon VPC",
+  "step-functions": "AWS Step Functions",
+  appsync: "AWS AppSync",
+  mq: "Amazon MQ",
+  kinesis: "Amazon Kinesis Data Streams",
+  msk: "Amazon MSK",
+  athena: "Amazon Athena",
+  glue: "AWS Glue",
+  opensearch: "Amazon OpenSearch Service",
+  cognito: "Amazon Cognito",
+  iam: "IAM \u30ED\u30FC\u30EB",
+  kms: "AWS KMS",
+  "secrets-manager": "AWS Secrets Manager",
+  waf: "AWS WAF",
+  cloudwatch: "Amazon CloudWatch",
+  cloudformation: "AWS CloudFormation",
+  codepipeline: "AWS CodePipeline",
+  codebuild: "AWS CodeBuild",
+  amplify: "AWS Amplify",
+  sagemaker: "Amazon SageMaker AI",
+  "resource-group": "\u30EA\u30BD\u30FC\u30B9 \u30B0\u30EB\u30FC\u30D7",
+  "azure-functions": "Azure Functions",
+  "app-service": "Azure App Service",
+  "app-service-plan": "App Service \u30D7\u30E9\u30F3",
+  "static-web-apps": "Azure Static Web Apps",
+  "container-apps": "Azure Container Apps",
+  aks: "Azure Kubernetes Service (AKS)",
+  "storage-account": "\u30B9\u30C8\u30EC\u30FC\u30B8 \u30A2\u30AB\u30A6\u30F3\u30C8",
+  "cosmos-db": "Azure Cosmos DB",
+  "sql-database": "Azure SQL Database",
+  "sql-server": "Azure SQL Database \u306E\u8AD6\u7406\u30B5\u30FC\u30D0\u30FC",
+  "key-vault": "Azure Key Vault",
+  "service-bus": "Azure Service Bus",
+  "event-hubs": "Azure Event Hubs",
+  "cache-for-redis": "Azure Cache for Redis",
+  "managed-redis": "Azure Managed Redis",
+  "virtual-network": "Azure Virtual Network",
+  subnet: "\u30B5\u30D6\u30CD\u30C3\u30C8",
+  "application-insights": "Application Insights",
+  "log-analytics": "Log Analytics \u30EF\u30FC\u30AF\u30B9\u30DA\u30FC\u30B9",
+  "api-management": "Azure API Management",
+  "front-door": "Azure Front Door",
+  "mcp-tool": "MCP \u30C4\u30FC\u30EB"
+};
+var TYPE_NAMES = {
+  en: TYPE_NAMES_EN,
+  ja: TYPE_NAMES_JA
+};
+var RELATION_NAMES = {
+  en: {
+    DEPENDS_ON: "depends on",
+    CALLS: "calls",
+    READS_FROM: "reads",
+    WRITES_TO: "writes",
+    DEPLOYED_ON: "runs on",
+    EXPOSES: "exposes",
+    BINDS_TO: "binds",
+    PUBLISHES_TO: "publishes",
+    CONSUMES_FROM: "consumes"
+  },
+  ja: {
+    DEPENDS_ON: "\u4F9D\u5B58\u3059\u308B",
+    CALLS: "\u547C\u3076",
+    READS_FROM: "\u8AAD\u3080",
+    WRITES_TO: "\u66F8\u304F",
+    DEPLOYED_ON: "\u8F09\u308B",
+    EXPOSES: "\u516C\u958B\u3059\u308B",
+    BINDS_TO: "\u30D0\u30A4\u30F3\u30C9\u3059\u308B",
+    PUBLISHES_TO: "\u9001\u308B",
+    CONSUMES_FROM: "\u53D7\u3051\u308B"
+  }
+};
+
+// ../../packages/architecture-diff/src/mermaid.ts
+var ENTITY = {
+  '"': "#quot;",
+  "#": "#35;",
+  ";": "#59;",
+  "&": "#38;",
+  "%": "#37;",
+  $: "#36;",
+  "(": "#40;",
+  ")": "#41;",
+  "[": "#91;",
+  "]": "#93;",
+  "{": "#123;",
+  "}": "#125;",
+  "<": "#60;",
+  ">": "#62;",
+  "|": "#124;",
+  "`": "#96;"
+};
+function escapeMermaidText(text6) {
+  return text6.replace(/["#;&%$()[\]{}<>|`]/g, (c) => ENTITY[c] ?? c);
+}
+
+// ../../packages/cloud-icons/src/aws.generated.ts
+var AWS_ICONS = {
+  "lambda": {
+    "name": "AWS Lambda",
+    "markup": '<g transform="translate(2 2) scale(0.75)"><g id="aws-lambda-Icon-Architecture_64_Arch_AWS-Lambda_64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="aws-lambda-Icon-Architecture-BG_64_Compute" fill="#ED7100"><rect id="aws-lambda-Rectangle" x="0" y="0" width="80" height="80"></rect></g><path d="M28.0075352,66 L15.5907274,66 L29.3235885,37.296 L35.5460249,50.106 L28.0075352,66 Z M30.2196674,34.553 C30.0512768,34.208 29.7004629,33.989 29.3175745,33.989 L29.3145676,33.989 C28.9286723,33.99 28.5778583,34.211 28.4124746,34.558 L13.097944,66.569 C12.9495999,66.879 12.9706487,67.243 13.1550766,67.534 C13.3374998,67.824 13.6582439,68 14.0020416,68 L28.6420072,68 C29.0299071,68 29.3817234,67.777 29.5481094,67.428 L37.563706,50.528 C37.693006,50.254 37.6920037,49.937 37.5586944,49.665 L30.2196674,34.553 Z M64.9953491,66 L52.6587274,66 L32.866809,24.57 C32.7014253,24.222 32.3486067,24 31.9617091,24 L23.8899822,24 L23.8990031,14 L39.7197081,14 L59.4204149,55.429 C59.5857986,55.777 59.9386172,56 60.3255148,56 L64.9953491,56 L64.9953491,66 Z M65.9976745,54 L60.9599868,54 L41.25928,12.571 C41.0938963,12.223 40.7410777,12 40.3531778,12 L22.89768,12 C22.3453987,12 21.8963569,12.447 21.8953545,12.999 L21.884329,24.999 C21.884329,25.265 21.9885708,25.519 22.1780103,25.707 C22.3654452,25.895 22.6200358,26 22.8866544,26 L31.3292417,26 L51.1221625,67.43 C51.2885485,67.778 51.6393624,68 52.02626,68 L65.9976745,68 C66.5519605,68 67,67.552 67,67 L67,55 C67,54.448 66.5519605,54 65.9976745,54 L65.9976745,54 Z" id="aws-lambda-AWS-Lambda_Icon_64_Squid" fill="#FFFFFF"></path></g></g>'
+  },
+  "s3": {
+    "name": "Amazon S3",
+    "markup": '<g transform="translate(2 2) scale(0.75)"><g id="aws-s3-Icon-Architecture_64_Arch_Amazon-Simple-Storage-Service_64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="aws-s3-Icon-Architecture-BG_64_Storage" fill="#7AA116"><rect id="aws-s3-Rectangle" x="0" y="0" width="80" height="80"></rect></g><g id="aws-s3-Icon-Service_64_Amazon-Simple-Storage-Service_64" transform="translate(12.999900, 11.999600)" fill="#FFFFFF"><path d="M47.836,30.893 L48.22,28.189 C51.761,30.31 51.807,31.186 51.8060132,31.21 C51.8,31.215 51.196,31.719 47.836,30.893 L47.836,30.893 Z M45.893,30.353 C39.773,28.501 31.25,24.591 27.801,22.961 C27.801,22.947 27.805,22.934 27.805,22.92 C27.805,21.595 26.727,20.517 25.401,20.517 C24.077,20.517 22.999,21.595 22.999,22.92 C22.999,24.245 24.077,25.323 25.401,25.323 C25.983,25.323 26.511,25.106 26.928,24.761 C30.986,26.682 39.443,30.535 45.608,32.355 L43.17,49.561 C43.163,49.608 43.16,49.655 43.16,49.702 C43.16,51.217 36.453,54 25.494,54 C14.419,54 7.641,51.217 7.641,49.702 C7.641,49.656 7.638,49.611 7.632,49.566 L2.538,12.359 C6.947,15.394 16.43,17 25.5,17 C34.556,17 44.023,15.4 48.441,12.374 L45.893,30.353 Z M2,8.478 C2.072,7.162 9.634,2 25.5,2 C41.364,2 48.927,7.161 49,8.478 L49,8.927 C48.13,11.878 38.33,15 25.5,15 C12.648,15 2.843,11.868 2,8.913 L2,8.478 Z M51,8.5 C51,5.035 41.066,0 25.5,0 C9.934,0 0,5.035 0,8.5 L0.094,9.254 L5.642,49.778 C5.775,54.31 17.861,56 25.494,56 C34.966,56 45.029,53.822 45.159,49.781 L47.555,32.884 C48.888,33.203 49.985,33.366 50.866,33.366 C52.049,33.366 52.849,33.077 53.334,32.499 C53.732,32.025 53.884,31.451 53.77,30.84 C53.511,29.456 51.868,27.964 48.522,26.055 L50.898,9.293 L51,8.5 Z" id="aws-s3-Amazon-Simple-Storage-Service-Icon_64_Squid"></path></g></g></g>'
+  },
+  "dynamodb": {
+    "name": "Amazon DynamoDB",
+    "markup": '<g transform="translate(2 2) scale(0.75)"><g id="aws-dynamodb-Icon-Architecture_64_Arch_Amazon-DynamoDB_64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="aws-dynamodb-Icon-Architecture-BG_64_Database" fill="#C925D1"><rect id="aws-dynamodb-Rectangle" x="0" y="0" width="80" height="80"></rect></g><path d="M52.0859525,54.8502506 C48.7479569,57.5490338 41.7449661,58.9752927 35.0439749,58.9752927 C28.3419838,58.9752927 21.336993,57.548042 17.9999974,54.8492588 L17.9999974,60.284515 L18.0009974,60.284515 C18.0009974,62.9952002 24.9999974,66.0163299 35.0439749,66.0163299 C45.0799617,66.0163299 52.0749525,62.9991676 52.0859525,60.290466 L52.0859525,54.8502506 Z M52.0869525,44.522272 L54.0869499,44.5113618 L54.0869499,44.522272 C54.0869499,45.7303271 53.4819507,46.8580436 52.3039522,47.8905439 C53.7319503,49.147199 54.0869499,50.3800499 54.0869499,51.257824 C54.0869499,51.263775 54.0859499,51.2687342 54.0859499,51.2746852 L54.0859499,60.284515 L54.0869499,60.284515 C54.0869499,65.2952658 44.2749628,68 35.0439749,68 C25.8349871,68 16.0499999,65.3071678 16.003,60.3192292 C16.003,60.31427 16,60.3093109 16,60.3043517 L16,51.2548485 C16,51.2528648 16.002,51.2498893 16.002,51.2469138 C16.005,50.3691398 16.3609995,49.1412479 17.7869976,47.8875684 C16.3699995,46.6358725 16.01,45.4149236 16.001,44.5440924 L16.002,44.5440924 C16.002,44.540125 16,44.5371495 16,44.5331822 L16,35.483679 C16,35.4807035 16.002,35.477728 16.002,35.4747525 C16.005,34.5969784 16.3619995,33.3690866 17.7879976,32.1173908 C16.3699995,30.8647031 16.01,29.6427623 16.001,28.7729229 L16.002,28.7729229 C16.002,28.7689556 16,28.7649882 16,28.7610209 L16,19.7125095 C16,19.709534 16.002,19.7065585 16.002,19.703583 C16.019,14.6997751 25.8199871,12 35.0439749,12 C40.2549681,12 45.2609615,12.8281823 48.7779569,14.2722941 L48.0129579,16.1052054 C44.7299622,14.7573015 40.0029684,13.9836701 35.0439749,13.9836701 C24.9999882,13.9836701 18.0009974,17.0047998 18.0009974,19.7174687 C18.0009974,22.4291458 24.9999882,25.4502754 35.0439749,25.4502754 C35.3149746,25.4532509 35.5799742,25.4502754 35.8479739,25.4403571 L35.9319738,27.4220435 C35.6359742,27.4339456 35.3399745,27.4339456 35.0439749,27.4339456 C28.3419838,27.4339456 21.336993,26.0066949 18,23.3079117 L18,28.7401923 L18.0009974,28.7401923 L18.0009974,28.7630046 C18.0109974,29.8034395 19.0779959,30.7119605 19.9719948,31.2892085 C22.6619912,33.0040913 27.4819849,34.1754485 32.8569778,34.4184481 L32.7659779,36.4001346 C27.3209851,36.1531677 22.5529914,35.0234675 19.4839954,33.2917235 C18.7279964,33.8570695 18.0009974,34.6217743 18.0009974,35.4886382 C18.0009974,38.2003153 24.9999882,41.2214449 35.0439749,41.2214449 C36.0289736,41.2214449 37.0069723,41.1887143 37.9519711,41.1232532 L38.0909709,43.1019642 C37.1009722,43.1704008 36.0749736,43.205115 35.0439749,43.205115 C28.3419838,43.205115 21.336993,41.7778644 18,39.0790811 L18,44.5113618 L18.0009974,44.5113618 C18.0109974,45.574609 19.0779959,46.4821381 19.9719948,47.060378 C23.0479907,49.0232196 28.8239831,50.2451604 35.0439749,50.2451604 L35.4839744,50.2451604 L35.4839744,52.2288305 L35.0439749,52.2288305 C28.7249832,52.2288305 22.9819908,51.0554896 19.4699954,49.0728113 C18.7179964,49.6371655 18.0009974,50.397903 18.0009974,51.257824 C18.0009974,53.9695011 24.9999882,56.9916225 35.0439749,56.9916225 C45.0799617,56.9916225 52.0749525,53.9744602 52.0859525,51.2647668 L52.0859525,51.2548485 L52.0859525,51.2538566 C52.0839525,50.391952 51.3639534,49.6312145 50.6099544,49.0668603 C50.1219551,49.3435823 49.5989558,49.6103859 49.0039566,49.8553692 L48.2379576,48.022458 C48.9639566,47.7239156 49.5939558,47.4015692 50.1109551,47.0623616 C51.0129539,46.4742034 52.0869525,45.5547723 52.0869525,44.522272 L52.0869525,44.522272 Z M60.6529412,30.0166841 L55.0489486,30.0166841 C54.717949,30.0166841 54.4069494,29.8540231 54.2219497,29.5822603 C54.0349499,29.3104975 53.99695,28.9643471 54.1189498,28.6598537 L57.5279453,20.1380068 L44.6189702,20.1380068 L38.6189702,32.0400276 L45.0009618,32.0400276 C45.3199614,32.0400276 45.619961,32.1917784 45.8089608,32.44668 C45.9959605,32.7025735 46.0509604,33.0308709 45.9539606,33.3333806 L40.2579681,51.089212 L60.6529412,30.0166841 Z M63.7219372,29.7121907 L38.7229701,55.539576 C38.5279703,55.7399267 38.2659707,55.8440694 38.000971,55.8440694 C37.8249713,55.8440694 37.6479715,55.7994368 37.4899717,55.7052124 C37.0899722,55.4691557 36.9069725,54.992083 37.0479723,54.5517083 L43.6339636,34.0236978 L37.0009724,34.0236978 C36.6539728,34.0236978 36.3329732,33.8461593 36.1499735,33.5535679 C35.9679737,33.2609766 35.9509737,32.8959813 36.1069735,32.5885124 L43.1069643,18.7028214 C43.2759641,18.3665893 43.6219636,18.1543366 44.0009631,18.1543366 L59.0009434,18.1543366 C59.331943,18.1543366 59.6429425,18.3179894 59.8279423,18.5887604 C60.0149421,18.861515 60.052942,19.2066736 59.9309422,19.5121588 L56.5219467,28.0330139 L62.9999381,28.0330139 C63.3999376,28.0330139 63.7629371,28.2710544 63.9199369,28.6360497 C64.0769367,29.0020368 63.9989368,29.4255504 63.7219372,29.7121907 L63.7219372,29.7121907 Z M19.4549955,60.6743062 C20.8719936,61.4727334 22.6559912,62.1442057 24.7569885,62.6678947 L25.2449878,60.7437346 C23.3459903,60.2706293 21.6859925,59.6497405 20.4429942,58.949505 L19.4549955,60.6743062 Z M24.7569885,46.7985335 L25.2449878,44.8753653 C23.3459903,44.4012681 21.6859925,43.7803794 20.4429942,43.0801438 L19.4549955,44.804945 C20.8719936,45.6033722 22.6549912,46.2748446 24.7569885,46.7985335 L24.7569885,46.7985335 Z M19.4549955,28.9355839 L20.4429942,27.2107827 C21.6839925,27.9110182 23.3449903,28.5309151 25.2449878,29.0060041 L24.7569885,30.9291723 C22.6529912,30.4044916 20.8699936,29.7330193 19.4549955,28.9355839 L19.4549955,28.9355839 Z" id="aws-dynamodb-Amazon-DynamoDB_Icon_64_Squid" fill="#FFFFFF"></path></g></g>'
+  },
+  "sqs": {
+    "name": "Amazon SQS",
+    "markup": '<g transform="translate(2 2) scale(0.75)"><g id="aws-sqs-Icon-Architecture_64_Arch_Amazon-Simple-Queue-Service_64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="aws-sqs-Icon-Architecture-BG_64_Application-Integration" fill="#E7157B"><rect id="aws-sqs-Rectangle" x="0" y="0" width="80" height="80"></rect></g><path d="M28.7169966,43.6876756 L31.7189265,40.721826 C31.9070474,40.5359011 32.0131156,40.2833614 32.0141233,40.019885 C32.0151169,39.7564086 31.9100493,39.5028747 31.722929,39.3159556 L28.7209992,36.3163014 L27.3020871,37.7181948 L28.5899149,39.0057494 L24.0089701,39.0057494 L24.0089701,40.9942506 L28.6059252,40.9942506 L27.3060896,42.2778282 L28.7169966,43.6876756 Z M51.627725,43.7781524 L55.630298,40.793412 C55.8804589,40.6054986 56.0295547,40.3112004 56.0295547,39.9990057 C56.0295547,39.6858168 55.8804589,39.3905244 55.6292974,39.202611 L51.6267243,36.2218476 L50.4259524,37.8126486 L52.0269816,39.0057494 L48.0244085,39.0057494 L48.0244085,40.9942506 L52.025981,40.9942506 L50.4249518,42.1873514 L51.627725,43.7781524 Z M35.2081695,40 C35.2081695,42.1107941 34.8429347,44.1012839 34.160496,45.8332685 C35.9606533,45.14127 37.9909585,44.7952708 40.0192624,44.7952708 C42.0475663,44.7952708 44.0778715,45.14127 45.8770281,45.8332685 C45.19559,44.1012839 44.8303552,42.1107941 44.8303552,40 C44.8303552,37.8892059 45.19559,35.8997104 45.8770281,34.1667315 C42.2777142,35.5497341 37.7608105,35.5497341 34.160496,34.1667315 C34.8429347,35.8997104 35.2081695,37.8892059 35.2081695,40 L35.2081695,40 Z M30.3060182,49.6511909 C30.1108927,49.4573121 30.0128297,49.2027839 30.0128297,48.9482557 C30.0128297,48.6937276 30.1108927,48.4391994 30.3060182,48.2453205 C32.1221857,46.4407556 33.206883,43.3575844 33.206883,40 C33.206883,36.6424156 32.1221857,33.5592444 30.3060182,31.7546795 C30.1108927,31.5608006 30.0128297,31.3062724 30.0128297,31.0517443 C30.0128297,30.7972161 30.1108927,30.5426879 30.3060182,30.3488091 C30.6972697,29.9600571 31.3296762,29.9600571 31.7209277,30.3488091 C35.5984204,34.2015303 44.4401044,34.2015303 48.317597,30.3488091 C48.7088485,29.9600571 49.3412551,29.9600571 49.7325066,30.3488091 C49.927632,30.5426879 50.0256951,30.7972161 50.0256951,31.0517443 C50.0256951,31.3062724 49.927632,31.5608006 49.7325066,31.7546795 C47.9163391,33.5592444 46.8316418,36.6424156 46.8316418,40 C46.8316418,43.3575844 47.9163391,46.4407556 49.7325066,48.2453205 C49.927632,48.4391994 50.0256951,48.6937276 50.0256951,48.9482557 C50.0256951,49.2027839 49.927632,49.4573121 49.7325066,49.6511909 C49.5373812,49.8450698 49.2812165,49.9425064 49.0250518,49.9425064 C48.7688871,49.9425064 48.5127225,49.8450698 48.317597,49.6511909 C44.4401044,45.7984697 35.5984204,45.7984697 31.7209277,49.6511909 C31.3296762,50.0399429 30.6972697,50.0399429 30.3060182,49.6511909 L30.3060182,49.6511909 Z M66.0009649,40.0049713 C66.0009649,39.0783297 65.6377314,38.2073661 64.9783075,37.5521549 C64.2978701,36.8750702 63.403295,36.5380193 62.5097205,36.5380193 C61.6161461,36.5380193 60.721571,36.8750702 60.0411336,37.5521549 C58.6792581,38.9043358 58.6792581,41.1046125 60.0411336,42.4577876 C61.4020084,43.8099684 63.6154313,43.8109627 64.9783075,42.4577876 C65.6377314,41.8025764 66.0009649,40.9316128 66.0009649,40.0049713 L66.0009649,40.0049713 Z M66.3932171,43.863658 C65.3225288,44.9275062 63.916625,45.4594303 62.5097205,45.4594303 C61.1028161,45.4594303 59.6969123,44.9275062 58.626224,43.863658 C56.4838468,41.7359616 56.4838468,38.2739809 58.626224,36.1462845 C60.7686012,34.0165997 64.2528411,34.0185882 66.3932171,36.1462845 C68.5355943,38.2739809 68.5355943,41.7359616 66.3932171,43.863658 L66.3932171,43.863658 Z M20.9800229,40.027839 C20.9800229,39.1011974 20.6167894,38.2302339 19.9573654,37.5750227 C19.2979415,36.9198115 18.421378,36.5588985 17.4887785,36.5588985 C16.5571796,36.5588985 15.6806161,36.9198115 15.0201916,37.5750227 C14.3607676,38.2302339 13.9985348,39.1011974 13.9985348,40.027839 C13.9985348,40.9534864 14.3607676,41.8244499 15.0201916,42.4806553 C16.34004,43.7900834 18.6385176,43.7900834 19.9573654,42.4806553 C20.6167894,41.8244499 20.9800229,40.9534864 20.9800229,40.027839 L20.9800229,40.027839 Z M21.372275,43.8865257 C20.3015867,44.9503739 18.8956829,45.482298 17.4887785,45.482298 C16.0828747,45.482298 14.6769709,44.9503739 13.605282,43.8865257 C11.464906,41.7588294 11.464906,38.2968487 13.605282,36.1691523 C15.7476592,34.0414559 19.2308984,34.0414559 21.372275,36.1691523 C23.5136516,38.2968487 23.5136516,41.7588294 21.372275,43.8865257 L21.372275,43.8865257 Z M54.8958259,54.856093 C50.901258,58.8261358 45.5888428,61.0114987 39.9392109,61.0114987 C34.2875777,61.0114987 28.9761632,58.8261358 24.9815953,54.856093 C22.241834,52.134829 20.7338646,48.8826352 19.9513616,46.6346345 L18.0601458,47.2848744 C18.9116932,49.730731 20.5577514,53.273246 23.5666857,56.2619634 C27.9394968,60.607833 33.7532342,63 39.9392109,63 C46.124187,63 51.9379244,60.607833 56.3107355,56.2619634 C58.8373597,53.7534691 60.8496533,50.563913 61.9793796,47.2818917 L60.0861625,46.6376173 C59.0534987,49.6382657 57.2103138,52.5573856 54.8958259,54.856093 L54.8958259,54.856093 Z M19.9503609,33.3663597 L18.0611465,32.7141313 C19.2719248,29.2501621 21.229183,26.0606061 23.5726896,23.7330653 C27.9434994,19.3911728 33.7552355,17 39.9392109,17 C46.1231863,17 51.9349225,19.3911728 56.3047316,23.7330653 C58.7713173,26.1838931 60.8396469,29.4569662 61.9773783,32.7141313 L60.0881638,33.3663597 C59.0444929,30.3836078 57.1502752,27.3849479 54.889822,25.1389357 C50.898256,21.1718757 45.5878422,18.9885013 39.9392109,18.9885013 C34.289579,18.9885013 28.9801658,21.1718757 24.9875992,25.1389357 C22.8542277,27.2596723 21.0650775,30.181775 19.9503609,33.3663597 L19.9503609,33.3663597 Z" id="aws-sqs-AWS-Simple-Queue-Service_Icon_64_Squid" fill="#FFFFFF"></path></g></g>'
+  },
+  "sns": {
+    "name": "Amazon SNS",
+    "markup": '<g transform="translate(2 2) scale(0.75)"><g id="aws-sns-Icon-Architecture_64_Arch_Amazon-Simple-Notification-Service_64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="aws-sns-Icon-Architecture-BG_64_Application-Integration" fill="#E7157B"><rect id="aws-sns-Rectangle" x="0" y="0" width="80" height="80"></rect></g><path d="M17,38 C18.103,38 19,38.897 19,40 C19,41.103 18.103,42 17,42 C15.897,42 15,41.103 15,40 C15,38.897 15.897,38 17,38 L17,38 Z M41,64 C29.314,64 19.289,55.466 17.194,43.98 C18.965,43.894 20.427,42.659 20.857,41 L27,41 L27,39 L20.857,39 C20.427,37.342 18.966,36.107 17.195,36.02 C19.285,24.71 29.511,16 41,16 C45.313,16 49.832,17.622 54.429,20.821 L55.571,19.179 C50.633,15.743 45.73,14 41,14 C28.27,14 16.949,23.865 15.063,36.521 C13.839,37.207 13,38.5 13,40 C13,41.5 13.839,42.793 15.063,43.478 C16.97,56.341 28.056,66 41,66 C46.407,66 51.942,64.157 56.585,60.811 L55.415,59.189 C51.11,62.292 45.991,64 41,64 L41,64 Z M30.101,36.442 C31.955,36.895 34.275,37 36,37 C37.642,37 39.823,36.905 41.629,36.506 L37.105,45.553 C37.036,45.691 37,45.845 37,46 L37,50.453 C36.199,50.964 34.833,51.812 34,51.986 L34,46 C34,45.868 33.974,45.737 33.923,45.615 L30.101,36.442 Z M36,33 C40.025,33 42.174,33.604 42.841,34 C42.174,34.396 40.025,35 36,35 C31.975,35 29.826,34.396 29.159,34 C29.826,33.604 31.975,33 36,33 L36,33 Z M33,54 L34,54 C34.043,54 34.086,53.997 34.128,53.992 C35.352,53.833 36.909,52.887 38.272,52.013 L38.535,51.845 C38.824,51.661 39,51.342 39,51 L39,46.236 L44.559,35.12 C44.833,34.801 45,34.434 45,34 C45,31.39 39.361,31 36,31 C32.639,31 27,31.39 27,34 C27,34.366 27.12,34.684 27.32,34.967 L32,46.2 L32,53 C32,53.552 32.447,54 33,54 L33,54 Z M62,53 C63.103,53 64,53.897 64,55 C64,56.103 63.103,57 62,57 C60.897,57 60,56.103 60,55 C60,53.897 60.897,53 62,53 L62,53 Z M62,23 C63.103,23 64,23.897 64,25 C64,26.103 63.103,27 62,27 C60.897,27 60,26.103 60,25 C60,23.897 60.897,23 62,23 L62,23 Z M64,38 C65.103,38 66,38.897 66,40 C66,41.103 65.103,42 64,42 C62.897,42 62,41.103 62,40 C62,38.897 62.897,38 64,38 L64,38 Z M54,41 L60.143,41 C60.589,42.72 62.142,44 64,44 C66.206,44 68,42.206 68,40 C68,37.794 66.206,36 64,36 C62.142,36 60.589,37.28 60.143,39 L54,39 L54,26 L58.143,26 C58.589,27.72 60.142,29 62,29 C64.206,29 66,27.206 66,25 C66,22.794 64.206,21 62,21 C60.142,21 58.589,22.28 58.143,24 L53,24 C52.447,24 52,24.448 52,25 L52,39 L45,39 L45,41 L52,41 L52,55 C52,55.552 52.447,56 53,56 L58.143,56 C58.589,57.72 60.142,59 62,59 C64.206,59 66,57.206 66,55 C66,52.794 64.206,51 62,51 C60.142,51 58.589,52.28 58.143,54 L54,54 L54,41 Z" id="aws-sns-AWS-Simple-Notification-Service_Icon_64_Squid" fill="#FFFFFF"></path></g></g>'
+  },
+  "eventbridge": {
+    "name": "Amazon EventBridge",
+    "markup": '<g transform="translate(2 2) scale(0.75)"><g id="aws-eventbridge-Icon-Architecture_64_Arch_Amazon-EventBridge_64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="aws-eventbridge-Icon-Architecture-BG_64_Application-Integration" fill="#E7157B"><rect id="aws-eventbridge-Rectangle" x="0" y="0" width="80" height="80"></rect></g><path d="M53.656744,66 C51.5137882,66 49.7695913,64.247 49.7695913,62.091 C49.7695913,59.935 51.5137882,58.182 53.656744,58.182 C55.7996998,58.182 57.5438968,59.935 57.5438968,62.091 C57.5438968,64.247 55.7996998,66 53.656744,66 L53.656744,66 Z M45.1326526,49 L34.7977386,49 L29.6297845,40 L34.7977386,31 L45.1326526,31 L50.2996124,40 L45.1326526,49 Z M27.6210741,21.818 C25.4781184,21.818 23.7339214,20.065 23.7339214,17.909 C23.7339214,15.753 25.4781184,14 27.6210741,14 C29.7650244,14 31.5092213,15.753 31.5092213,17.909 C31.5092213,20.065 29.7650244,21.818 27.6210741,21.818 L27.6210741,21.818 Z M53.656744,56.182 C52.918891,56.182 52.214848,56.325 51.5635088,56.576 L47.3402451,49.41 L47.117497,49.543 L52.3093171,40.5 C52.4863222,40.19 52.4863222,39.81 52.3093171,39.5 L46.5675877,29.5 C46.3895881,29.19 46.0614325,29 45.7064278,29 L35.2581509,29 L35.2989218,28.976 L31.4266852,22.404 C32.691576,21.32 33.4980434,19.708 33.4980434,17.909 C33.4980434,14.651 30.8618597,12 27.6210741,12 C24.381283,12 21.7450993,14.651 21.7450993,17.909 C21.7450993,21.167 24.381283,23.818 27.6210741,23.818 C28.3599216,23.818 29.0639646,23.675 29.7153038,23.424 L33.3299879,29.557 L27.6200797,39.5 C27.4430746,39.81 27.4430746,40.19 27.6200797,40.5 L33.3628035,50.5 C33.5408031,50.81 33.8689587,51 34.2239635,51 L45.7064278,51 C45.7889639,51 45.8695112,50.987 45.9470752,50.968 L49.8521274,57.596 C48.5862421,58.68 47.7807692,60.292 47.7807692,62.091 C47.7807692,65.349 50.4159585,68 53.656744,68 C56.8975296,68 59.5327189,65.349 59.5327189,62.091 C59.5327189,58.833 56.8975296,56.182 53.656744,56.182 L53.656744,56.182 Z M59.5844283,32.104 C57.4414725,32.104 55.6982699,30.351 55.6982699,28.195 C55.6982699,26.039 57.4414725,24.286 59.5844283,24.286 C61.7273841,24.286 63.471581,26.039 63.471581,28.195 C63.471581,30.351 61.7273841,32.104 59.5844283,32.104 L59.5844283,32.104 Z M66.8665003,39.5 L63.091716,32.925 C64.5266511,31.846 65.4604031,30.13 65.4604031,28.195 C65.4604031,24.937 62.8252138,22.286 59.5844283,22.286 C58.7600615,22.286 57.9744768,22.459 57.2614841,22.77 L54.1837819,17.409 C54.0067767,17.1 53.6776267,16.909 53.3226219,16.909 L40.9949082,16.909 L40.9949082,18.909 L52.7488468,18.909 L55.5958456,23.869 C54.4383511,24.949 53.7094478,26.486 53.7094478,28.195 C53.7094478,31.453 56.3446371,34.104 59.5844283,34.104 C60.1880358,34.104 60.771755,34.011 61.3206699,33.84 L64.85779,40 L59.8917013,48.648 L61.6140212,49.648 L66.8665003,40.5 C67.0444999,40.19 67.0444999,39.81 66.8665003,39.5 L66.8665003,39.5 Z M21.229,55.247 C19.0850498,55.247 17.3408528,53.493 17.3408528,51.338 C17.3408528,49.182 19.0850498,47.429 21.229,47.429 C23.3719558,47.429 25.1161527,49.182 25.1161527,51.338 C25.1161527,53.493 23.3719558,55.247 21.229,55.247 L21.229,55.247 Z M24.4767464,56.258 C26.0588544,55.198 27.1049748,53.389 27.1049748,51.338 C27.1049748,48.08 24.4687911,45.429 21.229,45.429 C20.2902759,45.429 19.4062445,45.657 18.618671,46.052 L15.1432044,40 L20.9018387,29.971 L19.1785244,28.971 L13.1334997,39.5 C12.9555001,39.81 12.9555001,40.19 13.1334997,40.5 L17.0047419,47.24 C15.9834817,48.304 15.3520307,49.747 15.3520307,51.338 C15.3520307,54.596 17.9882144,57.247 21.229,57.247 C21.7172558,57.247 22.189601,57.18 22.6440469,57.066 L25.8162181,62.591 C25.9942177,62.9 26.3223733,63.091 26.6773781,63.091 L39.0060862,63.091 L39.0060862,61.091 L27.2511532,61.091 L24.4767464,56.258 Z" id="aws-eventbridge-Amazon-EventBridge_Icon_64_Squid" fill="#FFFFFF"></path></g></g>'
+  },
+  "api-gateway": {
+    "name": "Amazon API Gateway",
+    "markup": '<g transform="translate(2 2) scale(0.75)"><g id="aws-api-gateway-Icon-Architecture_64_Arch_Amazon-API-Gateway_64"><g id="aws-api-gateway-Icon-Architecture-BG_64_Networking-Content-Delivery"><rect id="aws-api-gateway-Rectangle" width="80" height="80" fill="#8C4FFF"/></g><g id="aws-api-gateway-Icon-Service_64_Amazon-API-Gateway_64"><path id="aws-api-gateway-Amazon-API-Gateway_Icon_64_Squid" fill-rule="evenodd" clip-rule="evenodd" d="M34.065 55.6324H37V53.6153H34.065V55.6324ZM39 55.6324H42V53.6153H39V55.6324ZM27 14.6295L14 21.0821V61.1934L27 65.5896V14.6295ZM29 27.3934V53.6153H32V55.6324H29V66.9915C29 67.3162 28.845 67.6208 28.584 67.8104C28.412 67.9355 28.207 68 28 68C27.894 68 27.786 67.9829 27.682 67.9476L12.682 62.8756C12.274 62.7375 12 62.3522 12 61.9196V20.4537C12 20.0705 12.217 19.7185 12.559 19.5491L27.559 12.1041C27.868 11.9498 28.235 11.9679 28.528 12.1525C28.821 12.3361 29 12.6598 29 13.0087V25.3764H32V27.3934H29ZM44 55.6324H47V53.6153H44V55.6324ZM44.065 27.3934H47V25.3764H44.065V27.3934ZM39.065 27.3934H42V25.3764H39.065V27.3934ZM34.065 27.3934H37V25.3764H34.065V27.3934ZM66 21.0821L53 14.6295V65.5896L66 61.1934V21.0821ZM68 61.9196C68 62.3522 67.726 62.7375 67.318 62.8756L52.318 67.9476C52.214 67.9829 52.106 68 52 68C51.793 68 51.588 67.9355 51.416 67.8104C51.155 67.6208 51 67.3162 51 66.9915V55.6324H49.065V53.6153H51V27.3934H49.065V25.3764H51V13.0087C51 12.6598 51.179 12.3361 51.472 12.1525C51.765 11.9679 52.131 11.9498 52.441 12.1041L67.441 19.5491C67.783 19.7185 68 20.0705 68 20.4537V61.9196ZM42.934 33.8067L41.066 33.0826L36.066 46.1935L37.934 46.9176L42.934 33.8067ZM49.707 40.2089C50.098 39.8145 50.098 39.1761 49.707 38.7828L45.707 34.7487L44.293 36.1747L47.586 39.4958L44.293 42.8169L45.707 44.243L49.707 40.2089ZM34.293 44.243L30.293 40.2089C29.902 39.8145 29.902 39.1761 30.293 38.7828L34.293 34.7487L35.707 36.1747L32.414 39.4958L35.707 42.8169L34.293 44.243Z" fill="white"/></g></g></g>'
+  },
+  "rds": {
+    "name": "Amazon RDS",
+    "markup": '<g transform="translate(2 2) scale(0.75)"><g id="aws-rds-Icon-Architecture_64_Arch_Amazon-RDS_64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="aws-rds-Icon-Architecture-BG_64_Database" fill="#C925D1"><rect id="aws-rds-Rectangle" x="0" y="0" width="80" height="80"></rect></g><path d="M15.414,14 L24.707,23.293 L23.293,24.707 L14,15.414 L14,23 L12,23 L12,13 C12,12.448 12.447,12 13,12 L23,12 L23,14 L15.414,14 Z M68,13 L68,23 L66,23 L66,15.414 L56.707,24.707 L55.293,23.293 L64.586,14 L57,14 L57,12 L67,12 C67.553,12 68,12.448 68,13 L68,13 Z M66,57 L68,57 L68,67 C68,67.552 67.553,68 67,68 L57,68 L57,66 L64.586,66 L55.293,56.707 L56.707,55.293 L66,64.586 L66,57 Z M65.5,39.213 C65.5,35.894 61.668,32.615 55.25,30.442 L55.891,28.548 C63.268,31.045 67.5,34.932 67.5,39.213 C67.5,43.495 63.268,47.383 55.89,49.879 L55.249,47.984 C61.668,45.812 65.5,42.534 65.5,39.213 L65.5,39.213 Z M14.556,39.213 C14.556,42.393 18.143,45.585 24.152,47.753 L23.473,49.634 C16.535,47.131 12.556,43.333 12.556,39.213 C12.556,35.094 16.535,31.296 23.473,28.792 L24.152,30.673 C18.143,32.842 14.556,36.034 14.556,39.213 L14.556,39.213 Z M24.707,56.707 L15.414,66 L23,66 L23,68 L13,68 C12.447,68 12,67.552 12,67 L12,57 L14,57 L14,64.586 L23.293,55.293 L24.707,56.707 Z M40,31.286 C32.854,31.286 29,29.44 29,28.686 C29,27.931 32.854,26.086 40,26.086 C47.145,26.086 51,27.931 51,28.686 C51,29.44 47.145,31.286 40,31.286 L40,31.286 Z M40.029,39.031 C33.187,39.031 29,37.162 29,36.145 L29,31.284 C31.463,32.643 35.832,33.286 40,33.286 C44.168,33.286 48.537,32.643 51,31.284 L51,36.145 C51,37.163 46.835,39.031 40.029,39.031 L40.029,39.031 Z M40.029,46.667 C33.187,46.667 29,44.798 29,43.781 L29,38.862 C31.431,40.291 35.742,41.031 40.029,41.031 C44.292,41.031 48.578,40.292 51,38.867 L51,43.781 C51,44.799 46.835,46.667 40.029,46.667 L40.029,46.667 Z M40,53.518 C32.883,53.518 29,51.605 29,50.622 L29,46.498 C31.431,47.927 35.742,48.667 40.029,48.667 C44.292,48.667 48.578,47.929 51,46.503 L51,50.622 C51,51.605 47.117,53.518 40,53.518 L40,53.518 Z M40,24.086 C33.739,24.086 27,25.525 27,28.686 L27,50.622 C27,53.836 33.54,55.518 40,55.518 C46.46,55.518 53,53.836 53,50.622 L53,28.686 C53,25.525 46.261,24.086 40,24.086 L40,24.086 Z" id="aws-rds-Amazon-RDS_Icon_64_Squid" fill="#FFFFFF"></path></g></g>'
+  },
+  "aurora": {
+    "name": "Amazon Aurora",
+    "markup": '<g transform="translate(2 2) scale(0.75)"><g id="aws-aurora-Icon-Architecture_64_Arch_Amazon-Aurora_64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="aws-aurora-Icon-Architecture-BG_64_Database" fill="#C925D1"><rect id="aws-aurora-Rectangle" x="0" y="0" width="80" height="80"></rect></g><path d="M45.0911055,18.0451258 L42.0830668,18.0451258 L42.0830668,16.0270755 L45.0911055,16.0270755 L45.0911055,13 L47.0964647,13 L47.0964647,16.0270755 L50.1045034,16.0270755 L50.1045034,18.0451258 L47.0964647,18.0451258 L47.0964647,21.0722014 L45.0911055,21.0722014 L45.0911055,18.0451258 Z M57.1232604,29.1444027 L54.1152217,29.1444027 L54.1152217,27.1263524 L57.1232604,27.1263524 L57.1232604,24.0992769 L59.1286196,24.0992769 L59.1286196,27.1263524 L62.1366583,27.1263524 L62.1366583,29.1444027 L59.1286196,29.1444027 L59.1286196,32.1714782 L57.1232604,32.1714782 L57.1232604,29.1444027 Z M51.9013052,61.0336342 C49.9861872,56.1681148 45.5663757,51.7203319 40.7294494,49.7920848 C45.5663757,47.8648467 49.9861872,43.4170637 51.9013052,38.5505353 C53.8164232,43.4170637 58.2362348,47.8648467 63.0721584,49.7920848 C58.2362348,51.7203319 53.8164232,56.1681148 51.9013052,61.0336342 L51.9013052,61.0336342 Z M67.9973204,48.7830596 C60.9444723,48.7830596 52.9039848,40.6916868 52.9039848,33.5942037 C52.9039848,33.0372218 52.455787,32.5851785 51.9013052,32.5851785 C51.3468234,32.5851785 50.8986256,33.0372218 50.8986256,33.5942037 C50.8986256,40.6916868 42.8571354,48.7830596 35.8042873,48.7830596 C35.2508082,48.7830596 34.8016077,49.2351029 34.8016077,49.7920848 C34.8016077,50.3500757 35.2508082,50.8011099 35.8042873,50.8011099 C42.8571354,50.8011099 50.8986256,58.8924828 50.8986256,65.9909748 C50.8986256,66.5479567 51.3468234,67 51.9013052,67 C52.455787,67 52.9039848,66.5479567 52.9039848,65.9909748 C52.9039848,58.8924828 60.9444723,50.8011099 67.9973204,50.8011099 C68.5507996,50.8011099 69,50.3500757 69,49.7920848 C69,49.2351029 68.5507996,48.7830596 67.9973204,48.7830596 L67.9973204,48.7830596 Z M13.0053591,28.9032457 C15.9251621,31.040361 21.5983231,32.1714782 27.0428732,32.1714782 C32.4874233,32.1714782 38.1605843,31.040361 41.0803872,28.9032457 L41.0803872,38.5676888 C39.635526,40.500981 34.3223269,42.4060205 27.2434091,42.4060205 C19.0946322,42.4060205 13.0053591,39.8430966 13.0053591,37.5516004 L13.0053591,28.9032457 Z M27.0428732,21.0722014 C35.7401158,21.0722014 41.0803872,23.7168563 41.0803872,25.6128146 C41.0803872,27.5087729 35.7401158,30.1534279 27.0428732,30.1534279 C18.3456306,30.1534279 13.0053591,27.5087729 13.0053591,25.6128146 C13.0053591,23.7168563 18.3456306,21.0722014 27.0428732,21.0722014 L27.0428732,21.0722014 Z M41.0803872,58.941925 C41.0803872,61.267728 35.0753393,63.8700039 27.0378598,63.8700039 C19.0063964,63.8700039 13.0053591,61.267728 13.0053591,58.941925 L13.0053591,52.4942542 C15.9612585,54.7504344 21.7477224,55.9451202 27.3005618,55.9451202 C31.1618809,55.9451202 34.8958596,55.3962105 37.8106491,54.3992937 L37.1669289,52.4882 C34.4536779,53.4154941 30.9493128,53.9270699 27.3005618,53.9270699 C19.1186965,53.9270699 13.0053591,51.364146 13.0053591,49.0726498 L13.0053591,40.9792589 C15.9532371,43.2314031 21.7146339,44.4240709 27.2434091,44.4240709 C33.16724,44.4240709 38.2478174,43.1960872 41.0803872,41.2516957 L41.0803872,44.2797803 L43.0857464,44.2797803 L43.0857464,25.6128146 C43.0857464,21.3527104 34.8206587,19.054151 27.0428732,19.054151 C19.5819345,19.054151 11.6918489,21.1751219 11.0621661,25.108302 L11,25.108302 L11,58.941925 C11,63.4532765 19.2630824,65.8880543 27.0378598,65.8880543 C34.8176506,65.8880543 43.0857464,63.4532765 43.0857464,58.941925 L43.0857464,55.3790571 L41.0803872,55.3790571 L41.0803872,58.941925 Z" id="aws-aurora-Amazon-Aurora_Icon_64_Squid" fill="#FFFFFF"></path></g></g>'
+  },
+  "ecs": {
+    "name": "Amazon ECS",
+    "markup": '<g transform="translate(2 2) scale(0.75)"><g id="aws-ecs-Icon-Architecture_64_Arch_Amazon-Elastic-Container-Service_64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="aws-ecs-Icon-Architecture-BG_64_Compute" fill="#ED7100"><rect id="aws-ecs-Rectangle" x="0" y="0" width="80" height="80"></rect></g><path d="M64,48.2340095 L56,43.4330117 L56,32.0000169 C56,31.6440171 55.812,31.3150172 55.504,31.1360173 L44,24.4260204 L44,14.7520248 L64,26.5710194 L64,48.2340095 Z M65.509,25.13902 L43.509,12.139026 C43.199,11.9560261 42.818,11.9540261 42.504,12.131026 C42.193,12.3090259 42,12.6410257 42,13.0000256 L42,25.0000201 C42,25.3550199 42.189,25.6840198 42.496,25.8640197 L54,32.5740166 L54,44.0000114 C54,44.3510113 54.185,44.6770111 54.486,44.857011 L64.486,50.8570083 C64.644,50.9520082 64.822,51 65,51 C65.17,51 65.34,50.9570082 65.493,50.8700083 C65.807,50.6930084 66,50.3600085 66,50 L66,26.0000196 C66,25.6460198 65.814,25.31902 65.509,25.13902 L65.509,25.13902 Z M40.445,66.863001 L17,54.3990067 L17,26.5710194 L37,14.7520248 L37,24.4510204 L26.463,31.1560173 C26.175,31.3400172 26,31.6580171 26,32.0000169 L26,49.0000091 C26,49.373009 26.208,49.7150088 26.538,49.8870087 L39.991,56.8870055 C40.28,57.0370055 40.624,57.0380055 40.912,56.8880055 L53.964,50.1440086 L61.996,54.9640064 L40.445,66.863001 Z M64.515,54.1420068 L54.515,48.1420095 C54.217,47.9640096 53.849,47.9520096 53.541,48.1120095 L40.455,54.8730065 L28,48.3930094 L28,32.5490167 L38.537,25.8440197 C38.825,25.6600198 39,25.3420199 39,25.0000201 L39,13.0000256 C39,12.6410257 38.808,12.3090259 38.496,12.131026 C38.184,11.9540261 37.802,11.9560261 37.491,12.139026 L15.491,25.13902 C15.187,25.31902 15,25.6460198 15,26.0000196 L15,55 C15,55.3690062 15.204,55.7090061 15.53,55.883006 L39.984,68.8830001 C40.131,68.961 40.292,69 40.453,69 C40.62,69 40.786,68.958 40.937,68.8750001 L64.484,55.875006 C64.797,55.7020061 64.993,55.3750062 65.0001416,55.0180064 C65.006,54.6600066 64.821,54.3260067 64.515,54.1420068 L64.515,54.1420068 Z" id="aws-ecs-Amazon-Elastic-Container-Service_Icon_64_Squid" fill="#FFFFFF"></path></g></g>'
+  },
+  "eks": {
+    "name": "Amazon EKS",
+    "markup": '<g transform="translate(2 2) scale(0.75)"><g id="aws-eks-Icon-Architecture_64_Arch_Amazon-Elastic-Kubernetes-Service_64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="aws-eks-Icon-Architecture-BG_64_Compute" fill="#ED7100"><rect id="aws-eks-Rectangle" x="0" y="0" width="80" height="80"></rect></g><path d="M46.842,32.1990168 L40.013,40.1200132 L47.441,48.7840092 L44.669,48.7840092 L38,41.0000169 L38,49.0000169 L36,49.0000169 L36,32.0000169 L38,32.0000169 L38,39.0000169 L44.181,32.1990168 L46.842,32.1990168 Z M64,48.2340095 L56,43.4330117 L56,32.0000169 C56,31.6440171 55.812,31.3150172 55.504,31.1360173 L44,24.4260204 L44,14.7520248 L64,26.5710194 L64,48.2340095 Z M65.509,25.13902 L43.509,12.139026 C43.199,11.9560261 42.818,11.9540261 42.504,12.131026 C42.193,12.3090259 42,12.6410257 42,13.0000256 L42,25.0000201 C42,25.3550199 42.189,25.6840198 42.496,25.8640197 L54,32.5740166 L54,44.0000114 C54,44.3510113 54.185,44.6770111 54.486,44.857011 L64.486,50.8570083 C64.644,50.9520082 64.822,51 65,51 C65.17,51 65.34,50.9570082 65.493,50.8700083 C65.807,50.6930084 66,50.3600085 66,50 L66,26.0000196 C66,25.6460198 65.814,25.31902 65.509,25.13902 L65.509,25.13902 Z M40.445,66.863001 L17,54.3990067 L17,26.5710194 L37,14.7520248 L37,24.4510204 L26.463,31.1560173 C26.175,31.3400172 26,31.6580171 26,32.0000169 L26,49.0000091 C26,49.373009 26.208,49.7150088 26.538,49.8870087 L39.991,56.8870055 C40.28,57.0370055 40.624,57.0380055 40.912,56.8880055 L53.964,50.1440086 L61.996,54.9640064 L40.445,66.863001 Z M64.515,54.1420068 L54.515,48.1420095 C54.217,47.9640096 53.849,47.9520096 53.541,48.1120095 L40.455,54.8730065 L28,48.3930094 L28,32.5490167 L38.537,25.8440197 C38.825,25.6600198 39,25.3420199 39,25.0000201 L39,13.0000256 C39,12.6410257 38.808,12.3090259 38.496,12.131026 C38.184,11.9540261 37.802,11.9560261 37.491,12.139026 L15.491,25.13902 C15.187,25.31902 15,25.6460198 15,26.0000196 L15,55 C15,55.3690062 15.204,55.7090061 15.53,55.883006 L39.984,68.8830001 C40.131,68.961 40.292,69 40.453,69 C40.62,69 40.786,68.958 40.937,68.8750001 L64.484,55.875006 C64.797,55.7020061 64.993,55.3750062 65.0001416,55.0180064 C65.006,54.6600066 64.821,54.3260067 64.515,54.1420068 L64.515,54.1420068 Z" id="aws-eks-Amazon-Elastic-Kubernetes-Service_Icon_64_Squid" fill="#FFFFFF"></path></g></g>'
+  },
+  "ecr": {
+    "name": "Amazon ECR",
+    "markup": '<g transform="translate(2 2) scale(0.75)"><g id="aws-ecr-Icon-Architecture_64_Arch_Amazon-Elastic-Container-Registry_64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="aws-ecr-Icon-Architecture-BG_64_Compute" fill="#ED7100"><rect id="aws-ecr-Rectangle" x="0" y="0" width="80" height="80"></rect></g><path d="M38.7880741,37.5776945 C38.2933845,37.8655125 37.9855777,38.4000317 37.9855777,38.973662 L37.9855777,66.7195186 L16.9987459,54.9841655 L16.9987459,27.7076428 L40.5569643,14.0588515 L61.484833,24.4283226 L38.7880741,37.5776945 Z M63.9203049,24.4022485 C63.9203049,23.8276153 63.6134974,23.2920933 63.0598448,22.9751927 L41.3464689,12.2146099 C40.8507799,11.9287976 40.2351662,11.9277948 39.7404766,12.2156128 L15.8024965,26.0840283 C15.3078069,26.3718463 15,26.9063655 15,27.4799958 L15,55.2158239 C15,55.7894542 15.3078069,56.3239734 15.8174871,56.6198142 L37.573836,68.7853901 C37.8216805,68.9287976 38.1005056,69 38.3783312,69 C38.6551575,69 38.9339826,68.9287976 39.1808277,68.7853901 C39.6765167,68.4985749 39.9843236,67.9640557 39.9843236,67.3894226 L39.9843236,39.201309 L63.1178084,25.798216 C63.6134974,25.5114008 63.9203049,24.9768817 63.9203049,24.4022485 L63.9203049,24.4022485 Z M63.9692742,55.0473451 L44.9811883,66.6613533 L44.9811883,56.2617967 L54.881976,49.872638 L54.9499334,49.424364 C54.9679221,49.3070305 54.9749177,49.3070305 54.9749177,48.7664942 L55.0058983,36.3602344 L64.0002547,31.1484218 L63.9692742,55.0473451 Z M65.1965042,29.0715191 C64.6998158,28.7816953 64.0842021,28.7826982 63.5885131,29.0715191 L54.0135209,34.6182835 C53.713709,34.7817481 53.0081517,35.1658398 53.0081517,35.9580914 L52.9761718,48.7173546 L43.8508975,54.606091 C43.3062392,54.9310145 42.9824424,55.4454766 42.9824424,55.9890214 L42.9824424,67.3081917 C42.9824424,67.8748021 43.2872511,68.3912699 43.7979307,68.6871107 C44.0647633,68.8405468 44.361577,68.9187691 44.6573914,68.9187691 C44.948209,68.9187691 45.2390265,68.8445582 45.5018616,68.692125 L65.1675223,56.6639396 C65.6622119,56.3761216 65.9680201,55.8416024 65.9680201,55.2709807 L66,30.4664837 C66,29.8928534 65.6921931,29.3583342 65.1965042,29.0715191 L65.1965042,29.0715191 Z" id="aws-ecr-Amazon-Elastic-Container-Registry_Icon_64_Squid" fill="#FFFFFF"></path></g></g>'
+  },
+  "fargate": {
+    "name": "AWS Fargate",
+    "markup": '<g transform="translate(2 2) scale(0.75)"><g id="aws-fargate-Icon-Architecture_64_Arch_AWS-Fargate_64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="aws-fargate-Icon-Architecture-BG_64_Compute" fill="#ED7100"><rect id="aws-fargate-Rectangle" x="0" y="0" width="80" height="80"></rect></g><path d="M52,56.523 L52,51.677 L55,50.477 L55,55.323 L52,56.523 Z M47,50.477 L50,51.677 L50,56.523 L47,55.323 L47,50.477 Z M41,63.523 L41,58.677 L44,57.477 L44,62.323 L41,63.523 Z M36,57.477 L39,58.677 L39,63.523 L36,62.323 L36,57.477 Z M30,56.523 L30,51.677 L33,50.477 L33,55.323 L30,56.523 Z M25,50.477 L28,51.677 L28,56.523 L25,55.323 L25,50.477 Z M29,48.077 L31.308,49 L29,49.923 L26.692,49 L29,48.077 Z M40,55.077 L42.308,56 L40,56.923 L37.692,56 L40,55.077 Z M51,48.077 L53.308,49 L51,49.923 L48.692,49 L51,48.077 Z M56.371,48.071 L51.371,46.071 C51.133,45.977 50.867,45.977 50.629,46.071 L45.629,48.071 C45.249,48.224 45,48.591 45,49 L45,54.923 L40.371,53.071 C40.133,52.977 39.867,52.977 39.629,53.071 L35,54.923 L35,49 C35,48.591 34.751,48.224 34.371,48.071 L29.371,46.071 C29.133,45.977 28.867,45.977 28.629,46.071 L23.629,48.071 C23.249,48.224 23,48.591 23,49 L23,56 C23,56.409 23.249,56.776 23.629,56.929 L28.629,58.929 C28.748,58.976 28.874,59 29,59 C29.126,59 29.252,58.976 29.371,58.929 L34,57.077 L34,63 C34,63.409 34.249,63.776 34.629,63.929 L39.629,65.929 C39.748,65.976 39.874,66 40,66 C40.126,66 40.252,65.976 40.371,65.929 L45.371,63.929 C45.751,63.776 46,63.409 46,63 L46,57.077 L50.629,58.929 C50.748,58.976 50.874,59 51,59 C51.126,59 51.252,58.976 51.371,58.929 L56.371,56.929 C56.751,56.776 57,56.409 57,56 L57,49 C57,48.591 56.751,48.224 56.371,48.071 L56.371,48.071 Z M65,35.938 C65,41.783 52.119,44.938 40,44.938 C27.881,44.938 15,41.783 15,35.938 C15,33.147 18.095,30.69 23.715,29.019 L24.285,30.936 C19.791,32.272 17,34.189 17,35.938 C17,39.249 26.445,42.938 40,42.938 C53.555,42.938 63,39.249 63,35.938 C63,34.189 60.209,32.272 55.715,30.936 L56.285,29.019 C61.905,30.69 65,33.147 65,35.938 L65,35.938 Z M40,17.071 L50.214,21 L40,24.929 L29.786,21 L40,17.071 Z M50.58,36.842 C48.694,37.686 45.528,38.669 41,38.801 L41,26.687 L52,22.457 L52,34.648 C52,35.599 51.444,36.46 50.58,36.842 L50.58,36.842 Z M28,34.648 L28,22.457 L39,26.687 L39,38.801 C34.472,38.669 31.306,37.686 29.416,36.84 C28.556,36.46 28,35.599 28,34.648 L28,34.648 Z M28.604,38.667 C30.805,39.652 34.569,40.827 40,40.827 C45.431,40.827 49.195,39.652 51.393,38.669 C52.977,37.968 54,36.39 54,34.648 L54,21 C54,20.586 53.745,20.215 53.359,20.066 L40.359,15.066 C40.127,14.978 39.873,14.978 39.641,15.066 L26.641,20.066 C26.255,20.215 26,20.586 26,21 L26,34.648 C26,36.39 27.023,37.968 28.604,38.667 L28.604,38.667 Z" id="aws-fargate-AWS-Fargate_Icon_64_Squid" fill="#FFFFFF"></path></g></g>'
+  },
+  "ec2": {
+    "name": "Amazon EC2",
+    "markup": '<g transform="translate(2 2) scale(0.75)"><g id="aws-ec2-Icon-Architecture_64_Arch_Amazon-EC2_64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="aws-ec2-Icon-Architecture-BG_64_Compute" fill="#ED7100"><rect id="aws-ec2-Rectangle" x="0" y="0" width="80" height="80"></rect></g><path d="M27,53 L52,53 L52,28 L27,28 L27,53 Z M54,28 L58,28 L58,30 L54,30 L54,34 L58,34 L58,36 L54,36 L54,39 L58,39 L58,41 L54,41 L54,45 L58,45 L58,47 L54,47 L54,51 L58,51 L58,53 L54,53 L54,53.136 C54,54.164 53.164,55 52.136,55 L52,55 L52,59 L50,59 L50,55 L46,55 L46,59 L44,59 L44,55 L41,55 L41,59 L39,59 L39,55 L35,55 L35,59 L33,59 L33,55 L29,55 L29,59 L27,59 L27,55 L26.864,55 C25.836,55 25,54.164 25,53.136 L25,53 L22,53 L22,51 L25,51 L25,47 L22,47 L22,45 L25,45 L25,41 L22,41 L22,39 L25,39 L25,36 L22,36 L22,34 L25,34 L25,30 L22,30 L22,28 L25,28 L25,27.864 C25,26.836 25.836,26 26.864,26 L27,26 L27,22 L29,22 L29,26 L33,26 L33,22 L35,22 L35,26 L39,26 L39,22 L41,22 L41,26 L44,26 L44,22 L46,22 L46,26 L50,26 L50,22 L52,22 L52,26 L52.136,26 C53.164,26 54,26.836 54,27.864 L54,28 Z M41,65.876 C41,65.944 40.944,66 40.876,66 L14.124,66 C14.056,66 14,65.944 14,65.876 L14,39.124 C14,39.056 14.056,39 14.124,39 L20,39 L20,37 L14.124,37 C12.953,37 12,37.953 12,39.124 L12,65.876 C12,67.047 12.953,68 14.124,68 L40.876,68 C42.047,68 43,67.047 43,65.876 L43,61 L41,61 L41,65.876 Z M68,14.124 L68,40.876 C68,42.047 67.047,43 65.876,43 L60,43 L60,41 L65.876,41 C65.944,41 66,40.944 66,40.876 L66,14.124 C66,14.056 65.944,14 65.876,14 L39.124,14 C39.056,14 39,14.056 39,14.124 L39,20 L37,20 L37,14.124 C37,12.953 37.953,12 39.124,12 L65.876,12 C67.047,12 68,12.953 68,14.124 L68,14.124 Z" id="aws-ec2-Amazon-EC2_Icon_64_Squid" fill="#FFFFFF"></path></g></g>'
+  },
+  "app-runner": {
+    "name": "AWS App Runner",
+    "markup": '<g transform="translate(2 2) scale(0.75)"><g id="aws-app-runner-Icon-Architecture_64_Arch_AWS-App-Runner_64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="aws-app-runner-Icon-Architecture-BG_64_Compute" fill="#ED7100"><rect id="aws-app-runner-Rectangle" x="0" y="0" width="80" height="80"></rect></g><g id="aws-app-runner-Icon-Service_64_AWS-Fusion_64" transform="translate(12.000000, 12.000000)" fill="#FFFFFF"><path d="M15.707,41.707 L14.293,40.293 L2,52.586 L2,46 L0,46 L0,55 C0,55.552 0.447,56 1,56 L10,56 L10,54 L3.414,54 L15.707,41.707 Z M55,0 L46,0 L46,2 L52.586,2 L40.293,14.293 L41.707,15.707 L54,3.414 L54,10 L56,10 L56,1 C56,0.448 55.553,0 55,0 L55,0 Z M31,47 L47,47 L47,31 L31,31 L31,47 Z M49,30 L49,48 C49,48.552 48.553,49 48,49 L30,49 C29.447,49 29,48.552 29,48 L29,30 C29,29.448 29.447,29 30,29 L48,29 C48.553,29 49,29.448 49,30 L49,30 Z M9,25 L25,25 L25,9 L9,9 L9,25 Z M27,8 L27,26 C27,26.552 26.553,27 26,27 L8,27 C7.447,27 7,26.552 7,26 L7,8 C7,7.448 7.447,7 8,7 L26,7 C26.553,7 27,7.448 27,8 L27,8 Z M26,29 L8,29 C7.447,29 7,29.448 7,30 L7,44.757 L9,42.757 L9,31 L25,31 L25,47 L13.242,47 L11.242,49 L26,49 C26.553,49 27,48.552 27,48 L27,30 C27,29.448 26.553,29 26,29 L26,29 Z M47,13.242 L49,11.242 L49,26 C49,26.552 48.553,27 48,27 L30,27 C29.447,27 29,26.552 29,26 L29,8 C29,7.448 29.447,7 30,7 L44.758,7 L42.758,9 L31,9 L31,25 L47,25 L47,13.242 Z" id="aws-app-runner-Fill-5"></path></g></g></g>'
+  },
+  "batch": {
+    "name": "AWS Batch",
+    "markup": '<g transform="translate(2 2) scale(0.75)"><g id="aws-batch-Icon-Architecture_64_Arch_AWS-Batch_64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="aws-batch-Icon-Architecture-BG_64_Compute" fill="#ED7100"><rect id="aws-batch-Rectangle" x="0" y="0" width="80" height="80"></rect></g><path d="M40.2258065,58.897 C41.4647177,58.897 42.4707661,59.894 42.4707661,61.124 C42.4707661,62.354 41.4647177,63.351 40.2258065,63.351 C38.9868952,63.351 37.9808468,62.354 37.9808468,61.124 C37.9808468,59.894 38.9868952,58.897 40.2258065,58.897 M21.3014113,40.876 C21.3014113,42.106 20.2953629,43.103 19.0564516,43.103 C17.8175403,43.103 16.8114919,42.106 16.8114919,40.876 C16.8114919,39.647 17.8175403,38.649 19.0564516,38.649 C20.2953629,38.649 21.3014113,39.647 21.3014113,40.876 M61.3790323,66 C58.797379,66 56.7752016,64.066 56.7752016,61.598 C56.7752016,59.08 58.8407258,57.031 61.3790323,57.031 C63.9183468,57.031 65.983871,59.08 65.983871,61.598 C65.983871,64.066 63.9616935,66 61.3790323,66 M56.7752016,41 C56.7752016,38.482 58.8407258,36.433 61.3790323,36.433 C63.9183468,36.433 65.983871,38.482 65.983871,41 C65.983871,43.518 63.9183468,45.567 61.3790323,45.567 C58.8407258,45.567 56.7752016,43.518 56.7752016,41 M40.2258065,45.567 C37.6864919,45.567 35.6219758,43.518 35.6219758,41 C35.6219758,38.482 37.6864919,36.433 40.2258065,36.433 C42.765121,36.433 44.8296371,38.482 44.8296371,41 C44.8296371,43.518 42.765121,45.567 40.2258065,45.567 M45.266129,61 C45.266129,63.851 43.0997984,66 40.2258065,66 C37.3518145,66 35.1854839,63.851 35.1854839,61 C35.1854839,58.149 37.3518145,56 40.2258065,56 C43.0997984,56 45.266129,58.149 45.266129,61 M34.1774194,21 C34.1774194,17.86 37.0594758,15 40.2258065,15 C43.3921371,15 46.2741935,17.86 46.2741935,21 C46.2741935,24.14 43.3921371,27 40.2258065,27 C37.0594758,27 34.1774194,24.14 34.1774194,21 M19.0564516,46 C16.1824597,46 14.016129,43.851 14.016129,41 C14.016129,38.106 16.2772177,35.752 19.0564516,35.752 C21.8356855,35.752 24.0967742,38.106 24.0967742,41 C24.0967742,43.851 21.9304435,46 19.0564516,46 M23.6451613,61.564 C23.6451613,64.051 21.6229839,66 19.0403226,66 C16.4586694,66 14.4364919,64.051 14.4364919,61.564 C14.4364919,59.045 16.5020161,56.997 19.0403226,56.997 C21.5796371,56.997 23.6451613,59.045 23.6451613,61.564 M62.3870968,55.115 L62.3870968,47.482 C65.5594758,46.999 68,44.28 68,41 C68,37.379 65.0292339,34.433 61.3790323,34.433 C58.0725806,34.433 55.3316532,36.853 54.8447581,40 L46.7600806,40 C46.3235887,37.18 44.0766129,34.951 41.233871,34.518 L41.233871,28.923 C45.09375,28.397 48.2903226,24.924 48.2903226,21 C48.2903226,16.738 44.5221774,13 40.2258065,13 C35.9294355,13 32.1612903,16.738 32.1612903,21 C32.1612903,24.924 35.3578629,28.397 39.2177419,28.923 L39.2177419,34.518 C36.375,34.951 34.1280242,37.18 33.6915323,40 L26.0383065,40 C25.5604839,36.477 22.6159274,33.752 19.0564516,33.752 C15.1663306,33.752 12,37.004 12,41 C12,44.584 14.5866935,47.451 18.0483871,47.924 L18.0483871,55.079 C14.8689516,55.556 12.4203629,58.278 12.4203629,61.564 C12.4203629,65.173 15.328629,68 19.0403226,68 C22.7530242,68 25.6612903,65.173 25.6612903,61.564 C25.6612903,58.289 23.2298387,55.574 20.0645161,55.084 L20.0645161,47.924 C23.1955645,47.496 25.6048387,45.107 26.0362903,42 L33.6915323,42 C34.1280242,44.82 36.375,47.049 39.2177419,47.482 L39.2177419,54.076 C35.7560484,54.549 33.1693548,57.416 33.1693548,61 C33.1693548,64.925 36.2691532,68 40.2258065,68 C44.1824597,68 47.2822581,64.925 47.2822581,61 C47.2822581,57.416 44.6955645,54.549 41.233871,54.076 L41.233871,47.482 C44.0766129,47.049 46.3235887,44.82 46.7600806,42 L54.8447581,42 C55.2822581,44.82 57.5282258,47.049 60.3709677,47.482 L60.3709677,55.115 C57.1995968,55.599 54.7590726,58.318 54.7590726,61.598 C54.7590726,65.188 57.6673387,68 61.3790323,68 C65.0917339,68 68,65.188 68,61.598 C68,58.318 65.5594758,55.599 62.3870968,55.115" id="aws-batch-AWS-Batch_Icon_64_Squid" fill="#FFFFFF"></path></g></g>'
+  },
+  "elastic-beanstalk": {
+    "name": "AWS Elastic Beanstalk",
+    "markup": '<g transform="translate(2 2) scale(0.75)"><g id="aws-elastic-beanstalk-Icon-Architecture_64_Arch_AWS-Elastic-Beanstalk_64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="aws-elastic-beanstalk-Icon-Architecture-BG_64_Compute" fill="#ED7100"><rect id="aws-elastic-beanstalk-Rectangle" x="0" y="0" width="80" height="80"></rect></g><path d="M50.4868099,45.9605228 C50.4868099,44.3028952 49.1425853,42.9539432 47.4907669,42.9539432 C45.8389486,42.9539432 44.4947239,44.3028952 44.4947239,45.9605228 C44.4947239,47.6181503 45.8389486,48.9671023 47.4907669,48.9671023 C49.1425853,48.9671023 50.4868099,47.6181503 50.4868099,45.9605228 M39.501319,35.938591 C41.1531374,35.938591 42.497362,34.5896389 42.497362,32.9320114 C42.497362,31.2743839 41.1531374,29.9254319 39.501319,29.9254319 C37.8495007,29.9254319 36.5052761,31.2743839 36.5052761,32.9320114 C36.5052761,34.5896389 37.8495007,35.938591 39.501319,35.938591 M30.5131901,46.9627159 C32.1650085,46.9627159 33.5092331,45.6137639 33.5092331,43.9561364 C33.5092331,42.2985089 32.1650085,40.9495569 30.5131901,40.9495569 C28.8613718,40.9495569 27.5171472,42.2985089 27.5171472,43.9561364 C27.5171472,45.6137639 28.8613718,46.9627159 30.5131901,46.9627159 M52.4841718,45.9605228 C52.4841718,48.3808193 50.7654419,50.4042473 48.4894479,50.8702672 L48.4894479,56.9846477 C48.4894479,57.5378584 48.0430375,57.9868409 47.4907669,57.9868409 L40.5,57.9868409 L40.5,64 L38.502638,64 L38.502638,52.975875 L30.5131901,52.975875 C29.9609195,52.975875 29.5145091,52.5268925 29.5145091,51.9736818 L29.5145091,48.8658808 C27.2385152,48.399861 25.5197852,46.3764329 25.5197852,43.9561364 C25.5197852,41.1930898 27.7598266,38.9451705 30.5131901,38.9451705 C33.2665536,38.9451705 35.5065951,41.1930898 35.5065951,43.9561364 C35.5065951,46.3764329 33.7878651,48.399861 31.5118711,48.8658808 L31.5118711,50.9714887 L38.502638,50.9714887 L38.502638,37.8417558 C36.2266441,37.375736 34.5079141,35.352308 34.5079141,32.9320114 C34.5079141,30.1689648 36.7479555,27.9210455 39.501319,27.9210455 C42.2546825,27.9210455 44.4947239,30.1689648 44.4947239,32.9320114 C44.4947239,35.352308 42.775994,37.375736 40.5,37.8417558 L40.5,55.9824546 L46.4920859,55.9824546 L46.4920859,50.8702672 C44.216092,50.4042473 42.497362,48.3808193 42.497362,45.9605228 C42.497362,43.1974762 44.7374034,40.9495569 47.4907669,40.9495569 C50.2441304,40.9495569 52.4841718,43.1974762 52.4841718,45.9605228 M67,41.0116928 C67,48.3547623 61.5442058,50.9714887 56.4389486,50.9714887 L56.4389486,48.9671023 C59.0135481,48.9671023 65.002638,48.1914048 65.002638,41.0116928 C65.002638,35.6399374 60.9320143,33.6926761 57.517524,33.0051715 C57.0721123,32.9159763 56.7435463,32.5361451 56.7165819,32.0821516 C56.468909,27.8749446 54.0261353,26.3816768 52.007801,26.3816768 C50.6436028,26.3816768 49.3642924,27.0341046 48.498436,28.172596 C48.2777275,28.4642342 47.9142077,28.6125588 47.5546825,28.556436 C47.1951573,28.5023176 46.892557,28.2547759 46.7667232,27.9110236 C45.984756,25.7793587 44.8622386,23.9934505 43.4291313,22.6024063 C39.7469945,19.0195657 34.7106463,18.0474383 29.9549275,20.0047216 C26.0061428,21.6182526 22.9142265,26.2834619 22.9142265,30.6259649 C22.9142265,31.1060155 22.9431882,31.5880704 23.0021104,32.0591012 C23.0640286,32.5632043 22.7414547,33.0342351 22.2511023,33.1555005 C19.9151875,33.7357704 15.997362,35.5176698 15.997362,40.9365284 C15.997362,41.141978 16.0063501,41.3384078 16.0163369,41.5238136 C16.2500283,45.6959438 19.9331637,48.9671023 24.4022612,48.9671023 L25.5197852,48.9671023 L25.5197852,50.9714887 L24.4022612,50.9714887 C18.8745619,50.9714887 14.3145845,46.869512 14.021971,41.6330526 C14.0109855,41.4105657 14,41.1790591 14,40.9365284 C14,34.6397486 18.3512531,32.2876012 20.9408329,31.4477633 C20.9238553,31.1741646 20.9168645,30.8995637 20.9168645,30.6259649 C20.9168645,25.4416196 24.4781609,20.0778817 29.2009233,18.149662 C34.7096476,15.8837032 40.5489354,17.008164 44.8182966,21.1622547 C46.1315621,22.4360423 47.2141323,23.9864351 48.0480309,25.7843697 C49.1735444,24.8773848 50.5547202,24.3772904 52.007801,24.3772904 C54.9668928,24.3772904 58.0767854,26.4959268 58.6430375,31.2032282 C64.0399096,32.5241188 67,35.9846919 67,41.0116928" id="aws-elastic-beanstalk-AWS-Elastic-Beanstalk_Icon_64_Squid" fill="#FFFFFF"></path></g></g>'
+  },
+  "efs": {
+    "name": "Amazon EFS",
+    "markup": '<g transform="translate(2 2) scale(0.75)"><g id="aws-efs-Icon-Architecture_64_Arch_Amazon-EFS_64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="aws-efs-Icon-Architecture-BG_64_Storage" fill="#7AA116"><rect id="aws-efs-Rectangle" x="0" y="0" width="80" height="80"></rect></g><g id="aws-efs-Icon-Service_64_Amazon-EFS_64" transform="translate(11.982214, 12.000000)" fill="#FFFFFF"><path d="M19.3953463,12.0244294 C25.6594582,9.40433587 30.0955374,12.8504589 31.7115663,14.4525162 C33.0295898,15.7615629 34.0576082,17.4336226 34.7676209,19.4196936 C34.890623,19.7657059 35.1956285,20.0167149 35.558635,20.0717168 C35.9266415,20.1227187 36.287648,19.9787135 36.5076519,19.684703 C37.295666,18.6366656 38.4496866,18.0356441 39.6707084,18.0356441 C41.495741,18.0356441 43.7077805,19.4206936 43.9367846,23.323833 C43.962785,23.7748491 44.2877909,24.1508625 44.7297987,24.2438659 C49.2628797,25.1958999 51.5619207,27.7109897 51.5619207,31.7161327 C51.5619207,35.4382657 49.8578903,37.7383478 46.4988303,38.5533769 L46.9688387,40.4964463 C51.2209147,39.4664095 53.5619565,36.3482982 53.5619565,31.7161327 C53.5619565,27.0009643 50.8359078,23.7348477 45.865819,22.455802 C45.3238094,18.0276438 42.4267576,16.0355727 39.6707084,16.0355727 C38.3536849,16.0355727 37.0976625,16.4835887 36.061644,17.3006179 C35.3006304,15.6505589 34.3156128,14.2205079 33.1215915,13.0324654 C29.1575207,9.10732526 23.7404239,8.04028715 18.6233326,10.1793635 C14.2472544,12.0154291 10.9471955,17.0766099 10.9471955,21.9547841 C10.9471955,22.1947927 10.9551956,22.4418015 10.9701959,22.6968106 C6.95312416,24.0188578 4.58208182,27.3119754 4.58208182,31.6581306 C4.58208182,31.8771385 4.592082,32.0951463 4.60408222,32.3071538 C4.81108591,36.065288 7.32113073,39.3154041 10.9991964,40.5854495 L11.6512081,38.6943819 C8.74615618,37.6913461 6.76312077,35.140255 6.60111788,32.20115 C6.59211772,32.0251438 6.58211754,31.8421372 6.58211754,31.6581306 C6.58211754,26.5749491 10.1551813,24.9278903 12.2842194,24.3988714 C12.7732281,24.276867 13.0952338,23.8098504 13.0362328,23.3088325 C12.9762317,22.8138148 12.9472312,22.370799 12.9472312,21.9547841 C12.9472312,17.9026394 15.7802818,13.5414836 19.3953463,12.0244294 L19.3953463,12.0244294 Z M39.9997143,33.0011786 C39.9997143,32.6041644 39.9147128,32.3051538 39.75871,32.1591485 C39.5877069,32.0001429 39.2897016,31.9851423 39.0666976,31.9991428 L25.9994643,32.0011429 C25.4474544,32.0011429 24.9994464,31.5531269 24.9994464,31.0011072 C24.9994464,30.7300975 24.8984446,29.9710704 24.7824425,29.5000536 L21.3233808,29.5000536 C21.170378,29.96007 21.0063751,30.7410979 20.999375,31.0051073 C20.9853747,31.5471267 20.5413668,32.0011429 19.9993571,32.0011429 L16.9993036,32.0011429 C16.7062983,31.9821422 16.4112931,32.0001429 16.24129,32.1591485 C16.0852872,32.3051538 15.9992857,32.6041644 15.9992857,33.0011786 L15.9992857,47.0016786 L39.9997143,47.0016786 L39.9997143,33.0011786 Z M41.99975,35.00125 L41.99975,42.2295082 L44.5817961,35.00125 L41.99975,35.00125 Z M41.941749,48.3387264 L41.9327488,48.3357263 C41.7947463,48.7217401 41.4347399,49.0017501 40.9997321,49.0017501 L14.9992678,49.0017501 C14.447258,49.0017501 13.99925,48.5537341 13.99925,48.0017143 L13.99925,33.0011786 C13.99925,31.7751348 14.4752585,31.0721097 14.8742656,30.6980964 C15.2572725,30.3400836 15.9372846,29.9210686 17.0663048,30.0040716 L19.1163414,30.0020715 C19.2943445,28.9670345 19.7383525,27.4999821 20.8073716,27.4999821 L25.3594528,27.4999821 C25.4204539,27.4999821 25.482455,27.5059824 25.5434561,27.5169827 C26.4844729,27.692989 26.8174789,29.0280367 26.935481,30.0010715 L38.9996964,30.0010715 C40.0567153,29.9280689 40.7417275,30.3400836 41.1247344,30.6980964 C41.5247415,31.0721097 41.99975,31.7751348 41.99975,33.0011786 L45.9998214,33.0011786 C46.3258272,33.0011786 46.6298327,33.1591843 46.817836,33.4251938 C47.0048394,33.6912033 47.0508402,34.0312154 46.9418382,34.3372263 L41.941749,48.3387264 Z M53.9999643,52.5868781 L46.3938285,44.9806065 L44.9798032,46.394657 L52.584939,53.9999286 L47.0818407,53.9999286 L47.0818407,56 L54.9999821,56 C55.552992,56 56,55.551984 56,54.9999643 L56,47.0816815 L53.9999643,47.0816815 L53.9999643,52.5868781 Z M10.64219,44.9456052 L2.00003571,52.7488839 L2.00003571,47.0816815 L0,47.0816815 L0,54.9999643 C0,55.551984 0.448008,56 1.00001786,56 L9.91917713,56 L9.91917713,53.9999286 L3.59906427,53.9999286 L11.982214,46.4296582 L10.64219,44.9456052 Z M54.9999821,0 L46.0818229,0 L46.0818229,2.00007143 L52.7489419,2.00007143 L44.9448026,10.6423801 L46.4288291,11.9824279 L53.9999643,3.59912854 L53.9999643,9.91935426 L56,9.91935426 L56,1.00003572 C56,0.448016001 55.552992,0 54.9999821,0 L54.9999821,0 Z M2.00003571,9.91935426 L0,9.91935426 L0,1.00003572 C0,0.448016001 0.448008,0 1.00001786,0 L9.91917713,0 L9.91917713,2.00007143 L3.41406097,2.00007143 L12.0192146,10.6053788 L10.6051894,12.0194293 L2.00003571,3.41512197 L2.00003571,9.91935426 Z" id="aws-efs-Amazon-EFS_Icon_64_Squid"></path></g></g></g>'
+  },
+  "ebs": {
+    "name": "Amazon EBS",
+    "markup": '<g transform="translate(2 2) scale(0.75)"><g id="aws-ebs-Icon-Architecture_64_Arch_Amazon-Elastic-Block-Store_64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="aws-ebs-Icon-Architecture-BG_64_Storage" fill="#7AA116"><rect id="aws-ebs-Rectangle" x="0" y="0" width="80" height="80"></rect></g><path d="M66,58 L68,58 L68,68 L58,68 L58,66 L64.586,66 L56.293,57.707 L57.707,56.293 L66,64.586 L66,58 Z M23.707,57.707 L15.414,66 L22,66 L22,68 L12,68 L12,58 L14,58 L14,64.586 L22.293,56.293 L23.707,57.707 Z M68,12 L68,22 L66,22 L66,15.414 L57.707,23.707 L56.293,22.293 L64.586,14 L58,14 L58,12 L68,12 Z M15.414,14 L23.707,22.293 L22.293,23.707 L14,15.414 L14,22 L12,22 L12,12 L22,12 L22,14 L15.414,14 Z M50.678,53.661 C49.521,54.848 45.635,56.046 39.563,56.046 C32.168,56.046 28.031,54.23 28,53 L28,29.857 C30.603,31.395 35.32,32 39.563,32 C43.756,32 48.418,31.397 51,29.867 L51,53.025 C51.002,53.099 51.008,53.323 50.678,53.661 L50.678,53.661 Z M39.563,24 C45.663,24 49.545,25.181 50.686,26.352 C51.008,26.682 51.002,26.902 51,26.975 L51,27 C51,28.226 46.927,30 39.563,30 C32.422,30 28.032,28.265 28.003,27.013 C28.061,25.746 32.093,24 39.563,24 L39.563,24 Z M52.999,27 C53.007,26.482 52.858,25.716 52.118,24.956 C50.313,23.105 45.62,22 39.563,22 C33.365,22 26.094,23.303 26,27 L26,53.025 C26.095,56.731 33.365,58.046 39.563,58.046 C44.22,58.046 49.962,57.261 52.11,55.057 C52.869,54.278 53.013,53.495 53,53 L53,27.011 L53,27.004 L53,27 L52.999,27 Z" id="aws-ebs-Amazon-Elastic-Block-Store_Icon_64_Squid" fill="#FFFFFF"></path></g></g>'
+  },
+  "elasticache": {
+    "name": "Amazon ElastiCache",
+    "markup": '<g transform="translate(2 2) scale(0.75)"><g id="aws-elasticache-Icon-Architecture_64_Arch_Amazon-ElastiCache_64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="aws-elasticache-Icon-Architecture-BG_64_Database" fill="#C925D1"><rect id="aws-elasticache-Rectangle" x="0" y="0" width="80" height="80"></rect></g><path d="M51,61.5554864 L51,55.7029342 C48.466,57.3400887 43.904,58.1131616 39.556,58.1131616 C34.816,58.1131616 31.121,57.2860836 29,55.8679498 L29,61.5554864 C29,63.2486461 32.948,64.9998113 39.556,64.9998113 C46.3,64.9998113 51,63.1846401 51,61.5554864 L51,61.5554864 Z M39.556,49.2203227 C34.816,49.2203227 31.121,48.3942447 29,46.976111 L29,52.6866497 C29.031,54.3738088 32.973,56.1129729 39.556,56.1129729 C46.279,56.1129729 50.969,54.3088027 51,52.6826493 L51,46.8100953 C48.466,48.4482498 43.904,49.2203227 39.556,49.2203227 L39.556,49.2203227 Z M51,43.7908105 L51,37.0291726 C48.466,38.666327 43.904,39.4393999 39.556,39.4393999 C34.816,39.4393999 31.121,38.613322 29,37.1951882 L29,43.7948108 C29.031,45.48197 32.973,47.220134 39.556,47.220134 C46.279,47.220134 50.969,45.4159638 51,43.7908105 L51,43.7908105 Z M28.997,33.9928861 C28.997,33.9958864 28.998,33.9988867 28.998,34.001887 L29,34.001887 L29,34.012888 C29.031,35.7000472 32.973,37.4392112 39.556,37.4392112 C46.898,37.4392112 50.969,35.4170205 51,34.0098877 L51,34.001887 L51.002,34.001887 C51.002,33.9988867 51.003,33.9958864 51.003,33.9928861 C51.003,32.5847533 46.927,30.546561 39.556,30.546561 C32.946,30.546561 28.997,32.2987263 28.997,33.9928861 L28.997,33.9928861 Z M53,34.0178885 L53,43.7738088 L53.003,43.7738088 C53.003,43.7828097 53,43.7898104 53,43.7988112 L53,52.6666478 L53.003,52.6666478 C53.003,52.6756486 53,52.6826493 53,52.6916502 L53,61.5554864 C53,65.2968393 46.031,67 39.556,67 C31.929,67 27,64.8627984 27,61.5554864 L27,52.6976507 C27,52.6866497 26.997,52.6776488 26.997,52.6666478 L27,52.6666478 L27,43.8048118 C27,43.7948108 26.997,43.7848099 26.997,43.7738088 L27,43.7738088 L27,34.023889 C27,34.012888 26.997,34.0038872 26.997,33.9928861 C26.997,30.684574 31.927,28.5463723 39.556,28.5463723 C46.032,28.5463723 53.003,30.2505331 53.003,33.9928861 C53.003,34.001887 53,34.0088876 53,34.0178885 L53,34.0178885 Z M67,21.1206718 C67.553,21.1206718 68,20.6726295 68,20.1205774 L68,15.0000943 C68,14.4470422 67.553,14 67,14 L13,14 C12.447,14 12,14.4470422 12,15.0000943 L12,20.1205774 C12,20.6726295 12.447,21.1206718 13,21.1206718 C14.221,21.1206718 15.214,22.1077649 15.214,23.3208793 C15.214,24.5339938 14.221,25.5210869 13,25.5210869 C12.447,25.5210869 12,25.9691292 12,26.5211812 L12,47.0031135 C12,47.5551656 12.447,48.0032078 13,48.0032078 L23,48.0032078 L23,46.0030192 L18,46.0030192 L18,43.0027361 L23,43.0027361 L23,41.0025474 L17,41.0025474 C16.447,41.0025474 16,41.4495896 16,42.0026418 L16,46.0030192 L14,46.0030192 L14,27.4012643 C15.843,26.9522219 17.214,25.2930654 17.214,23.3208793 C17.214,21.3476932 15.843,19.6885367 14,19.2394943 L14,16.0001887 L66,16.0001887 L66,19.2394943 C64.157,19.6885367 62.786,21.3476932 62.786,23.3208793 C62.786,25.2930654 64.157,26.9522219 66,27.4012643 L66,46.0030192 L64,46.0030192 L64,42.0026418 C64,41.4495896 63.553,41.0025474 63,41.0025474 L57,41.0025474 L57,43.0027361 L62,43.0027361 L62,46.0030192 L57,46.0030192 L57,48.0032078 L67,48.0032078 C67.553,48.0032078 68,47.5551656 68,47.0031135 L68,26.5211812 C68,25.9691292 67.553,25.5210869 67,25.5210869 C65.779,25.5210869 64.786,24.5339938 64.786,23.3208793 C64.786,22.1077649 65.779,21.1206718 67,21.1206718 L67,21.1206718 Z M28,28.0013209 L28,20.0005661 C28,19.4475139 27.553,19.0004717 27,19.0004717 L21,19.0004717 C20.447,19.0004717 20,19.4475139 20,20.0005661 L20,37.00217 C20,37.5542221 20.447,38.0022644 21,38.0022644 L24,38.0022644 L24,36.0020757 L22,36.0020757 L22,21.0006604 L26,21.0006604 L26,28.0013209 L28,28.0013209 Z M58,36.0020757 L57,36.0020757 L57,38.0022644 L59,38.0022644 C59.553,38.0022644 60,37.5542221 60,37.00217 L60,20.0005661 C60,19.4475139 59.553,19.0004717 59,19.0004717 L53,19.0004717 C52.447,19.0004717 52,19.4475139 52,20.0005661 L52,28.0013209 L54,28.0013209 L54,21.0006604 L58,21.0006604 L58,36.0020757 Z M50,27.0012265 L50,20.0005661 C50,19.4475139 49.553,19.0004717 49,19.0004717 L42,19.0004717 C41.447,19.0004717 41,19.4475139 41,20.0005661 L41,26.0011322 L43,26.0011322 L43,21.0006604 L48,21.0006604 L48,27.0012265 L50,27.0012265 Z M37,26.0011322 L37,21.0006604 L32,21.0006604 L32,27.0012265 L30,27.0012265 L30,20.0005661 C30,19.4475139 30.447,19.0004717 31,19.0004717 L38,19.0004717 C38.553,19.0004717 39,19.4475139 39,20.0005661 L39,26.0011322 L37,26.0011322 Z" id="aws-elasticache-Amazon-ElastiCache_Icon_64_Squid" fill="#FFFFFF"></path></g></g>'
+  },
+  "documentdb": {
+    "name": "Amazon DocumentDB",
+    "markup": '<g transform="translate(2 2) scale(0.75)"><g id="aws-documentdb-Icon-Architecture_64_Arch_Amazon-DocumentDB_64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="aws-documentdb-Icon-Architecture-BG_64_Database" fill="#C925D1"><rect id="aws-documentdb-Rectangle" x="0" y="0" width="80" height="80"></rect></g><path d="M34.5,13.9928328 C44.813,13.9928328 52,17.1435014 52,19.9713312 C52,22.7991609 44.813,25.9498296 34.5,25.9498296 C24.187,25.9498296 17,22.7991609 17,19.9713312 C17,17.1435014 24.187,13.9928328 34.5,13.9928328 L34.5,13.9928328 Z M34.295,67.0071672 C24.103,67.0071672 17,63.7877458 17,60.8991347 L17,52.2123765 C20.121,54.8249803 26.472,56.5388165 34.161,56.5388165 C35.934,56.5388165 37.718,56.4401713 39.465,56.2468665 L39.244,54.2659907 C37.57,54.4513242 35.859,54.5459837 34.161,54.5459837 C24.646,54.5459837 17.83,51.7241325 17,48.9929552 L17,38.2555721 C20.121,40.8681759 26.472,42.5810156 34.161,42.5810156 C35.971,42.5810156 37.757,42.481374 39.469,42.2840836 L39.24,40.3052006 C37.603,40.4935233 35.895,40.5881829 34.161,40.5881829 C24.646,40.5881829 17.83,37.767328 17,35.0361507 L17,23.5544445 C19.879,26.0126038 25.818,27.9426624 34.5,27.9426624 C43.182,27.9426624 49.121,26.0126038 52,23.5544445 L52,26.946246 L54,26.946246 L54,19.9713312 C54,16.1072284 47.166,12 34.5,12 C21.834,12 15,16.1072284 15,19.9713312 L15,60.8991347 C15,65.5165283 23.295,69 34.295,69 C43.13,69 50.592,66.669382 52.863,63.201853 L51.187,62.1127699 C49.595,64.5450223 43.281,67.0071672 34.295,67.0071672 L34.295,67.0071672 Z M58.207,42.1675028 C58.77,42.1675028 59.267,42.3916965 59.606,42.8002273 C60.23,43.5475396 60.129,44.6794686 60.068,45.080028 C60.097,47.1864522 61.26,47.5979722 61.395,47.6388253 C61.825,47.7683594 62.128,48.171908 62.117,48.6202954 C62.106,49.0686828 61.809,49.4572852 61.372,49.5658946 C61.259,49.6007692 60.067,50.0222533 60.067,52.1964339 C60.09,53.369216 59.527,54.6695394 58.237,54.7083996 L57.469,54.7083996 L57.469,52.7155668 L57.997,52.7155668 C58.037,52.5830434 58.068,52.3747924 58.067,52.2103837 C58.067,50.3919238 58.677,49.274941 59.329,48.6003671 C58.677,47.9267896 58.067,46.8127961 58.067,45.0013111 C58.067,44.9405297 58.073,44.8787519 58.084,44.8189669 C58.122,44.6047373 58.122,44.3237479 58.09,44.1603356 L57.469,44.1603356 L57.469,42.1675028 L58.207,42.1675028 Z M53.527,42.1675028 L54.296,42.1675028 L54.296,44.1603356 L53.769,44.1603356 C53.728,44.292859 53.697,44.50111 53.698,44.6655187 C53.698,46.4839787 53.089,47.6009615 52.437,48.2755354 C53.089,48.9491128 53.698,50.0631064 53.698,51.8745914 C53.698,51.9363692 53.692,51.9971506 53.682,52.0569356 C53.644,52.2711651 53.644,52.5521545 53.676,52.7155668 L54.296,52.7155668 L54.296,54.7083996 L53.558,54.7083996 C52.995,54.7083996 52.498,54.4842059 52.158,54.0766716 C51.535,53.3293593 51.637,52.1974303 51.697,51.7958745 C51.669,49.6904466 50.505,49.2779303 50.37,49.2380736 C49.939,49.107543 49.637,48.7039944 49.647,48.255607 C49.658,47.8082161 49.956,47.4186173 50.393,47.3100079 C50.507,47.2751333 51.698,46.8536492 51.698,44.6794686 C51.675,43.5076829 52.237,42.2063631 53.527,42.1675028 L53.527,42.1675028 Z M64,58.8315707 L47,58.8315707 L47,34.9175771 L58,34.9175771 L58,38.9032427 C58,39.4532646 58.447,39.8996591 59,39.8996591 L64,39.8996591 L64,58.8315707 Z M60,34.9175771 L60.245,34.9175771 L63.268,37.9068263 L60,37.9068263 L60,34.9175771 Z M65.704,37.5082598 L61.361,33.2137051 C61.175,33.0283716 60.921,32.9247443 60.657,32.9247443 L60,32.9247443 L59.635,32.9247443 L56.548,29.2918102 C56.357,29.0676165 56.078,28.9390788 55.784,28.9390788 L42,28.9390788 C41.447,28.9390788 41,29.3854733 41,29.9354951 L41,55.8423215 C41,56.3923433 41.447,56.8387379 42,56.8387379 L44,56.8387379 L44,54.8459051 L43,54.8459051 L43,30.9319115 L55.32,30.9319115 L57.014,32.9247443 L46,32.9247443 C45.447,32.9247443 45,33.3711389 45,33.9211607 L45,59.8279871 C45,60.3780089 45.447,60.8244035 46,60.8244035 L65,60.8244035 C65.553,60.8244035 66,60.3780089 66,59.8279871 L66,38.2157154 C66,37.9496722 65.894,37.6955861 65.704,37.5082598 L65.704,37.5082598 Z" id="aws-documentdb-Amazon-DocumentDB_Icon_64_Squid" fill="#FFFFFF"></path></g></g>'
+  },
+  "neptune": {
+    "name": "Amazon Neptune",
+    "markup": '<g transform="translate(2 2) scale(0.75)"><g id="aws-neptune-Icon-Architecture_64_Arch_Amazon-Neptune_64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="aws-neptune-Icon-Architecture-BG_64_Database" fill="#C925D1"><rect id="aws-neptune-Rectangle" x="0" y="0" width="80" height="80"></rect></g><path d="M65,58 C64.448,58 64,57.551 64,57 C64,56.449 64.448,56 65,56 C65.552,56 66,56.449 66,57 C66,57.551 65.552,58 65,58 L65,58 Z M55.5,66 C54.121,66 53,64.878 53,63.5 C53,62.122 54.121,61 55.5,61 C56.879,61 58,62.122 58,63.5 C58,64.878 56.879,66 55.5,66 L55.5,66 Z M51,48.5 C51,46.57 52.57,45 54.5,45 C56.43,45 58,46.57 58,48.5 C58,50.43 56.43,52 54.5,52 C52.57,52 51,50.43 51,48.5 L51,48.5 Z M45,40 C44.448,40 44,39.551 44,39 C44,38.449 44.448,38 45,38 C45.552,38 46,38.449 46,39 C46,39.551 45.552,40 45,40 L45,40 Z M42,54 C40.897,54 40,53.103 40,52 C40,50.897 40.897,50 42,50 C43.103,50 44,50.897 44,52 C44,53.103 43.103,54 42,54 L42,54 Z M63,33 C64.103,33 65,33.897 65,35 C65,36.103 64.103,37 63,37 C61.897,37 61,36.103 61,35 C61,33.897 61.897,33 63,33 L63,33 Z M65,54 C63.346,54 62,55.346 62,57 C62,57.446 62.104,57.865 62.279,58.246 L58.774,60.434 C58.117,59.732 57.244,59.245 56.257,59.077 L56.019,53.782 C58.314,53.121 60,51.005 60,48.5 C60,47.028 59.415,45.692 58.47,44.704 L61.955,38.844 C62.29,38.936 62.637,39 63,39 C65.206,39 67,37.206 67,35 C67,32.794 65.206,31 63,31 C60.794,31 59,32.794 59,35 C59,36.122 59.467,37.133 60.213,37.86 L56.841,43.531 C56.13,43.194 55.338,43 54.5,43 C53.348,43 52.278,43.358 51.394,43.966 L47.733,40.223 C47.901,39.849 48,39.437 48,39 C48,37.346 46.654,36 45,36 C43.346,36 42,37.346 42,39 C42,40.654 43.346,42 45,42 C45.486,42 45.939,41.873 46.347,41.666 L49.977,45.378 C49.362,46.266 49,47.341 49,48.5 C49,48.704 49.013,48.905 49.035,49.103 L45.371,49.865 C44.66,48.748 43.42,48 42,48 C39.794,48 38,49.794 38,52 C38,54.206 39.794,56 42,56 C44.206,56 46,54.206 46,52 C46,51.925 45.982,51.855 45.979,51.782 L49.619,51.024 C50.467,52.656 52.105,53.811 54.025,53.976 L54.26,59.195 C52.384,59.738 51,61.452 51,63.5 C51,65.981 53.019,68 55.5,68 C57.981,68 60,65.981 60,63.5 C60,63.033 59.908,62.59 59.775,62.166 L63.722,59.703 C64.11,59.888 64.541,60 65,60 C66.654,60 68,58.654 68,57 C68,55.346 66.654,54 65,54 L65,54 Z M31.5,15 C41.224,15 48,18.162 48,21 C48,23.838 41.224,27 31.5,27 C21.776,27 15,23.838 15,21 C15,18.162 21.776,15 31.5,15 L31.5,15 Z M48,60.02 C48,62.772 41.224,65.84 31.5,65.84 C21.776,65.84 15,62.772 15,60.02 L15,51.78 C17.957,54.302 23.937,55.954 31.167,55.954 C32.87,55.954 34.591,55.859 36.279,55.672 L36.059,53.684 C34.443,53.863 32.797,53.954 31.167,53.954 C21.496,53.954 15,50.919 15,48.086 L15,38.287 C17.957,40.809 23.937,42.46 31.167,42.46 C34.632,42.46 37.996,42.076 40.895,41.348 L40.408,39.409 C37.666,40.097 34.471,40.46 31.167,40.46 C21.496,40.46 15,37.426 15,34.592 L15,24.722 C17.997,27.305 24.104,29 31.5,29 C38.896,29 45.003,27.305 48,24.722 L48,36 L50,36 L50,21 C50,16.439 42.047,13 31.5,13 C20.953,13 13,16.439 13,21 L13,60.02 C13,64.478 20.953,67.84 31.5,67.84 C42.047,67.84 50,64.478 50,60.02 L50,55 L48,55 L48,60.02 Z" id="aws-neptune-Amazon-Neptune_Icon_64_Squid" fill="#FFFFFF"></path></g></g>'
+  },
+  "redshift": {
+    "name": "Amazon Redshift",
+    "markup": '<g transform="translate(2 2) scale(0.75)"><g id="aws-redshift-Icon-Architecture_64_Arch_Amazon-Redshift_64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="aws-redshift-Icon-Architecture-BG_64_Analytics" fill="#8C4FFF"><rect id="aws-redshift-Rectangle" x="0" y="0" width="80" height="80"></rect></g><path d="M50.8250355,35.1704885 C49.7652069,35.1704885 48.9041586,34.3110668 48.9041586,33.2542373 C48.9041586,32.1974078 49.7652069,31.336989 50.8250355,31.336989 C51.8838652,31.336989 52.7449135,32.1974078 52.7449135,33.2542373 C52.7449135,34.3110668 51.8838652,35.1704885 50.8250355,35.1704885 M45.9594133,46.8245264 C44.9005836,46.8245264 44.0395353,45.9651047 44.0395353,44.9082752 C44.0395353,43.8514457 44.9005836,42.9920239 45.9594133,42.9920239 C47.018243,42.9920239 47.8802902,43.8514457 47.8802902,44.9082752 C47.8802902,45.9651047 47.018243,46.8245264 45.9594133,46.8245264 M34.2823195,44.8823529 C33.2244887,44.8823529 32.3634404,44.0229312 32.3634404,42.9661017 C32.3634404,41.9092722 33.2244887,41.0488534 34.2823195,41.0488534 C35.3421482,41.0488534 36.2031965,41.9092722 36.2031965,42.9661017 C36.2031965,44.0229312 35.3421482,44.8823529 34.2823195,44.8823529 M29.4176962,55.5653041 C28.3598654,55.5653041 27.4978182,54.7058824 27.4978182,53.6490528 C27.4978182,52.5922233 28.3598654,51.7328016 29.4176962,51.7328016 C30.4775248,51.7328016 31.3385732,52.5922233 31.3385732,53.6490528 C31.3385732,54.7058824 30.4775248,55.5653041 29.4176962,55.5653041 M50.8250355,29.3429711 C48.6644235,29.3429711 46.9063666,31.0977069 46.9063666,33.2542373 C46.9063666,34.5762712 47.5706325,35.7417747 48.5805163,36.4506481 L46.7525367,41.0787637 C46.4958204,41.0259222 46.2301141,40.998006 45.9594133,40.998006 C44.2413122,40.998006 42.793912,42.114656 42.2674938,43.6550349 L38.1770149,42.7268195 C38.0501551,40.6839482 36.3620209,39.0548355 34.2823195,39.0548355 C32.1227065,39.0548355 30.3656485,40.8095713 30.3656485,42.9661017 C30.3656485,43.9740778 30.7592135,44.885344 31.3895168,45.5792622 L29.6044898,49.7577268 C29.5405604,49.7537388 29.4816256,49.7387836 29.4176962,49.7387836 C27.2580832,49.7387836 25.5000263,51.4925224 25.5000263,53.6490528 C25.5000263,55.8045862 27.2580832,57.559322 29.4176962,57.559322 C31.5783082,57.559322 33.3363651,55.8045862 33.3363651,53.6490528 C33.3363651,52.2652044 32.6091688,51.0548355 31.5193733,50.3589232 L33.0946322,46.6729811 C33.4722149,46.7936191 33.8657799,46.8763709 34.2823195,46.8763709 C35.823616,46.8763709 37.1471531,45.9760718 37.7854477,44.6829511 L42.1186583,45.666002 C42.4732664,47.4606181 44.0595132,48.8185444 45.9594133,48.8185444 C48.1200252,48.8185444 49.8780821,47.0648056 49.8780821,44.9082752 C49.8780821,43.7427717 49.3536617,42.7068794 48.5405604,41.9890329 L50.4614374,37.1276171 C50.5833027,37.1395813 50.7001735,37.1645065 50.8250355,37.1645065 C52.9846485,37.1645065 54.7427054,35.4097707 54.7427054,33.2542373 C54.7427054,31.0977069 52.9846485,29.3429711 50.8250355,29.3429711 M40,66.0059821 C30.2687556,66.0059821 22.9977919,63.0847458 22.9977919,60.4725823 L22.9977919,23.1515454 C26.3081331,25.8414756 33.3153883,27.2632104 40.0209768,27.2632104 C46.6965985,27.2632104 53.6738868,25.8534397 57.0022081,23.1864407 L57.0022081,60.4725823 C57.0022081,63.0847458 49.7302455,66.0059821 40,66.0059821 M40.0209768,13.9940179 C50.0279165,13.9940179 57.0022081,16.9651047 57.0022081,19.6321037 C57.0022081,22.2981057 50.0279165,25.2691924 40.0209768,25.2691924 C30.0130382,25.2691924 23.0397455,22.2981057 23.0397455,19.6321037 C23.0397455,16.9651047 30.0130382,13.9940179 40.0209768,13.9940179 M59,19.6321037 C59,14.6749751 49.2218075,12 40.0209768,12 C30.8201462,12 21.0419536,14.6749751 21.0419536,19.6321037 C21.0419536,19.6400798 21.0439514,19.6490528 21.0439514,19.6570289 L21,19.6570289 L21,60.4725823 C21,65.3619143 30.7891804,68 40,68 C49.2108196,68 59,65.3619143 59,60.4725823 L59,19.6570289 L58.9980022,19.6570289 C58.9980022,19.6490528 59,19.6400798 59,19.6321037" id="aws-redshift-Amazon-Redshift_Icon_64_Squid" fill="#FFFFFF"></path></g></g>'
+  },
+  "cloudfront": {
+    "name": "Amazon CloudFront",
+    "markup": '<g transform="translate(2 2) scale(0.75)"><g id="aws-cloudfront-Icon-Architecture_64_Arch_Amazon-CloudFront_64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="aws-cloudfront-Icon-Architecture-BG_64_Networking-Content-Delivery" fill="#8C4FFF"><rect id="aws-cloudfront-Rectangle" x="0" y="0" width="80" height="80"></rect></g><path d="M55.122,52.123 C55.122,50.469 53.776,49.123 52.122,49.123 C50.468,49.123 49.122,50.469 49.122,52.123 C49.122,53.777 50.468,55.123 52.122,55.123 C53.776,55.123 55.122,53.777 55.122,52.123 L55.122,52.123 Z M57.122,52.123 C57.122,54.88 54.879,57.123 52.122,57.123 C49.365,57.123 47.122,54.88 47.122,52.123 C47.122,49.366 49.365,47.123 52.122,47.123 C54.879,47.123 57.122,49.366 57.122,52.123 L57.122,52.123 Z M30.392,37.692 C30.392,36.038 29.046,34.692 27.392,34.692 C25.737,34.692 24.392,36.038 24.392,37.692 C24.392,39.346 25.737,40.692 27.392,40.692 C29.046,40.692 30.392,39.346 30.392,37.692 L30.392,37.692 Z M32.392,37.692 C32.392,40.449 30.148,42.692 27.392,42.692 C24.635,42.692 22.392,40.449 22.392,37.692 C22.392,34.935 24.635,32.692 27.392,32.692 C30.148,32.692 32.392,34.935 32.392,37.692 L32.392,37.692 Z M39.73,22.007 C39.73,23.661 41.076,25.007 42.73,25.007 C44.385,25.007 45.73,23.661 45.73,22.007 C45.73,20.352 44.385,19.007 42.73,19.007 C41.076,19.007 39.73,20.352 39.73,22.007 L39.73,22.007 Z M37.73,22.007 C37.73,19.25 39.974,17.007 42.73,17.007 C45.487,17.007 47.73,19.25 47.73,22.007 C47.73,24.764 45.487,27.007 42.73,27.007 C39.974,27.007 37.73,24.764 37.73,22.007 L37.73,22.007 Z M66,40 C66,30.727 61.028,22.148 53.012,17.509 C51.575,17.799 50.185,18.196 48.451,18.823 L47.771,16.942 C48.676,16.616 49.486,16.352 50.266,16.126 C47.046,14.737 43.548,14 40,14 C38.311,14 36.649,14.175 35.025,14.492 C36.201,15.18 37.244,15.866 38.257,16.634 L37.048,18.227 C35.62,17.145 34.14,16.228 32.197,15.21 C22.378,18.298 15.306,26.958 14.183,37.128 C16.242,36.711 18.219,36.484 20.414,36.43 L20.463,38.429 C18.163,38.486 16.187,38.73 14.027,39.205 C14.018,39.47 14,39.738 14,40 C14,48.658 18.283,56.636 25.327,61.447 C24.074,57.716 23.45,54.19 23.45,50.746 C23.45,48.782 23.788,47.169 24.145,45.462 C24.228,45.067 24.312,44.665 24.394,44.248 L26.357,44.635 C26.273,45.059 26.187,45.47 26.103,45.873 C25.753,47.545 25.45,48.989 25.45,50.746 C25.45,54.654 26.308,58.695 28.054,63.083 C31.773,65.014 35.789,66 40,66 C42.756,66 45.446,65.56 48.012,64.714 C49.019,62.727 49.766,60.852 50.39,58.699 L52.311,59.256 C51.855,60.826 51.332,62.253 50.709,63.677 C52.323,62.951 53.85,62.053 55.283,61.005 C54.938,60.159 54.568,59.318 54.159,58.499 L55.948,57.604 C56.296,58.3 56.615,59.012 56.92,59.728 C62.705,54.775 66,47.66 66,40 L66,40 Z M68,40 C68,48.727 64.034,56.799 57.121,62.149 C55.409,63.479 53.552,64.583 51.589,65.472 C50.756,65.85 49.908,66.2 49.036,66.494 C46.156,67.493 43.113,68 40,68 C35.4,68 30.832,66.854 26.788,64.686 C17.667,59.806 12,50.347 12,40 C12,39.314 12.018,38.792 12.059,38.309 C12.74,26.625 20.756,16.512 32.001,13.166 C34.562,12.393 37.255,12 40,12 C44.808,12 49.539,13.238 53.684,15.579 C62.513,20.525 68,29.884 68,40 L68,40 Z M37.314,25.463 L36,23.956 C33.758,25.912 32.014,27.989 29.977,31.126 L31.655,32.215 C33.583,29.244 35.223,27.288 37.314,25.463 L37.314,25.463 Z M34.275,38.427 L33.625,40.318 C38.218,41.895 42.225,44.411 46.234,48.236 L47.615,46.789 C43.389,42.758 39.15,40.101 34.275,38.427 L34.275,38.427 Z M47.646,26.668 C51.398,32.39 53.511,38.671 53.925,45.338 L51.929,45.462 C51.536,39.146 49.533,33.192 45.975,27.765 L47.646,26.668 Z" id="aws-cloudfront-Amazon-CloudFront_Icon_64_Squid" fill="#FFFFFF"></path></g></g>'
+  },
+  "route53": {
+    "name": "Amazon Route 53",
+    "markup": '<g transform="translate(2 2) scale(0.75)"><g id="aws-route53-Icon-Architecture_64_Arch_Amazon-Route-53_64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="aws-route53-Icon-Architecture-BG_64_Networking-Content-Delivery" fill="#8C4FFF"><rect id="aws-route53-Rectangle" x="0" y="0" width="80" height="80"></rect></g><path d="M48.692,40.6795109 C49.431,41.3627732 49.801,42.2781246 49.801,43.4275659 C49.801,44.678046 49.351,45.6764293 48.452,46.4227159 C47.552,47.1700028 46.343,47.543146 44.826,47.543146 C43.627,47.543146 42.44,47.2870477 41.266,46.7768518 L41.266,45.2452638 C42.657,45.7054405 43.843,45.9345284 44.826,45.9345284 C45.796,45.9345284 46.542,45.7174451 47.065,45.2842788 C47.588,44.8501121 47.849,44.2308744 47.849,43.4275659 C47.849,41.8829729 46.874,41.1106764 44.921,41.1106764 C44.309,41.1106764 43.703,41.1426887 43.103,41.2057129 L43.103,39.9432282 L47.123,35.5585448 L41.458,35.5585448 L41.458,33.9889422 L49.247,33.9889422 L49.247,35.5015229 L45.304,39.6751253 C45.369,39.6621203 45.431,39.656118 45.496,39.656118 L45.687,39.656118 C46.951,39.656118 47.952,39.9972489 48.692,40.6795109 M37.574,40.3453826 C38.351,41.0726618 38.74,42.0740463 38.74,43.349536 C38.74,44.6010165 38.288,45.6124048 37.381,46.3847013 C36.475,47.1569978 35.283,47.543146 33.803,47.543146 C32.503,47.543146 31.284,47.2870477 30.148,46.7768518 L30.148,45.2452638 C31.564,45.7054405 32.776,45.9345284 33.784,45.9345284 C34.754,45.9345284 35.497,45.7154443 36.013,45.2742749 C36.53,44.834106 36.789,44.1998624 36.789,43.3695437 C36.789,42.4631957 36.546,41.8059434 36.061,41.3977867 C35.576,40.9896299 34.785,40.7845512 33.688,40.7845512 C32.897,40.7845512 31.909,40.8495762 30.722,40.976625 L30.722,39.7131399 L31.086,33.9889422 L38.071,33.9889422 L38.071,35.5585448 L32.693,35.5585448 L32.444,39.4450369 C33.146,39.3179882 33.777,39.2539636 34.338,39.2539636 C35.716,39.2539636 36.795,39.617103 37.574,40.3453826 M51.957,54.37777 C47.103,55.250105 42.852,57.2268639 40,58.8374822 C37.147,57.2268639 32.896,55.250105 28.043,54.37777 C26.677,54.1326759 19.869,52.7111302 19.869,48.7756192 C19.869,46.951919 20.522,45.7424547 21.776,43.5826255 C23.274,40.9996338 25.138,37.7843994 25.138,33.1556222 C25.138,29.8473521 24.271,26.6751342 22.559,23.7149977 C22.76,23.4669025 22.965,23.2158061 23.171,22.9627089 C25.707,24.2301955 28.347,24.8724421 31.031,24.8724421 C34.311,24.8724421 37.325,24.0111114 40,22.3114589 C42.674,24.0111114 45.688,24.8724421 48.968,24.8724421 C51.652,24.8724421 54.293,24.2301955 56.829,22.9627089 C57.034,23.2158061 57.239,23.4669025 57.44,23.7149977 C55.728,26.6751342 54.861,29.8473521 54.861,33.1556222 C54.861,37.7843994 56.725,40.9996338 58.226,43.586627 C59.477,45.7424547 60.13,46.951919 60.13,48.7756192 C60.13,52.7111302 53.322,54.1326759 51.957,54.37777 M56.861,33.1556222 C56.861,29.9974097 57.752,26.9702475 59.507,24.1581679 C59.735,23.7950284 59.706,23.3278491 59.434,22.9957216 C58.926,22.3734827 58.393,21.7182311 57.867,21.0669811 C57.562,20.6898363 57.032,20.5857963 56.606,20.8198862 C54.143,22.1814089 51.574,22.8716739 48.968,22.8716739 C45.824,22.8716739 43.077,22.0263494 40.569,20.2886823 C40.227,20.0515912 39.772,20.0515912 39.43,20.2886823 C36.922,22.0263494 34.175,22.8716739 31.031,22.8716739 C28.425,22.8716739 25.856,22.1814089 23.393,20.8198862 C22.968,20.5857963 22.437,20.6898363 22.132,21.0669811 C21.606,21.7182311 21.073,22.3734827 20.565,22.9957216 C20.294,23.3278491 20.264,23.7950284 20.492,24.1581679 C22.248,26.9702475 23.138,29.9974097 23.138,33.1556222 C23.138,37.2461927 21.423,40.2023277 20.045,42.581241 C18.695,44.9041328 17.869,46.4467251 17.869,48.7756192 C17.869,54.1646882 25.385,55.9343677 27.689,56.3475263 C32.549,57.2208616 36.793,59.2806524 39.497,60.8542565 C39.652,60.9452915 39.826,60.9903088 40,60.9903088 C40.173,60.9903088 40.347,60.9452915 40.503,60.8542565 C43.207,59.2806524 47.45,57.2208616 52.31,56.3475263 C54.614,55.9343677 62.13,54.1646882 62.13,48.7756192 C62.13,46.4467251 61.304,44.9041328 59.954,42.5782399 C58.576,40.2023277 56.861,37.2461927 56.861,33.1556222 M52.994,60.1569888 C46.863,61.2594121 41.723,64.556678 40,65.7641416 C38.276,64.556678 33.136,61.2594121 27.005,60.1569888 C14.937,57.9891566 14,50.8974338 14,48.7756192 C14,45.2852792 15.371,42.9233724 16.697,40.6374948 C17.961,38.4596586 19.268,36.2067937 19.268,33.1556222 C19.268,28.3357718 16.485,24.9314648 15.112,23.5459328 C16.556,21.7892584 20.204,17.3415508 22.003,15.0236609 C24.729,17.5966487 27.898,19.0001876 31.031,19.0001876 C34.509,19.0001876 37.385,17.5846441 40,14.5644846 C42.614,17.5846441 45.49,19.0001876 48.968,19.0001876 C52.101,19.0001876 55.27,17.5966487 57.997,15.0236609 C59.796,17.3415508 63.443,21.7892584 64.887,23.5459328 C63.514,24.9314648 60.731,28.3357718 60.731,33.1556222 C60.731,36.2067937 62.039,38.4596586 63.302,40.6374948 C64.629,42.9233724 66,45.2852792 66,48.7756192 C66,50.8974338 65.062,57.9891566 52.994,60.1569888 M65.032,39.6341095 C63.797,37.5052922 62.731,35.6675867 62.731,33.1556222 C62.731,27.867592 66.847,24.4472789 66.887,24.4152666 C67.094,24.2472021 67.226,24.0031083 67.254,23.7370062 C67.28,23.470904 67.2,23.2058022 67.03,22.9997231 C66.963,22.9196924 60.408,14.9726413 58.906,12.9138509 C58.73,12.6727583 58.457,12.5227007 58.159,12.5046938 C57.86,12.4826853 57.572,12.601731 57.368,12.8198148 C54.848,15.5148495 51.866,16.9994194 48.968,16.9994194 C45.764,16.9994194 43.244,15.5718713 40.794,12.3706423 C40.415,11.8764526 39.585,11.8764526 39.206,12.3706423 C36.755,15.5718713 34.235,16.9994194 31.031,16.9994194 C28.133,16.9994194 25.151,15.5148495 22.631,12.8198148 C22.427,12.601731 22.137,12.4776834 21.84,12.5046938 C21.543,12.5227007 21.269,12.6727583 21.093,12.9138509 C19.591,14.9726413 13.036,22.9196924 12.969,22.9997231 C12.8,23.2058022 12.72,23.470904 12.747,23.7360058 C12.773,24.0011076 12.904,24.2452013 13.11,24.4132658 C13.152,24.4472789 17.268,27.867592 17.268,33.1556222 C17.268,35.6675867 16.202,37.5052922 14.967,39.6341095 C13.576,42.0310298 12,44.7470725 12,48.7756192 C12,55.487196 17.477,60.4781121 26.652,62.1267451 C33.559,63.3682217 39.334,67.7489036 39.391,67.7939209 C39.57,67.9309735 39.785,68 40,68 C40.214,68 40.429,67.9309735 40.609,67.7929205 C40.667,67.7489036 46.422,63.3712229 53.347,62.1267451 C62.522,60.4781121 68,55.487196 68,48.7756192 C68,44.7470725 66.423,42.0310298 65.032,39.6341095" id="aws-route53-Amazon-Route-53-Icon_64_Squid" fill="#FFFFFF"></path></g></g>'
+  },
+  "elb": {
+    "name": "Elastic Load Balancing",
+    "markup": '<g transform="translate(2 2) scale(0.75)"><g id="aws-elb-Icon-Architecture_64_Arch_Elastic-Load-Balancing_64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="aws-elb-Icon-Architecture-BG_64_Networking-Content-Delivery" fill="#8C4FFF"><rect id="aws-elb-Rectangle" x="0" y="0" width="80" height="80"></rect></g><path d="M30,53 C22.832,53 17,47.168 17,40 C17,32.832 22.832,27 30,27 C37.168,27 43,32.832 43,40 C43,47.168 37.168,53 30,53 M60,59 C60,61.206 58.206,63 56,63 C53.794,63 52,61.206 52,59 C52,56.794 53.794,55 56,55 C58.206,55 60,56.794 60,59 M56,17 C58.206,17 60,18.794 60,21 C60,23.206 58.206,25 56,25 C53.794,25 52,23.206 52,21 C52,18.794 53.794,17 56,17 M59,36 C61.206,36 63,37.794 63,40 C63,42.206 61.206,44 59,44 C56.794,44 55,42.206 55,40 C55,37.794 56.794,36 59,36 M44.949,41 L53.09,41 C53.568,43.833 56.033,46 59,46 C62.309,46 65,43.309 65,40 C65,36.691 62.309,34 59,34 C56.033,34 53.568,36.167 53.09,39 L44.949,39 C44.823,37.099 44.344,35.297 43.572,33.654 L52.446,25.823 C53.442,26.559 54.669,27 56,27 C59.309,27 62,24.309 62,21 C62,17.691 59.309,15 56,15 C52.691,15 50,17.691 50,21 C50,22.256 50.389,23.421 51.051,24.386 L42.581,31.859 C39.904,27.738 35.271,25 30,25 C21.729,25 15,31.729 15,40 C15,48.271 21.729,55 30,55 C35.271,55 39.904,52.262 42.581,48.141 L51.051,55.614 C50.389,56.579 50,57.744 50,59 C50,62.309 52.691,65 56,65 C59.309,65 62,62.309 62,59 C62,55.691 59.309,53 56,53 C54.669,53 53.442,53.441 52.446,54.177 L43.572,46.346 C44.344,44.703 44.823,42.901 44.949,41" id="aws-elb-Elastic-Load-Balancing_Icon_64_Squid" fill="#FFFFFF"></path></g></g>'
+  },
+  "vpc": {
+    "name": "Amazon VPC",
+    "markup": '<g transform="translate(2 2) scale(0.75)"><g id="aws-vpc-Icon-Architecture_64_Arch_Amazon-Virtual-Private-Cloud_64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="aws-vpc-Icon-Architecture-BG_64_Networking-Content-Delivery" fill="#8C4FFF"><rect id="aws-vpc-Rectangle" x="0" y="0" width="80" height="80"></rect></g><path d="M61,41.3717025 L55.5,39.1717025 L55.5,59.1227025 C57.106,58.9627025 58.401,58.4347025 59.321,57.5007025 C61.021,55.7727025 61.001,53.2397025 61,53.2147025 L61,41.3717025 Z M53.5,59.1357025 L53.5,39.1717025 L48,41.3717025 L48,53.1947025 C48.007,53.4017025 48.234,58.5517025 53.5,59.1357025 L53.5,59.1357025 Z M63,53.1947025 C63.003,53.3077025 63.053,56.5417025 60.765,58.8847025 C59.269,60.4177025 57.16,61.1947025 54.5,61.1947025 C47.927,61.1947025 46.065,55.9767025 46,53.2187025 L46,40.6947025 C46,40.2857025 46.249,39.9177025 46.629,39.7657025 L54.129,36.7657025 C54.367,36.6707025 54.633,36.6707025 54.871,36.7657025 L62.371,39.7657025 C62.751,39.9177025 63,40.2857025 63,40.6947025 L63,53.1947025 Z M66.001,51.2287025 L66,37.8717025 L54.5,33.2717025 L43,37.8717025 L43,51.1947025 C42.998,51.2857025 42.865,57.4227025 46.534,61.1987025 C48.466,63.1867025 51.146,64.1947025 54.5,64.1947025 C57.877,64.1947025 60.57,63.1797025 62.504,61.1787025 C66.168,57.3867025 66.003,51.2897025 66.001,51.2287025 L66.001,51.2287025 Z M63.942,62.5677025 C61.617,64.9747025 58.44,66.1947025 54.5,66.1947025 C50.579,66.1947025 47.413,64.9787025 45.09,62.5807025 C40.831,58.1877025 40.991,51.4477025 41,51.1637025 L41,37.1947025 C41,36.7857025 41.249,36.4177025 41.629,36.2657025 L54.129,31.2657025 C54.367,31.1707025 54.633,31.1707025 54.871,31.2657025 L67.371,36.2657025 C67.751,36.4177025 68,36.7857025 68,37.1947025 L68,51.1947025 C68.009,51.4447025 68.189,58.1727025 63.942,62.5677025 L63.942,62.5677025 Z M23.055,47.1947025 L38,47.1947025 L38,49.1947025 L23.055,49.1947025 C16.977,49.1947025 12.337,45.1427025 12.024,39.5597025 C12.002,39.3317025 12,39.0657025 12,38.7997025 C12,31.9307025 16.803,29.4017025 19.604,28.5117025 C19.584,28.1907025 19.574,27.8657025 19.574,27.5387025 C19.574,22.0857025 23.464,16.3807025 28.621,14.2687025 C34.677,11.7887025 41.062,12.9897025 45.695,17.4757025 C47.256,18.9967025 48.446,20.6207025 49.307,22.4097025 C50.513,21.3747025 51.969,20.8187025 53.529,20.8187025 C56.834,20.8187025 60.33,23.4127025 60.931,28.3817025 C63.114,28.9317025 65.854,30.0997025 67.788,32.5797025 L66.212,33.8097025 C64.43,31.5237025 61.741,30.5717025 59.8,30.1737025 C59.355,30.0837025 59.028,29.7057025 59.002,29.2537025 C58.741,24.8327025 55.982,22.8187025 53.529,22.8187025 C52.067,22.8187025 50.771,23.5087025 49.78,24.8137025 C49.559,25.1057025 49.199,25.2567025 48.835,25.1987025 C48.474,25.1437025 48.17,24.8967025 48.045,24.5537025 C47.278,22.4637025 46.054,20.6177025 44.302,18.9107025 C40.258,14.9967025 34.676,13.9517025 29.379,16.1197025 C24.93,17.9417025 21.574,22.8507025 21.574,27.5387025 C21.574,28.0797025 21.605,28.6147025 21.668,29.1277025 C21.729,29.6287025 21.405,30.0967025 20.915,30.2187025 C18.333,30.8577025 14,32.8237025 14,38.7997025 C14,39.0017025 13.998,39.2047025 14.018,39.4077025 C14.272,43.9357025 18.072,47.1947025 23.055,47.1947025 L23.055,47.1947025 Z" id="aws-vpc-Amazon-Virtual-Private-Cloud_Icon_64_Squid" fill="#FFFFFF"></path></g></g>'
+  },
+  "step-functions": {
+    "name": "AWS Step Functions",
+    "markup": '<g transform="translate(2 2) scale(0.75)"><g id="aws-step-functions-Icon-Architecture_64_Arch_AWS-Step-Functions_64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="aws-step-functions-Icon-Architecture-BG_64_Application-Integration" fill="#E7157B"><rect id="aws-step-functions-Rectangle" x="0" y="0" width="80" height="80"></rect></g><path d="M45,44 L66,44 L66,37 L45,37 L45,44 Z M67,35 L44,35 C43.447,35 43,35.448 43,36 L43,45 C43,45.552 43.447,46 44,46 L67,46 C67.553,46 68,45.552 68,45 L68,36 C68,35.448 67.553,35 67,35 L67,35 Z M43.5,62.5 C43.5,64.43 41.93,66 40,66 C38.07,66 36.5,64.43 36.5,62.5 C36.5,60.57 38.07,59 40,59 C41.93,59 43.5,60.57 43.5,62.5 L43.5,62.5 Z M14,47 L32,47 L32,43 L14,43 L14,47 Z M14,37 L32,37 L32,33 L14,33 L14,37 Z M36.5,17.5 C36.5,15.57 38.07,14 40,14 C41.93,14 43.5,15.57 43.5,17.5 C43.5,19.43 41.93,21 40,21 C38.07,21 36.5,19.43 36.5,17.5 L36.5,17.5 Z M56,53 L24,53 L24,49 L33,49 C33.553,49 34,48.552 34,48 L34,42 C34,41.448 33.553,41 33,41 L24,41 L24,39 L33,39 C33.553,39 34,38.552 34,38 L34,32 C34,31.448 33.553,31 33,31 L24,31 L24,28 L56,28 L56,32 L58,32 L58,27 C58,26.448 57.553,26 57,26 L41,26 L41,22.904 C43.556,22.432 45.5,20.191 45.5,17.5 C45.5,14.467 43.032,12 40,12 C36.968,12 34.5,14.467 34.5,17.5 C34.5,20.191 36.444,22.432 39,22.904 L39,26 L23,26 C22.447,26 22,26.448 22,27 L22,31 L13,31 C12.447,31 12,31.448 12,32 L12,38 C12,38.552 12.447,39 13,39 L22,39 L22,41 L13,41 C12.447,41 12,41.448 12,42 L12,48 C12,48.552 12.447,49 13,49 L22,49 L22,54 C22,54.552 22.447,55 23,55 L39,55 L39,57.096 C36.444,57.568 34.5,59.809 34.5,62.5 C34.5,65.533 36.968,68 40,68 C43.032,68 45.5,65.533 45.5,62.5 C45.5,59.809 43.556,57.568 41,57.096 L41,55 L57,55 C57.553,55 58,54.552 58,54 L58,49.027 L56,49.027 L56,53 Z" id="aws-step-functions-AWS_Step_Functions_Icon_64_Squid" fill="#FFFFFF"></path></g></g>'
+  },
+  "appsync": {
+    "name": "AWS AppSync",
+    "markup": '<g transform="translate(2 2) scale(0.75)"><g id="aws-appsync-Icon-Architecture_64_Arch_AWS-AppSync_64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="aws-appsync-Icon-Architecture-BG_64_Application-Integration" fill="#E7157B"><rect id="aws-appsync-Rectangle" x="0" y="0" width="80" height="80"></rect></g><g id="aws-appsync-Icon-Service_64_AWS-AppSync" transform="translate(13.000000, 15.000000)" fill="#FFFFFF"><path d="M53.5202995,12.9808368 L48.0136554,11.5893498 C53.4776815,21.1163772 52.6104544,33.5996882 45.6260554,41.6019905 C40.8538286,47.0707647 33.7723001,50 26.6521181,50 C22.5092504,50 18.3534983,49.0082274 14.6308641,46.9485462 L15.5833272,45.1914057 C24.9117172,50.353632 37.1886792,48.2408559 44.1393804,40.2766217 C50.5984876,32.8773973 51.3636297,21.2946959 46.2395566,12.4819451 L44.8103663,18.2622761 L42.8876,17.7764077 L44.8698333,9.76208398 C45.002643,9.22612608 45.5398282,8.89553522 46.0710667,9.03378231 L54,11.0373632 L53.5202995,12.9808368 Z M7.7584612,36.5870274 L9.18963365,30.7996838 L11.1124,31.2855522 L9.13016665,39.299876 C9.01817047,39.7556907 8.61379488,40.0592332 8.16977461,40.0592332 C8.09048528,40.0592332 8.00921371,40.0502171 7.92893326,40.0291795 L-3.55271368e-15,38.0255985 L0.479700463,36.082125 L5.97742457,37.4706066 C0.556016445,28.1048675 1.44108362,16.5031321 8.45918068,8.46175995 C16.116548,-0.310919199 29.1170252,-2.55893701 39.370127,3.116206 L38.4176639,4.87334648 C28.9693488,-0.35499798 16.9946773,1.71069397 9.94585566,9.78712874 C3.47089054,17.206389 2.68493503,27.9425774 7.7584612,36.5870274 L7.7584612,36.5870274 Z M18.3961163,28.7199668 C19.6627634,28.7199668 20.6935247,29.7618289 20.6935247,31.0431189 C20.6935247,32.3234072 19.6627634,33.3652692 18.3961163,33.3652692 C17.1284781,33.3652692 16.0977168,32.3234072 16.0977168,31.0431189 C16.0977168,29.7618289 17.1284781,28.7199668 18.3961163,28.7199668 L18.3961163,28.7199668 Z M25.8641803,19.8491122 C26.2279201,19.9512948 26.6045445,20.0234238 27,20.0234238 C27.3716687,20.0234238 27.7264885,19.960311 28.070406,19.869148 L31.7682622,27.8534181 C31.1408854,28.4284458 30.6849717,29.1817922 30.4817928,30.0413285 L22.547904,30.0413285 C22.3486895,29.1968191 21.9056604,28.4524888 21.2951325,27.8804664 L25.8641803,19.8491122 Z M27,13.3745404 C28.2676382,13.3745404 29.2983995,14.4164025 29.2983995,15.6966907 C29.2983995,16.9779807 28.2676382,18.0198428 27,18.0198428 C25.7333529,18.0198428 24.7025916,16.9779807 24.7025916,15.6966907 C24.7025916,14.4164025 25.7333529,13.3745404 27,13.3745404 L27,13.3745404 Z M36.93198,31.0431189 C36.93198,32.3234072 35.9012187,33.3652692 34.6335805,33.3652692 C33.3669334,33.3652692 32.3361721,32.3234072 32.3361721,31.0431189 C32.3361721,29.7618289 33.3669334,28.7199668 34.6335805,28.7199668 C35.9012187,28.7199668 36.93198,29.7618289 36.93198,31.0431189 L36.93198,31.0431189 Z M18.3961163,35.3688502 C20.4130387,35.3688502 22.0989281,33.9463077 22.547904,32.0449094 L30.4817928,32.0449094 C30.9317598,33.9463077 32.6166581,35.3688502 34.6335805,35.3688502 C36.9934293,35.3688502 38.9142133,33.428382 38.9142133,31.0431189 C38.9142133,28.656854 36.9934293,26.7163859 34.6335805,26.7163859 C34.2420894,26.7163859 33.8694296,26.787513 33.5086631,26.8876921 L29.820718,18.9254614 C30.7077674,18.1320434 31.2806328,16.9859951 31.2806328,15.6966907 C31.2806328,13.3114276 29.3598488,11.3709595 27,11.3709595 C24.6401512,11.3709595 22.7203583,13.3114276 22.7203583,15.6966907 C22.7203583,16.9619521 23.2694369,18.0899682 24.1277439,18.8813826 L19.5646428,26.9017171 C19.1909919,26.7935238 18.8044564,26.7163859 18.3961163,26.7163859 C16.0362675,26.7163859 14.1154834,28.656854 14.1154834,31.0431189 C14.1154834,33.428382 16.0362675,35.3688502 18.3961163,35.3688502 L18.3961163,35.3688502 Z" id="aws-appsync-AWS-AppSync-Icon_64_Squid"></path></g></g></g>'
+  },
+  "mq": {
+    "name": "Amazon MQ",
+    "markup": '<g transform="translate(2 2) scale(0.75)"><g id="aws-mq-Icon-Architecture_64_Arch_Amazon-MQ_64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="aws-mq-Icon-Architecture-BG_64_Application-Integration" fill="#E7157B"><rect id="aws-mq-Rectangle" x="0" y="0" width="80" height="80"></rect></g><path d="M20.137,51.603 C19.158,49.93 18.394,48.136 17.866,46.273 L19.79,45.728 C20.272,47.429 20.969,49.065 21.864,50.593 L20.137,51.603 Z M19.79,34.273 L17.866,33.728 C18.383,31.903 19.127,30.144 20.078,28.499 L21.809,29.501 C20.941,31.001 20.262,32.607 19.79,34.273 L19.79,34.273 Z M31.409,20.832 L30.591,19.008 C33.557,17.676 36.723,17 40,17 C43.278,17 46.444,17.676 49.409,19.008 L48.591,20.832 C45.884,19.617 42.993,19 40,19 C37.007,19 34.116,19.617 31.409,20.832 L31.409,20.832 Z M59.922,28.499 C60.873,30.144 61.617,31.903 62.134,33.728 L60.21,34.273 C59.739,32.607 59.06,31.001 58.192,29.501 L59.922,28.499 Z M60.21,45.728 L62.134,46.273 C61.617,48.098 60.873,49.857 59.922,51.501 L58.192,50.499 C59.06,48.999 59.739,47.394 60.21,45.728 L60.21,45.728 Z M48.591,59.169 L49.409,60.993 C46.444,62.325 43.278,63 40,63 C36.723,63 33.557,62.325 30.591,60.993 L31.409,59.169 C34.116,60.384 37.007,61 40,61 C42.993,61 45.884,60.384 48.591,59.169 L48.591,59.169 Z M25,59 C23.346,59 22,57.655 22,56 C22,54.346 23.346,53 25,53 C26.655,53 28,54.346 28,56 C28,57.655 26.655,59 25,59 L25,59 Z M25,51 C22.243,51 20,53.244 20,56 C20,58.757 22.243,61 25,61 C27.757,61 30,58.757 30,56 C30,53.244 27.757,51 25,51 L25,51 Z M55,59 C53.346,59 52,57.655 52,56 C52,54.346 53.346,53 55,53 C56.655,53 58,54.346 58,56 C58,57.655 56.655,59 55,59 L55,59 Z M55,51 C52.243,51 50,53.244 50,56 C50,58.757 52.243,61 55,61 C57.757,61 60,58.757 60,56 C60,53.244 57.757,51 55,51 L55,51 Z M16,40 C16,38.346 17.346,37 19,37 C20.655,37 22,38.346 22,40 C22,41.655 20.655,43 19,43 C17.346,43 16,41.655 16,40 L16,40 Z M23.899,41 L28.594,41 L27.295,42.291 L28.705,43.709 L31.705,40.727 C31.894,40.54 31.999,40.286 32,40.02 C32.001,39.755 31.897,39.5 31.709,39.312 L28.709,36.295 L27.291,37.706 L28.578,39 L23.899,39 C23.435,36.721 21.414,35 19,35 C16.243,35 14,37.244 14,40 C14,42.757 16.243,45 19,45 C21.414,45 23.435,43.28 23.899,41 L23.899,41 Z M62,43 C60.346,43 59,41.655 59,40 C59,38.346 60.346,37 62,37 C63.655,37 65,38.346 65,40 C65,41.655 63.655,43 62,43 L62,43 Z M62,35 C59.243,35 57,37.244 57,40 C57,42.757 59.243,45 62,45 C64.757,45 67,42.757 67,40 C67,37.244 64.757,35 62,35 L62,35 Z M25,21 C26.655,21 28,22.346 28,24 C28,25.655 26.655,27 25,27 C23.346,27 22,25.655 22,24 C22,22.346 23.346,21 25,21 L25,21 Z M25,29 C27.757,29 30,26.757 30,24 C30,21.244 27.757,19 25,19 C22.243,19 20,21.244 20,24 C20,26.757 22.243,29 25,29 L25,29 Z M55,21 C56.655,21 58,22.346 58,24 C58,25.655 56.655,27 55,27 C53.346,27 52,25.655 52,24 C52,22.346 53.346,21 55,21 L55,21 Z M55,29 C57.757,29 60,26.757 60,24 C60,21.244 57.757,19 55,19 C52.243,19 50,21.244 50,24 C50,26.757 52.243,29 55,29 L55,29 Z M50.4,42.201 L51.999,41 L48,41 L48,39 L52,39 L50.401,37.801 L51.6,36.2 L55.6,39.199 C55.852,39.388 56,39.684 56,39.999 C56,40.313 55.852,40.61 55.601,40.799 L51.601,43.8 L50.4,42.201 Z M45.855,45.868 C44.056,45.172 42.028,44.824 40,44.824 C37.973,44.824 35.945,45.172 34.146,45.868 C34.827,44.125 35.193,42.123 35.193,40 C35.193,37.878 34.827,35.876 34.146,34.133 C37.743,35.525 42.257,35.525 45.855,34.133 C45.173,35.876 44.808,37.878 44.808,40 C44.808,42.123 45.173,44.125 45.855,45.868 L45.855,45.868 Z M49.707,48.293 C47.892,46.478 46.808,43.378 46.808,40 C46.808,36.623 47.892,33.523 49.707,31.707 C49.903,31.512 50,31.256 50,31 C50,30.745 49.903,30.489 49.707,30.293 C49.317,29.903 48.684,29.903 48.293,30.293 C44.418,34.168 35.582,34.168 31.707,30.293 C31.317,29.903 30.684,29.903 30.293,30.293 C30.098,30.489 30,30.745 30,31 C30,31.256 30.098,31.512 30.293,31.707 C32.109,33.523 33.193,36.623 33.193,40 C33.193,43.378 32.109,46.478 30.293,48.293 C30.098,48.489 30,48.745 30,49 C30,49.256 30.098,49.512 30.293,49.707 C30.684,50.098 31.317,50.098 31.707,49.707 C35.582,45.832 44.418,45.832 48.293,49.707 C48.489,49.903 48.744,50 49,50 C49.256,50 49.512,49.903 49.707,49.707 C49.903,49.512 50,49.256 50,49 C50,48.745 49.903,48.489 49.707,48.293 L49.707,48.293 Z" id="aws-mq-Amazon-MQ-Icon_64_Squid" fill="#FFFFFF"></path></g></g>'
+  },
+  "kinesis": {
+    "name": "Amazon Kinesis Data Streams",
+    "markup": '<g transform="translate(2 2) scale(0.75)"><g id="aws-kinesis-Icon-Architecture_64_Arch_Amazon-Kinesis_64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="aws-kinesis-Icon-Architecture-BG_64_Analytics" fill="#8C4FFF"><rect id="aws-kinesis-Rectangle" x="0" y="0" width="80" height="80"></rect></g><path d="M19,62 L21,62 C21,53.594 26.465,45 67,45 L67,43 C24.703,43 19,52.604 19,62 M25,68 L27,68 C27,60.434 27,49 67,49 L67,47 C48.663,47 36.728,49.359 30.51,54.212 C25,58.512 25,63.996 25,68 M15,26 L13,26 C13,33.396 23.039,38.08 42.893,40 C23.039,41.92 13,46.604 13,54 L15,54 C15,49.145 21.756,41 67,41 L67,39 C21.756,39 15,30.855 15,26 M21,18 L19,18 C19,27.396 24.703,37 67,37 L67,35 C26.465,35 21,26.406 21,18 M67,31 L67,33 C48.663,33 36.728,30.641 30.51,25.788 C25,21.488 25,16.004 25,12 L27,12 C27,19.566 27,31 67,31" id="aws-kinesis-Amazon-Kinesis_Icon_64_Squid" fill="#FFFFFF"></path></g></g>'
+  },
+  "msk": {
+    "name": "Amazon MSK",
+    "markup": '<g transform="translate(2 2) scale(0.75)"><g id="aws-msk-Icon-Architecture_64_Arch_Amazon-Managed-Streaming-for-Apache-Kafka_64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="aws-msk-Icon-Architecture-BG_64_Analytics" fill="#8C4FFF"><rect id="aws-msk-Rectangle" x="0" y="0" width="80" height="80"></rect></g><path d="M36.0081373,36.9770888 L36.0081373,27.9864616 L38.0040686,27.9864616 L38.0040686,31.9822959 L40.697578,27.9864616 L42.907074,27.9864616 L39.7854374,32.1900793 L43.1645492,36.9770888 L40.7973746,36.9770888 L38.0040686,32.631619 L38.0040686,36.9770888 L36.0081373,36.9770888 Z M66,49.1174325 L65.331363,49.6958295 C63.9841093,50.8755996 62.1718036,51.4659841 60.357502,51.4659841 C58.5432004,51.4659841 56.7279008,50.8755996 55.3786512,49.6928326 L54.0453691,48.5380365 C52.0893563,46.8238236 48.665336,46.8238236 46.7133152,48.5340406 L45.3720493,49.6958295 C42.6785399,52.0563686 38.1168388,52.0583665 35.4193375,49.6928326 L34.0860553,48.5380365 C32.1300426,46.8238236 28.7060223,46.8238236 26.7540015,48.5340406 L25.4127356,49.6958295 C22.7192262,52.0563686 18.157525,52.0583665 15.4600238,49.6928326 L14.7953787,49.1174325 L16.1017157,47.6060081 L16.7703527,48.1854041 C18.7273635,49.899617 22.1513837,49.899617 24.1024066,48.1893999 L25.4436725,47.0266121 C28.1371819,44.667072 32.698883,44.667072 35.3963843,47.030608 L36.7296664,48.1854041 C38.6866772,49.899617 42.1106974,49.899617 44.0617203,48.1893999 L45.4029862,47.0266121 C48.0964956,44.667072 52.6581968,44.667072 55.355698,47.030608 L56.6889802,48.1854041 C58.6449929,49.899617 62.0690132,49.899617 64.021034,48.1893999 L64.6936629,47.6060081 L66,49.1174325 Z M63.8982843,61.139899 L65.2046213,62.6503244 L64.5359843,63.2297203 C63.1897286,64.4094904 61.3774229,64.998876 59.5641193,64.998876 C57.7488197,64.998876 55.9335201,64.4084915 54.5832726,63.2257245 L53.2499904,62.0709284 C51.2939777,60.3587134 47.8699574,60.3587134 45.9179365,62.0669326 L44.5766706,63.2297203 C41.8851572,65.5902595 37.323456,65.5912584 34.6239589,63.2257245 L33.2906767,62.0709284 C31.3356619,60.3587134 27.9116417,60.3587134 25.9586228,62.0669326 L24.6173569,63.2297203 C21.9248455,65.5902595 17.3631444,65.5912584 14.6646451,63.2257245 L14,62.6503244 L15.3063371,61.139899 L15.9749741,61.719295 C17.9319848,63.43151 21.3560051,63.4325089 23.307028,61.7222918 L24.6482939,60.560503 C27.3428012,58.2009628 31.9025064,58.1999639 34.6010056,60.5634999 L35.9342878,61.719295 C37.8912985,63.43151 41.3153188,63.4325089 43.2663417,61.7222918 L44.6076076,60.560503 C47.3021149,58.2009628 51.8618201,58.1999639 54.5603193,60.5634999 L55.8936015,61.719295 C57.8506122,63.43151 61.2746325,63.4325089 63.2256554,61.7222918 L63.8982843,61.139899 Z M63.8982843,54.8065016 L65.2046213,56.315928 L64.5359843,56.895324 C61.8434729,59.2568621 57.2817718,59.257861 54.5832726,56.8923271 L53.2499904,55.737531 C51.2939777,54.0233181 47.8699574,54.024317 45.9179365,55.7335351 L44.5766706,56.8963229 C43.2304149,58.076093 41.4171113,58.6654786 39.6048056,58.6654786 C37.789506,58.6654786 35.9742064,58.0750941 34.6239589,56.8923271 L33.2906767,55.737531 C31.3356619,54.0233181 27.9116417,54.024317 25.9586228,55.7335351 L24.6173569,56.8963229 C21.9258435,59.2568621 17.3641423,59.2568621 14.6646451,56.8923271 L14,56.315928 L15.3063371,54.8065016 L15.9749741,55.3858976 C17.9319848,57.1001105 21.3560051,57.0991115 23.307028,55.3888944 L24.6482939,54.2271056 C27.3428012,51.8675654 31.9045024,51.8655675 34.6010056,54.2301025 L35.9342878,55.3848986 C37.8912985,57.1001105 41.3153188,57.0991115 43.2663417,55.3888944 L44.6076076,54.2271056 C47.3021149,51.8675654 51.8638161,51.8655675 54.5603193,54.2301025 L55.8936015,55.3848986 C57.8506122,57.1001105 61.2746325,57.0991115 63.2256554,55.3888944 L63.8982843,54.8065016 Z M24.032549,37.9760474 C25.1333052,37.9760474 26.0284804,38.8721132 26.0284804,39.9739646 C26.0284804,41.0758159 25.1333052,41.9718817 24.032549,41.9718817 C22.9317929,41.9718817 22.0366177,41.0758159 22.0366177,39.9739646 C22.0366177,38.8721132 22.9317929,37.9760474 24.032549,37.9760474 L24.032549,37.9760474 Z M39.0020343,16.9979172 C40.1027905,16.9979172 40.9979657,17.893983 40.9979657,18.9958343 C40.9979657,20.0976856 40.1027905,20.9937515 39.0020343,20.9937515 C37.9012782,20.9937515 37.0061029,20.0976856 37.0061029,18.9958343 C37.0061029,17.893983 37.9012782,16.9979172 39.0020343,16.9979172 L39.0020343,16.9979172 Z M55.967451,39.9739646 C55.967451,41.0758159 55.0722757,41.9718817 53.9715196,41.9718817 C52.8707634,41.9718817 51.9755882,41.0758159 51.9755882,39.9739646 C51.9755882,38.8721132 52.8707634,37.9760474 53.9715196,37.9760474 C55.0722757,37.9760474 55.967451,38.8721132 55.967451,39.9739646 L55.967451,39.9739646 Z M39.0020343,22.9916687 C39.6666795,22.9916687 40.2854182,22.8128551 40.8372932,22.5231571 L51.0045676,37.3267243 C50.5884159,37.792239 50.2830384,38.3526548 50.1223659,38.975006 L27.8817027,38.975006 C27.7210302,38.3526548 27.4156527,37.792239 26.999501,37.3267243 L37.1667754,22.5231571 C37.7186504,22.8128551 38.3373892,22.9916687 39.0020343,22.9916687 L39.0020343,22.9916687 Z M24.032549,43.9697989 C25.8867693,43.9697989 27.43661,42.6911319 27.8817027,40.9729231 L50.1223659,40.9729231 C50.5674586,42.6911319 52.1172994,43.9697989 53.9715196,43.9697989 C56.1730319,43.9697989 57.9633823,42.1776672 57.9633823,39.9739646 C57.9633823,37.7702619 56.1730319,35.9781302 53.9715196,35.9781302 C53.5114574,35.9781302 53.0763444,36.0720323 52.6631866,36.2158824 L42.3372356,21.1805567 C42.7503934,20.5522118 42.9938971,19.8029929 42.9938971,18.9958343 C42.9938971,16.7921317 41.2035466,15 39.0020343,15 C36.800522,15 35.0101716,16.7921317 35.0101716,18.9958343 C35.0101716,19.8029929 35.2536752,20.5522118 35.666833,21.1805567 L25.340882,36.2158824 C24.9277243,36.0720323 24.4926112,35.9781302 24.032549,35.9781302 C21.8310367,35.9781302 20.0406863,37.7702619 20.0406863,39.9739646 C20.0406863,42.1776672 21.8310367,43.9697989 24.032549,43.9697989 L24.032549,43.9697989 Z" id="aws-msk-Amazon-Managed-Streaming-for-Apache-Kafka-Icon_64_Squid" fill="#FFFFFF"></path></g></g>'
+  },
+  "athena": {
+    "name": "Amazon Athena",
+    "markup": '<g transform="translate(2 2) scale(0.75)"><g id="aws-athena-Icon-Architecture_64_Arch_Amazon-Athena_64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="aws-athena-Icon-Architecture-BG_64_Analytics" fill="#8C4FFF"><rect id="aws-athena-Rectangle" x="0" y="0" width="80" height="80"></rect></g><path d="M38.29505,27.2267312 C42.787319,27.2267312 45.2478437,28.2331825 45.6964751,28.7379193 C45.2478437,29.2426562 42.787319,30.2491074 38.29505,30.2491074 C33.8027811,30.2491074 31.3422564,29.2426562 30.893625,28.7379193 C31.3422564,28.2331825 33.8027811,27.2267312 38.29505,27.2267312 L38.29505,27.2267312 Z M37.7838882,35.2823712 C37.6191254,35.1977447 37.5029973,35.0294991 37.5029973,34.8300223 C37.5029973,34.5499487 37.7292981,34.3212556 38.0062188,34.3212556 C38.0866151,34.3212556 38.1600636,34.3444272 38.2285494,34.3796882 L37.7838882,35.2823712 Z M43.5674612,43.5908834 C43.4930201,43.6513309 43.322302,43.7681961 42.9709403,43.9092403 C42.6582879,44.0341652 42.2880677,44.1470006 41.8682202,44.2457316 C40.7525971,44.5076708 39.3808968,44.6517374 38.0052262,44.6517374 C34.9968155,44.6517374 32.9005556,44.0019265 32.4489466,43.5989431 L31.1159556,31.150783 C33.1596104,31.9869737 36.1700063,32.2640249 38.29505,32.2640249 C40.3843621,32.2640249 43.3292498,31.9950334 45.3719121,31.1910813 L44.5748967,36.6656121 C43.0731726,36.0994203 41.1992434,35.2773339 39.4235763,34.4129344 C39.2429327,33.786295 38.6801584,33.3248789 38.0062188,33.3248789 C37.1883598,33.3248789 36.5233532,34.0008837 36.5233532,34.8300223 C36.5233532,35.6611757 37.1883598,36.3361731 38.0062188,36.3361731 C38.1997655,36.3361731 38.3843793,36.2958747 38.5531123,36.2273675 C41.0344805,37.4524373 42.8835961,38.2382552 44.2751474,38.7228428 L43.5674612,43.5908834 Z M28.8718062,28.8467249 L30.4787403,43.8498003 C30.5918907,46.6344162 37.6995217,46.6666549 38.0052262,46.6666549 C39.5268012,46.6666549 41.0573091,46.5034466 42.3148665,46.2092686 C42.8299985,46.0883736 43.2964958,45.9453144 43.7004625,45.7831136 C44.8736534,45.3116229 45.4890327,44.6688642 45.5317122,43.8739793 L46.2006891,39.2759376 C46.6562683,39.3696313 47.0284735,39.4109371 47.3252452,39.4109371 C48.2592321,39.4109371 48.5053839,39.0281028 48.6751094,38.7641486 C48.853768,38.48609 48.9053804,38.1445615 48.8220064,37.8010181 C48.6314374,37.0111704 47.5168068,35.971473 46.7723963,35.3539008 L47.7133311,28.8850083 L47.7043982,28.8840008 C47.7083684,28.8346354 47.7242492,28.7882923 47.7242492,28.7379193 C47.7242492,25.9543109 41.7967568,25.2118138 38.29505,25.2118138 C34.7933433,25.2118138 28.8658509,25.9543109 28.8658509,28.7379193 C28.8658509,28.7751953 28.8787541,28.8084414 28.8807391,28.8457174 L28.8718062,28.8467249 Z M37.8355007,20.0596698 C46.4865427,20.0596698 53.5246954,27.2035597 53.5246954,35.98457 C53.5246954,44.7655803 46.4865427,51.9094701 37.8355007,51.9094701 C29.1834661,51.9094701 22.1453133,44.7655803 22.1453133,35.98457 C22.1453133,27.2035597 29.1834661,20.0596698 37.8355007,20.0596698 L37.8355007,20.0596698 Z M12.9850945,41.8348828 L12.9850945,43.8498003 L21.91802,43.8498003 L21.91802,43.7309201 C24.7735785,49.7494786 30.8261318,53.9243876 37.8355007,53.9243876 C47.5803298,53.9243876 55.50979,45.8768072 55.50979,35.98457 C55.50979,26.0923327 47.5803298,18.0447524 37.8355007,18.0447524 C30.253432,18.0447524 23.7909567,22.9248825 21.2857674,29.7453781 L12.9850945,29.7453781 L12.9850945,31.7602955 L20.6763434,31.7602955 C20.3666686,33.0568949 20.1850325,34.4018523 20.1701443,35.7901304 L11,35.7901304 L11,37.8050479 L20.2515331,37.8050479 C20.3914823,39.2044081 20.7061198,40.548358 21.1448257,41.8348828 L12.9850945,41.8348828 Z M67.0799136,66.035049 C65.8789314,67.2560889 63.7965672,67.2631412 62.5965775,66.046131 L51.9326496,55.220987 C53.6487638,53.9223727 55.1802643,52.3900279 56.4934043,50.6763406 L67.0918241,61.4853653 C67.688345,62.0918555 68.0168782,62.8998374 68.014902,63.7591997 C68.0139005,64.6205769 67.6823898,65.4275513 67.0799136,66.035049 L67.0799136,66.035049 Z M68.4972711,60.0628336 L57.6616325,49.0100039 C60.0635969,45.2562127 61.4650736,40.7851108 61.4650736,35.98457 C61.4650736,22.7586518 50.8646687,12 37.8355007,12 C28.4728022,12 19.9825528,17.6196048 16.2039254,26.316996 L18.0202869,27.1290077 C21.4812992,19.1630316 29.2588997,14.0149175 37.8355007,14.0149175 C49.7708816,14.0149175 59.4799791,23.8698788 59.4799791,35.98457 C59.4799791,48.0982537 49.7708816,57.9542225 37.8355007,57.9542225 C29.8623684,57.9542225 22.5572205,53.5244265 18.7686675,46.3936336 L17.0217843,47.3507194 C21.1557437,55.1343455 29.1318536,59.9691399 37.8355007,59.9691399 C42.3912926,59.9691399 46.6483279,58.6503765 50.2602074,56.3735197 L61.1941082,67.4716851 C62.1648195,68.4569797 63.4561235,69 64.8278238,69 C66.2074645,69 67.5067089,68.4529499 68.4813903,67.462618 C69.4580568,66.4773233 69.9980025,65.1635972 70,63.7622221 C70.0029653,62.3628619 69.4679823,61.0491357 68.4972711,60.0628336 L68.4972711,60.0628336 Z" id="aws-athena-Amazon-Athena_Icon_64_Squid" fill="#FFFFFF"></path></g></g>'
+  },
+  "glue": {
+    "name": "AWS Glue",
+    "markup": '<g transform="translate(2 2) scale(0.75)"><g id="aws-glue-Icon-Architecture_64_Arch_AWS-Glue_64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="aws-glue-Icon-Architecture-BG_64_Analytics" fill="#8C4FFF"><rect id="aws-glue-Rectangle" x="0" y="0" width="80" height="80"></rect></g><path d="M33,23 L35,23 L35,21 L33,21 L33,23 Z M31,24 L31,20 C31,19.448 31.447,19 32,19 L36,19 C36.553,19 37,19.448 37,20 L37,24 C37,24.552 36.553,25 36,25 L32,25 C31.447,25 31,24.552 31,24 L31,24 Z M41,17 L43,17 L43,15 L41,15 L41,17 Z M39,18 L39,14 C39,13.448 39.447,13 40,13 L44,13 C44.553,13 45,13.448 45,14 L45,18 C45,18.552 44.553,19 44,19 L40,19 C39.447,19 39,18.552 39,18 L39,18 Z M43,27 L45,27 L45,25 L43,25 L43,27 Z M42,23 L46,23 C46.553,23 47,23.448 47,24 L47,28 C47,28.552 46.553,29 46,29 L42,29 C41.447,29 41,28.552 41,28 L41,24 C41,23.448 41.447,23 42,23 L42,23 Z M40,33.5 C38.239,33.5 31.854,33.425 27.701,32.404 L37.846,48.466 C37.946,48.626 38,48.811 38,49 L38,51.277 C39.404,51.684 40.701,51.688 42,51.293 L42,49 C42,48.811 42.054,48.626 42.154,48.466 L52.299,32.404 C48.146,33.425 41.761,33.5 40,33.5 L40,33.5 Z M24.254,30.692 C24.095,30.46 24,30.21 24,29.937 C24,27.092 33.384,26.566 38.978,26.505 L38.999,28.505 C32.127,28.58 27.928,29.364 26.448,29.948 C28.018,30.604 32.643,31.5 40,31.5 C47.338,31.5 51.957,30.609 53.539,29.954 C52.893,29.693 51.555,29.307 48.879,28.98 L49.121,26.995 C55.183,27.735 56,28.897 56,29.937 C56,30.21 55.905,30.46 55.746,30.692 L44,49.29 L44,52 C44,52.408 43.752,52.776 43.373,52.928 C42.282,53.366 41.186,53.584 40.066,53.584 C38.956,53.584 37.824,53.369 36.654,52.938 C36.262,52.793 36,52.419 36,52 L36,49.29 L24.254,30.692 Z M46.924,59.617 C47.079,59.991 46.993,60.421 46.707,60.707 L40.707,66.707 C40.512,66.902 40.256,67 40,67 C39.744,67 39.488,66.902 39.293,66.707 L33.293,60.707 C33.007,60.421 32.921,59.991 33.076,59.617 C33.23,59.244 33.596,59 34,59 L37,59 L37,56 L39,56 L39,60 C39,60.552 38.553,61 38,61 L36.414,61 L40,64.586 L43.586,61 L42,61 C41.447,61 41,60.552 41,60 L41,56 L43,56 L43,59 L46,59 C46.404,59 46.77,59.244 46.924,59.617 L46.924,59.617 Z" id="aws-glue-AWS-Glue_Icon_64_Squid" fill="#FFFFFF"></path></g></g>'
+  },
+  "opensearch": {
+    "name": "Amazon OpenSearch Service",
+    "markup": '<g transform="translate(2 2) scale(0.75)"><g id="aws-opensearch-Icon-Architecture_64_Arch_Amazon-OpenSearch-Service_64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="aws-opensearch-Icon-Architecture-BG_64_Analytics" fill="#8C4FFF"><rect id="aws-opensearch-Rectangle" x="0" y="0" width="80" height="80"></rect></g><path d="M44.26,51.33 C39.843,51.33 36.25,47.737 36.25,43.321 C36.25,38.904 39.843,35.311 44.26,35.311 C48.677,35.311 52.27,38.904 52.27,43.321 C52.27,47.737 48.677,51.33 44.26,51.33 L44.26,51.33 Z M44.26,33.311 C38.74,33.311 34.25,37.801 34.25,43.321 C34.25,48.84 38.74,53.33 44.26,53.33 C49.78,53.33 54.27,48.84 54.27,43.321 C54.27,37.801 49.78,33.311 44.26,33.311 L44.26,33.311 Z M64.548,61.346 C63.897,62.067 62.777,62.127 62.052,61.477 L53.712,53.954 C54.593,53.17 55.384,52.29 56.049,51.313 L64.416,58.851 C65.139,59.503 65.197,60.624 64.548,61.346 L64.548,61.346 Z M32.011,43.321 C32.011,36.566 37.506,31.071 44.26,31.071 C51.014,31.071 56.509,36.566 56.509,43.321 C56.509,50.075 51.014,55.57 44.26,55.57 C37.506,55.57 32.011,50.075 32.011,43.321 L32.011,43.321 Z M57.063,49.535 C57.98,47.654 58.509,45.55 58.509,43.321 C58.509,35.463 52.117,29.071 44.26,29.071 C36.403,29.071 30.011,35.463 30.011,43.321 C30.011,51.178 36.403,57.57 44.26,57.57 C47.159,57.57 49.856,56.695 52.109,55.202 L60.714,62.964 C61.432,63.609 62.333,63.927 63.232,63.9260024 C64.263,63.9260024 65.29,63.508 66.034,62.685 C67.42,61.143 67.296,58.757 65.756,57.366 L57.063,49.535 Z M67,20 L67,54 L65,54 L65,21 L57,21 L57,32 L55,32 L55,20 C55,19.448 55.448,19 56,19 L66,19 C66.553,19 67,19.448 67,20 L67,20 Z M51,61 L53,61 L53,66 C53,66.553 52.553,67 52,67 L42,67 C41.447,67 41,66.553 41,66 L41,60 L43,60 L43,65 L51,65 L51,61 Z M43,26 L41,26 L41,14 C41,13.448 41.447,13 42,13 L52,13 C52.553,13 53,13.448 53,14 L53,28 L51,28 L51,15 L43,15 L43,26 Z M37,59 L39,59 L39,66 C39,66.553 38.553,67 38,67 L28,67 C27.448,67 27,66.553 27,66 L27,51 L29,51 L29,65 L37,65 L37,59 Z M29,36 L27,36 L27,23 C27,22.448 27.448,22 28,22 L38,22 C38.553,22 39,22.448 39,23 L39,27 L37,27 L37,24 L29,24 L29,36 Z M15,65 L23,65 L23,31 L15,31 L15,65 Z M24,29 L14,29 C13.448,29 13,29.448 13,30 L13,66 C13,66.553 13.448,67 14,67 L24,67 C24.553,67 25,66.553 25,66 L25,30 C25,29.448 24.553,29 24,29 L24,29 Z" id="aws-opensearch-Amazon-OpenSearch-Service_Icon_64_Squid" fill="#FFFFFF"></path></g></g>'
+  },
+  "cognito": {
+    "name": "Amazon Cognito",
+    "markup": '<g transform="translate(2 2) scale(0.75)"><g id="aws-cognito-Icon-Architecture_64_Arch_Amazon-Cognito_64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="aws-cognito-Icon-Architecture-BG_64_Security-Identity-Compliance" fill="#DD344C"><rect id="aws-cognito-Rectangle" x="0" y="0" width="80" height="80"></rect></g><path d="M16.9635609,35.8079225 L29.8688192,35.8079225 L29.8688192,33.8253841 L16.9635609,33.8253841 L16.9635609,35.8079225 Z M61.3755183,50.2308895 L62.7792133,51.6325441 L55.4073327,58.9937093 C55.2127611,59.1870067 54.9586268,59.2841511 54.7054852,59.2841511 C54.4513509,59.2841511 54.1972166,59.1870067 54.0036377,58.9937093 L50.294865,55.2913188 L51.69856,53.8896641 L54.7054852,56.8912273 L61.3755183,50.2308895 Z M65.9439798,55.6937741 C65.7176414,57.5573602 64.9592093,59.29109 63.7471077,60.708605 C62.8864262,61.7157345 61.7994064,62.5484006 60.604181,63.1154066 C59.0009508,63.8757101 57.2200251,64.1641694 55.4460485,63.9480727 C53.7207147,63.7379237 52.0946522,63.057913 50.7396,61.9823859 C48.1367087,59.9155896 46.8223578,56.7108163 47.2224208,53.4088985 C47.6006441,50.2883831 49.4917608,47.5663578 52.2802893,46.127035 C53.6164799,45.4381029 55.0797377,45.0842198 56.5697987,45.0842198 C56.9519928,45.0842198 57.3371652,45.1080102 57.7213448,45.1545999 C60.8344902,45.534256 63.549558,47.4365016 64.9810489,50.2427847 C65.839745,51.9259598 66.1723036,53.8113538 65.9439798,55.6937741 L65.9439798,55.6937741 Z M66.750062,49.3437035 C65.0177793,45.9476152 61.731902,43.6458881 57.9615811,43.1869305 C55.6813213,42.9083838 53.4030468,43.3167868 51.3689796,44.3655496 C47.9957436,46.1062183 45.7085347,49.3982233 45.2508944,53.1709939 C44.7684363,57.1608525 46.3577685,61.0357238 49.5046661,63.5347135 C51.1456193,64.8372412 53.1171457,65.6609859 55.2048194,65.9157421 C55.6674233,65.9722445 56.1300272,66 56.5916383,66 C58.2713073,66 59.9301294,65.6292653 61.455928,64.9056388 C62.9023096,64.2196805 64.2176533,63.212551 65.2570229,61.9952724 C66.7232588,60.2803767 67.6425103,58.1838423 67.9155061,55.9316787 C68.1914801,53.6567158 67.788439,51.3787792 66.750062,49.3437035 L66.750062,49.3437035 Z M26.8906827,41.7555378 L30.8615314,41.7555378 L30.8615314,39.7729994 L26.8906827,39.7729994 L26.8906827,41.7555378 Z M16.9635609,41.7555378 L24.9052583,41.7555378 L24.9052583,39.7729994 L16.9635609,39.7729994 L16.9635609,41.7555378 Z M16.1058576,15.9825384 L60.5078879,15.9825384 C61.6773028,15.9825384 62.6283211,17.1393496 62.6283211,18.5608296 L62.6283211,25.8952305 L59.6501845,25.8952305 L59.6501845,20.9388844 C59.6501845,20.3917038 59.2064422,19.9476152 58.6574724,19.9476152 L35.8250923,19.9476152 C35.2761224,19.9476152 34.8323801,20.3917038 34.8323801,20.9388844 L34.8323801,25.8952305 L13.9854244,25.8952305 L13.9854244,18.5608296 C13.9854244,17.16314 14.9572896,15.9825384 16.1058576,15.9825384 L16.1058576,15.9825384 Z M47.256173,25.6077624 C49.5612507,25.6077624 51.436484,27.4614358 51.436484,29.7393725 C51.436484,31.2411453 50.6075693,32.6229746 49.2733642,33.3466011 C48.0066634,34.0335507 46.4798721,34.0246292 45.2300474,33.3475924 C43.9008058,32.6219833 43.075862,31.240154 43.075862,29.7393725 C43.075862,27.4614358 44.9501026,25.6077624 47.256173,25.6077624 L47.256173,25.6077624 Z M13.9854244,47.1083915 L13.9854244,27.8777689 L34.8323801,27.8777689 L34.8323801,44.7293454 C34.8323801,45.2775173 35.2761224,45.7206146 35.8250923,45.7206146 L46.2029054,45.7206146 L46.2029054,43.7380762 L37.9117733,43.7380762 C37.9981392,39.7710168 40.6357755,36.3441992 44.4338923,35.249838 C46.1890074,36.0696176 48.2846228,36.0775478 50.0665412,35.2488467 C52.2286683,35.8733463 54.1207777,37.3176255 55.2931708,39.2535743 L56.9917013,38.2266194 C55.7885342,36.2430897 53.9629365,34.6947272 51.8454814,33.7946548 C52.8381936,32.694346 53.4219083,31.2629532 53.4219083,29.7393725 C53.4219083,26.3680659 50.6552195,23.625224 47.256173,23.625224 C43.8561338,23.625224 41.0904377,26.3680659 41.0904377,29.7393725 C41.0904377,31.2570056 41.6681962,32.683442 42.6539593,33.7837508 C40.0004397,34.8999199 37.9276567,36.9924892 36.8178045,39.572763 L36.8178045,21.9301536 L57.6647602,21.9301536 L57.6647602,37.7904609 L59.6501845,37.7904609 L59.6501845,27.8777689 L62.6283211,27.8777689 L62.6293138,42.746807 L64.6147382,42.746807 L64.6137454,18.5608296 C64.6137454,16.0459796 62.7722643,14 60.5078879,14 L16.1058576,14 C13.8414811,14 12,16.0459796 12,18.5608296 L12,47.1083915 C12,49.6232415 13.8414811,51.6682298 16.1058576,51.6682298 L42.7740775,51.6682298 L42.7740775,49.6856914 L16.1058576,49.6856914 C14.9572896,49.6856914 13.9854244,48.5060811 13.9854244,47.1083915 L13.9854244,47.1083915 Z" id="aws-cognito-Amazon-Cognito_Icon_64_Squid" fill="#FFFFFF"></path></g></g>'
+  },
+  "iam": {
+    "name": "IAM role",
+    "markup": '<g transform="translate(2 2) scale(0.75)"><g id="aws-iam-Icon-Architecture_64_Arch_AWS-Identity-and-Access-Management_64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="aws-iam-Icon-Architecture-BG_64_Security-Identity-Compliance" fill="#DD344C"><rect id="aws-iam-Rectangle" x="0" y="0" width="80" height="80"></rect></g><path d="M14,59 L66,59 L66,21 L14,21 L14,59 Z M68,20 L68,60 C68,60.552 67.553,61 67,61 L13,61 C12.447,61 12,60.552 12,60 L12,20 C12,19.448 12.447,19 13,19 L67,19 C67.553,19 68,19.448 68,20 L68,20 Z M44,48 L59,48 L59,46 L44,46 L44,48 Z M57,42 L62,42 L62,40 L57,40 L57,42 Z M44,42 L52,42 L52,40 L44,40 L44,42 Z M29,46 C29,45.449 28.552,45 28,45 C27.448,45 27,45.449 27,46 C27,46.551 27.448,47 28,47 C28.552,47 29,46.551 29,46 L29,46 Z M31,46 C31,47.302 30.161,48.401 29,48.816 L29,51 L27,51 L27,48.815 C25.839,48.401 25,47.302 25,46 C25,44.346 26.346,43 28,43 C29.654,43 31,44.346 31,46 L31,46 Z M19,53.993 L36.994,54 L36.996,50 L33,50 L33,48 L36.996,48 L36.998,45 L33,45 L33,43 L36.999,43 L37,40.007 L19.006,40 L19,53.993 Z M22,38.001 L34,38.006 L34,31 C34.001,28.697 31.197,26.677 28,26.675 L27.996,26.675 C24.804,26.675 22.004,28.696 22.002,31 L22,38.001 Z M17,54.992 L17.006,39 C17.006,38.734 17.111,38.48 17.299,38.292 C17.486,38.105 17.741,38 18.006,38 L20,38.001 L20.002,31 C20.004,27.512 23.59,24.675 27.996,24.675 L28,24.675 C32.412,24.677 36.001,27.515 36,31 L36,38.007 L38,38.008 C38.553,38.008 39,38.456 39,39.008 L38.994,55 C38.994,55.266 38.889,55.52 38.701,55.708 C38.514,55.895 38.259,56 37.994,56 L18,55.992 C17.447,55.992 17,55.544 17,54.992 L17,54.992 Z M60,36 L62,36 L62,34 L60,34 L60,36 Z M44,36 L55,36 L55,34 L44,34 L44,36 Z" id="aws-iam-AWS-Identity-and-Access-Management_Icon_64_Squid" fill="#FFFFFF"></path></g></g>'
+  },
+  "kms": {
+    "name": "AWS KMS",
+    "markup": '<g transform="translate(2 2) scale(0.75)"><g id="aws-kms-Icon-Architecture_64_Arch_AWS-Key-Management-Service_64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="aws-kms-Icon-Architecture-BG_64_Security-Identity-Compliance" fill="#DD344C"><rect id="aws-kms-Rectangle" x="0" y="0" width="80" height="80"></rect></g><path d="M51.9968943,52.4963312 L58.9968943,52.4963312 L58.9968943,50.4963312 L51.9968943,50.4963312 L51.9968943,52.4963312 Z M42.9968943,52.4963312 L49.9968943,52.4963312 L49.9968943,50.4963312 L42.9968943,50.4963312 L42.9968943,52.4963312 Z M33.9968943,52.4963312 L40.9968943,52.4963312 L40.9968943,50.4963312 L33.9968943,50.4963312 L33.9968943,52.4963312 Z M44.9968943,44.4963312 C44.9968943,43.3933312 45.8948943,42.4963312 46.9968943,42.4963312 C48.0998943,42.4963312 48.9968943,43.3933312 48.9968943,44.4963312 C48.9968943,45.5993312 48.0998943,46.4963312 46.9968943,46.4963312 C45.8948943,46.4963312 44.9968943,45.5993312 44.9968943,44.4963312 L44.9968943,44.4963312 Z M50.9968943,44.4963312 C50.9968943,42.2903312 49.2038943,40.4963312 46.9968943,40.4963312 C44.7908943,40.4963312 42.9968943,42.2903312 42.9968943,44.4963312 C42.9968943,46.7023312 44.7908943,48.4963312 46.9968943,48.4963312 C49.2038943,48.4963312 50.9968943,46.7023312 50.9968943,44.4963312 L50.9968943,44.4963312 Z M36.9968943,42.4963312 C38.0998943,42.4963312 38.9968943,43.3933312 38.9968943,44.4963312 C38.9968943,45.5993312 38.0998943,46.4963312 36.9968943,46.4963312 C35.8948943,46.4963312 34.9968943,45.5993312 34.9968943,44.4963312 C34.9968943,43.3933312 35.8948943,42.4963312 36.9968943,42.4963312 L36.9968943,42.4963312 Z M36.9968943,48.4963312 C39.2038943,48.4963312 40.9968943,46.7023312 40.9968943,44.4963312 C40.9968943,42.2903312 39.2038943,40.4963312 36.9968943,40.4963312 C34.7908943,40.4963312 32.9968943,42.2903312 32.9968943,44.4963312 C32.9968943,46.7023312 34.7908943,48.4963312 36.9968943,48.4963312 L36.9968943,48.4963312 Z M65.9968943,33.4963312 L65.9968943,56.4963312 C65.9968943,57.0483312 65.5498943,57.4963312 64.9968943,57.4963312 L33.9968943,57.4963312 L33.9968943,55.4963312 L63.9968943,55.4963312 L63.9968943,34.4963312 L41.9968943,34.4963312 L41.9968943,32.4963312 L64.9968943,32.4963312 C65.5498943,32.4963312 65.9968943,32.9443312 65.9968943,33.4963312 L65.9968943,33.4963312 Z M30.6958943,38.5433312 C30.2798943,38.6743312 29.9968943,39.0603312 29.9968943,39.4963312 L29.9968943,60.5363312 L27.5978943,62.5933312 L24.9968943,59.6203312 L24.9968943,56.9963312 C24.9968943,56.7313312 24.8918943,56.4763312 24.7038943,56.2893312 L22.4118943,53.9963312 L24.7038943,51.7033312 C24.8918943,51.5163312 24.9968943,51.2613312 24.9968943,50.9963312 L24.9968943,48.9963312 C24.9968943,48.7313312 24.8918943,48.4763312 24.7038943,48.2893312 L22.4118943,45.9963312 L24.7038943,43.7033312 C24.8918943,43.5163312 24.9968943,43.2613312 24.9968943,42.9963312 L24.9968943,39.5063312 C24.9968943,39.0703312 24.7148943,38.6843312 24.2988943,38.5533312 C19.1568943,36.9233312 16.1168943,31.6343312 17.2298943,26.2493312 C18.0318943,22.3693312 21.0158943,19.2583312 24.8308943,18.3233312 C28.0798943,17.5263312 31.4118943,18.2233312 33.9718943,20.2303312 C36.5298943,22.2373312 37.9968943,25.2503312 37.9968943,28.4963312 C37.9968943,33.0493312 34.9948943,37.1813312 30.6958943,38.5433312 L30.6958943,38.5433312 Z M39.9968943,28.4963312 C39.9968943,24.6323312 38.2508943,21.0453312 35.2058943,18.6563312 C32.1608943,16.2673312 28.2088943,15.4363312 24.3548943,16.3813312 C19.7938943,17.4983312 16.2288943,21.2133312 15.2708943,25.8443312 L15.2708943,25.8453312 C14.0008943,31.9903312 17.2998943,38.0343312 22.9968943,40.2153312 L22.9968943,42.5823312 L20.2898943,45.2893312 C19.8998943,45.6803312 19.8998943,46.3123312 20.2898943,46.7033312 L22.9968943,49.4103312 L22.9968943,50.5823312 L20.2898943,53.2893312 C19.8998943,53.6803312 19.8998943,54.3123312 20.2898943,54.7033312 L22.9968943,57.4103312 L22.9968943,59.9963312 C22.9968943,60.2383312 23.0848943,60.4723312 23.2448943,60.6553312 L26.7448943,64.6553312 C26.9428943,64.8803312 27.2188943,64.9963312 27.4968943,64.9963312 C27.7278943,64.9963312 27.9588943,64.9173312 28.1478943,64.7553312 L31.6478943,61.7553312 C31.8698943,61.5653312 31.9968943,61.2883312 31.9968943,60.9963312 L31.9968943,40.2043312 C36.7428943,38.3723312 39.9968943,33.6623312 39.9968943,28.4963312 L39.9968943,28.4963312 Z M27.4968943,30.8663312 C26.1188943,30.8663312 24.9968943,29.7453312 24.9968943,28.3663312 C24.9968943,26.9883312 26.1188943,25.8663312 27.4968943,25.8663312 C28.8758943,25.8663312 29.9968943,26.9883312 29.9968943,28.3663312 C29.9968943,29.7453312 28.8758943,30.8663312 27.4968943,30.8663312 L27.4968943,30.8663312 Z M27.4968943,23.8663312 C25.0158943,23.8663312 22.9968943,25.8853312 22.9968943,28.3663312 C22.9968943,30.8483312 25.0158943,32.8663312 27.4968943,32.8663312 C29.9788943,32.8663312 31.9968943,30.8483312 31.9968943,28.3663312 C31.9968943,25.8853312 29.9788943,23.8663312 27.4968943,23.8663312 L27.4968943,23.8663312 Z" id="aws-kms-AWS-Key-Management-Service_Icon_64_Squid" fill="#FFFFFF"></path></g></g>'
+  },
+  "secrets-manager": {
+    "name": "AWS Secrets Manager",
+    "markup": '<g transform="translate(2 2) scale(0.75)"><g id="aws-secrets-manager-Icon-Architecture_64_Arch_AWS-Secrets-Manager_64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="aws-secrets-manager-Icon-Architecture-BG_64_Security-Identity-Compliance" fill="#DD344C"><rect id="aws-secrets-manager-Rectangle" x="0" y="0" width="80" height="80"></rect></g><path d="M38.76,43.36 C38.76,44.044 39.317,44.6 40,44.6 C40.684,44.6 41.24,44.044 41.24,43.36 C41.24,42.676 40.684,42.12 40,42.12 C39.317,42.12 38.76,42.676 38.76,43.36 L38.76,43.36 Z M36.76,43.36 C36.76,41.573 38.213,40.12 40,40.12 C41.787,40.12 43.24,41.573 43.24,43.36 C43.24,44.796 42.296,46.002 41,46.426 L41,49 L39,49 L39,46.426 C37.704,46.002 36.76,44.796 36.76,43.36 L36.76,43.36 Z M49,38 L31,38 L31,51 L49,51 L49,48 L46,48 L46,46 L49,46 L49,43 L46,43 L46,41 L49,41 L49,38 Z M34,36 L45.999,36 L46,31 C46.001,28.384 43.143,26.002 40.004,26 L40.001,26 C38.472,26 36.928,26.574 35.763,27.575 C34.643,28.537 34,29.786 34,31.001 L34,36 Z M48,31.001 L47.999,36 L50,36 C50.553,36 51,36.448 51,37 L51,52 C51,52.552 50.553,53 50,53 L30,53 C29.447,53 29,52.552 29,52 L29,37 C29,36.448 29.447,36 30,36 L32,36 L32,31 C32.001,29.202 32.897,27.401 34.459,26.058 C35.982,24.75 38.001,24 40.001,24 L40.004,24 C44.265,24.002 48.001,27.273 48,31.001 L48,31.001 Z M19.207,55.049 L20.828,53.877 C18.093,50.097 16.581,45.662 16.396,41 L19,41 L19,39 L16.399,39 C16.598,34.366 18.108,29.957 20.828,26.198 L19.207,25.025 C16.239,29.128 14.599,33.942 14.399,39 L12,39 L12,41 L14.396,41 C14.582,46.086 16.224,50.926 19.207,55.049 L19.207,55.049 Z M53.838,59.208 C50.069,61.936 45.648,63.446 41,63.639 L41,61 L39,61 L39,63.639 C34.352,63.447 29.93,61.937 26.159,59.208 L24.988,60.828 C29.1,63.805 33.928,65.445 39,65.639 L39,68 L41,68 L41,65.639 C46.072,65.445 50.898,63.805 55.01,60.828 L53.838,59.208 Z M26.159,20.866 C29.93,18.138 34.352,16.628 39,16.436 L39,19 L41,19 L41,16.436 C45.648,16.628 50.069,18.138 53.838,20.866 L55.01,19.246 C50.898,16.27 46.072,14.63 41,14.436 L41,12 L39,12 L39,14.436 C33.928,14.629 29.1,16.269 24.988,19.246 L26.159,20.866 Z M65.599,39 C65.399,33.942 63.759,29.128 60.79,25.025 L59.169,26.198 C61.89,29.957 63.4,34.366 63.599,39 L61,39 L61,41 L63.602,41 C63.416,45.662 61.905,50.097 59.169,53.877 L60.79,55.049 C63.774,50.926 65.415,46.086 65.602,41 L68,41 L68,39 L65.599,39 Z M56.386,25.064 L64.226,17.224 L62.812,15.81 L54.972,23.65 L56.386,25.064 Z M23.612,55.01 L15.772,62.85 L17.186,64.264 L25.026,56.424 L23.612,55.01 Z M28.666,27.253 L13.825,12.413 L12.411,13.827 L27.252,28.667 L28.666,27.253 Z M54.193,52.78 L67.586,66.173 L66.172,67.587 L52.779,54.194 L54.193,52.78 Z" id="aws-secrets-manager-AWS-Secrets-Manager_Icon_64_Squid" fill="#FFFFFF"></path></g></g>'
+  },
+  "waf": {
+    "name": "AWS WAF",
+    "markup": '<g transform="translate(2 2) scale(0.75)"><g id="aws-waf-Icon-Architecture_64_Arch_AWS-WAF_64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="aws-waf-Icon-Architecture-BG_64_Security-Identity-Compliance" fill="#DD344C"><rect id="aws-waf-Rectangle" x="0" y="0" width="80" height="80"></rect></g><g id="aws-waf-Icon-Service_64_AWS-WAF_64" transform="translate(11.999500, 12.000000)" fill="#FFFFFF"><path d="M2.396,29 L-3.55271368e-15,29 L-3.55271368e-15,27 L2.399,27 C2.599,21.941 4.239,17.128 7.208,13.025 L8.829,14.198 C6.108,17.957 4.598,22.366 4.399,27 L7,27 L7,29 L4.396,29 C4.582,33.662 6.093,38.097 8.829,41.876 L7.208,43.049 C4.224,38.926 2.583,34.085 2.396,29 L2.396,29 Z M43.01,48.828 C38.898,51.805 34.072,53.445 29,53.639 L29,56 L27,56 L27,53.639 C21.928,53.445 17.1,51.805 12.988,48.828 L14.16,47.208 C17.93,49.937 22.352,51.447 27,51.639 L27,49 L29,49 L29,51.639 C33.648,51.446 38.069,49.936 41.838,47.208 L43.01,48.828 Z M12.988,7.246 C17.1,4.269 21.928,2.629 27,2.436 L27,0 L29,0 L29,2.436 C34.072,2.629 38.898,4.27 43.01,7.246 L41.838,8.866 C38.069,6.138 33.648,4.628 29,4.436 L29,7 L27,7 L27,4.436 C22.352,4.627 17.93,6.138 14.16,8.866 L12.988,7.246 Z M56,27 L56,29 L53.602,29 C53.416,34.085 51.774,38.926 48.791,43.049 L47.169,41.876 C49.905,38.097 51.417,33.662 51.602,29 L49,29 L49,27 L51.599,27 C51.4,22.366 49.89,17.957 47.169,14.198 L48.791,13.025 C51.759,17.128 53.399,21.941 53.599,27 L56,27 Z M42.972,11.65 L50.812,3.81 L52.226,5.224 L44.386,13.064 L42.972,11.65 Z M13.026,44.424 L5.186,52.264 L3.772,50.85 L11.612,43.01 L13.026,44.424 Z M15.252,16.667 L0.412,1.827 L1.826,0.413 L16.667,15.253 L15.252,16.667 Z M40.707,39.293 L55.586,54.173 L54.172,55.587 L39.292,40.708 L40.707,39.293 Z M19.664,28.735 C19.739,28.602 19.82,28.468 19.905,28.334 C21.586,25.693 21.104,22.089 20.57,19.912 C22.011,20.859 23.31,22.816 23.753,23.638 C23.942,23.986 24.309,24.197 24.712,24.161 C25.107,24.13 25.446,23.87 25.578,23.497 C27.067,19.267 26.31,16.087 25.26,14.026 C26.533,14.767 27.519,15.833 28.172,17.192 C29.588,20.134 29.273,24.161 27.348,27.7 C24.719,32.536 25.246,37.606 25.844,40.334 C24.343,39.687 23.007,38.956 21.854,38.152 C18.827,36.042 17.864,31.907 19.664,28.735 L19.664,28.735 Z M33.094,28.398 C33.029,28.807 33.221,29.214 33.579,29.422 C33.936,29.629 34.386,29.596 34.709,29.336 C34.79,29.271 36.43,27.917 37.224,24.642 C38.181,26.034 39.182,28.843 37.85,34.003 C36.532,39.108 30.28,40.544 28.049,40.897 C27.51,38.964 26.417,33.599 29.106,28.655 C31.014,25.145 31.52,21.176 30.564,17.901 C32.374,20.027 33.901,23.373 33.094,28.398 L33.094,28.398 Z M17.922,27.75 C15.62,31.81 16.844,37.099 20.71,39.793 C22.46,41.013 24.58,42.072 27.01,42.941 C27.121,42.981 27.234,43 27.347,43 C27.368,43 27.386,42.989 27.406,42.988 L27.407,42.997 C27.832,42.964 37.826,42.096 39.786,34.503 C42.308,24.737 37.257,21.84 37.041,21.721 C36.748,21.561 36.393,21.557 36.096,21.712 C35.799,21.868 35.6,22.162 35.566,22.495 C35.495,23.17 35.384,23.771 35.25,24.302 C34.558,16.634 28.479,13.514 27.25,12.959 C25.99,11.994 24.458,11.331 22.682,11.016 C22.236,10.935 21.794,11.168 21.604,11.578 C21.412,11.987 21.521,12.477 21.867,12.768 C22.017,12.895 25.133,15.597 24.244,20.739 C23.083,19.216 21.235,17.38 19.061,17.38 C18.731,17.38 18.423,17.543 18.237,17.815 C18.05,18.087 18.01,18.434 18.128,18.741 C18.15,18.795 20.188,24.166 18.217,27.261 C18.113,27.425 18.014,27.589 17.922,27.75 L17.922,27.75 Z" id="aws-waf-AWS-WAF_Icon_64_Squid"></path></g></g></g>'
+  },
+  "cloudwatch": {
+    "name": "Amazon CloudWatch",
+    "markup": '<g transform="translate(2 2) scale(0.75)"><g id="aws-cloudwatch-Icon-Architecture_64_Arch_Amazon-CloudWatch_64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="aws-cloudwatch-Icon-Architecture-BG_64_Management-Governance" fill="#E7157B"><rect id="aws-cloudwatch-Rectangle" x="0" y="0" width="80" height="80"></rect></g><path d="M55.0592315,46.7773707 C55.0592315,42.8680281 51.8575588,39.6876305 47.9220646,39.6876305 C43.9865705,39.6876305 40.785903,42.8680281 40.785903,46.7773707 C40.785903,50.6867133 43.9865705,53.8671108 47.9220646,53.8671108 C51.8575588,53.8671108 55.0592315,50.6867133 55.0592315,46.7773707 M57.0697011,46.7773707 C57.0697011,51.7881194 52.9663327,55.8642207 47.9220646,55.8642207 C42.8788018,55.8642207 38.7754334,51.7881194 38.7754334,46.7773707 C38.7754334,41.7666219 42.8788018,37.6905206 47.9220646,37.6905206 C52.9663327,37.6905206 57.0697011,41.7666219 57.0697011,46.7773707 M65.5096522,60.4735504 L58.5011554,54.2026253 C57.9352082,54.9944794 57.2808004,55.7174332 56.5540156,56.3634982 L63.5524601,62.6334248 C64.1495696,63.1686502 65.0784065,63.1187225 65.6182176,62.5255808 C66.155013,61.9324392 66.1067617,61.010773 65.5096522,60.4735504 M47.9220646,57.6616197 C53.9645309,57.6616197 58.8801289,52.7786859 58.8801289,46.7773707 C58.8801289,40.7750569 53.9645309,35.8931217 47.9220646,35.8931217 C41.8806036,35.8931217 36.9650056,40.7750569 36.9650056,46.7773707 C36.9650056,52.7786859 41.8806036,57.6616197 47.9220646,57.6616197 M67.1119965,63.8626459 C66.4264264,64.6165549 65.47849,65 64.5285431,65 C63.7002296,65 62.8699057,64.708422 62.207456,64.1172774 L54.9305615,57.5987107 C52.9070239,58.8968321 50.505518,59.6587296 47.9220646,59.6587296 C40.7718297,59.6587296 34.9545361,53.8800921 34.9545361,46.7773707 C34.9545361,39.6746493 40.7718297,33.8960118 47.9220646,33.8960118 C55.0733048,33.8960118 60.8905985,39.6746493 60.8905985,46.7773707 C60.8905985,48.8154213 60.3990387,50.7366411 59.5465996,52.4511599 L66.8556616,58.9906963 C68.2750531,60.265851 68.3896499,62.4496907 67.1119965,63.8626459 M21.2803274,29.392529 C21.2803274,29.9117776 21.3124949,30.429029 21.3738143,30.9293051 C21.4089975,31.2138932 21.3205368,31.4984814 21.1295422,31.7131707 C20.9777518,31.8839236 20.7736891,31.9967603 20.550527,32.0347054 C18.0786547,32.6687878 14.0104695,34.5880104 14.0104695,40.3456782 C14.0104695,44.6933865 16.4240382,47.0929141 18.4495863,48.3411077 C19.1411878,48.7744806 19.9594489,49.0051468 20.8229456,49.0141338 L32.9450717,49.0251179 L32.9430613,51.0222278 L20.811888,51.0112437 C19.5664021,50.9982625 18.384246,50.6607509 17.3840374,50.0346569 C15.3765836,48.7974474 12,45.8896553 12,40.3456782 C12,33.66235 16.5999543,31.191925 19.3000149,30.319188 C19.2799102,30.0116331 19.2698579,29.702081 19.2698579,29.392529 C19.2698579,23.9324305 22.9982737,18.2696254 27.9420183,16.2215892 C33.7241287,13.8150717 39.8500294,15.0083449 44.3263399,19.4109737 C45.7135638,20.7749998 46.8545053,22.4316024 47.7300648,24.3478294 C48.9061895,23.3802296 50.355738,22.8460027 51.8836949,22.8460027 C54.8863312,22.8460027 58.2659305,25.1097268 58.8680661,30.0605622 C61.6797078,30.7046302 67.6206453,32.9553731 67.6206453,40.422567 C67.6206453,43.4042521 66.6797455,45.8666886 64.8230769,47.7419748 L63.3896121,46.3410022 C64.8632863,44.8531553 65.6101757,42.8620367 65.6101757,40.422567 C65.6101757,33.891019 60.1055101,32.2663701 57.737177,31.8719409 C57.4677741,31.827006 57.2295334,31.6752256 57.0757325,31.4515493 C56.9259525,31.2358614 56.8686541,30.9712444 56.9138897,30.7146157 C56.5851779,26.6604826 54.1605516,24.8431126 51.8836949,24.8431126 C50.4472144,24.8431126 49.1001998,25.5381069 48.1874466,26.7503526 C47.9652897,27.0439277 47.6044105,27.193711 47.2344841,27.139789 C46.8695838,27.085867 46.5629872,26.8362283 46.4373329,26.4917268 C45.6140456,24.2260057 44.4278686,22.3207628 42.9119745,20.8309188 C39.0327735,17.0154404 33.7281496,15.9809374 28.7170543,18.0649216 C24.5463352,19.7924217 21.2803274,24.7672224 21.2803274,29.392529" id="aws-cloudwatch-Amazon-CloudWatch_Icon_64_Squid" fill="#FFFFFF"></path></g></g>'
+  },
+  "cloudformation": {
+    "name": "AWS CloudFormation",
+    "markup": '<g transform="translate(2 2) scale(0.75)"><g id="aws-cloudformation-Icon-Architecture_64_Arch_AWS-CloudFormation_64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="aws-cloudformation-Icon-Architecture-BG_64_Management-Governance" fill="#E7157B"><rect id="aws-cloudformation-Rectangle" x="0" y="0" width="80" height="80"></rect></g><path d="M53,39.9632039 L58,39.9632039 L58,37.9601375 L53,37.9601375 L53,39.9632039 Z M28,51.9816019 L33,51.9816019 L33,49.9785356 L28,49.9785356 L28,51.9816019 Z M18,51.9816019 L25,51.9816019 L25,49.9785356 L18,49.9785356 L18,51.9816019 Z M18,45.9724029 L30,45.9724029 L30,43.9693366 L18,43.9693366 L18,45.9724029 Z M18,33.9540048 L27,33.9540048 L27,31.9509385 L18,31.9509385 L18,33.9540048 Z M18,39.9632039 L51,39.9632039 L51,37.9601375 L18,37.9601375 L18,39.9632039 Z M37,61.9969337 L14,61.9969337 L14,27.9448058 L37,27.9448058 L37,35.9570712 L39,35.9570712 L39,26.9432726 C39,26.3904263 38.552,25.9417395 38,25.9417395 L13,25.9417395 C12.447,25.9417395 12,26.3904263 12,26.9432726 L12,62.9984668 C12,63.5513131 12.447,64 13,64 L38,64 C38.552,64 39,63.5513131 39,62.9984668 L39,42.9678034 L37,42.9678034 L37,61.9969337 Z M68,36.9586044 C68,43.4305117 62.173,45.6819583 59.092,45.9683968 L43,45.9724029 L43,43.9693366 L59,43.9693366 C59.195,43.9463013 66,43.2121775 66,36.9586044 C66,31.2638867 60.863,30.1081175 59.834,29.9338507 C59.321,29.8467173 58.96,29.3820059 59.004,28.8632117 C59.005,28.8441826 59.007,28.826155 59.009,28.8081274 C58.954,25.5902013 56.981,24.584662 56.126,24.3002266 C54.53,23.769414 52.751,24.2771913 51.81,25.5391231 C51.591,25.8355769 51.229,25.9868085 50.861,25.9307226 C50.497,25.8756383 50.192,25.625255 50.068,25.2767214 C49.447,23.5360568 48.546,22.4083304 47.293,21.1534094 C44.159,18.0386412 39.905,17.1783242 35.925,18.8528877 C33.837,19.7332353 32.012,21.7282894 30.922,24.327268 L29.078,23.5500782 C30.37,20.4743699 32.584,18.0887179 35.15,17.007062 C39.905,15.0049972 44.971,16.0255595 48.704,19.7342369 C49.774,20.8068789 50.66,21.851478 51.35,23.2035478 C52.843,22.0978551 54.857,21.7673492 56.757,22.3993166 C59.189,23.2085554 60.727,25.3207889 60.975,28.1290879 C64.381,28.9884034 68,31.7115721 68,36.9586044 L68,36.9586044 Z" id="aws-cloudformation-AWS-CloudFormation_Icon_64_Squid" fill="#FFFFFF"></path></g></g>'
+  },
+  "codepipeline": {
+    "name": "AWS CodePipeline",
+    "markup": '<g transform="translate(2 2) scale(0.75)"><g id="aws-codepipeline-Icon-Architecture_64_Arch_AWS-CodePipeline_64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="aws-codepipeline-Icon-Architecture-BG_64_Developer-Tools" fill="#C925D1"><rect id="aws-codepipeline-Rectangle" x="0" y="0" width="80" height="80"></rect></g><path d="M30,31 L35,31 L35,29 L30,29 L30,31 Z M36.667,61.166 L34.817,60.407 L42.409,41.885 L44.259,42.644 L36.667,61.166 Z M45.571,55.78 L51.068,50.958 L45.575,46.197 L46.886,44.685 L53.245,50.198 C53.463,50.387 53.589,50.662 53.590006,50.951 C53.591,51.24 53.467,51.515 53.249,51.706 L46.89,57.284 L45.571,55.78 Z M25.508976,51.048 C25.507,50.759 25.63,50.484 25.847,50.293 L32.184,44.691 L33.508,46.19 L28.029,51.033 L33.478,55.73 L32.171,57.245 L25.855,51.799 C25.637,51.611 25.511,51.337 25.508976,51.048 L25.508976,51.048 Z M62.535,35 L18.465,35 C16.555,35 15,33.446 15,31.536 L15,31 L27,31 L27,29 L15,29 L15,18.464 C15,16.554 16.555,15 18.465,15 L62.535,15 C64.445,15 66,16.554 66,18.464 L66,29 L38,29 L38,31 L66,31 L66,31.536 C66,33.446 64.445,35 62.535,35 L62.535,35 Z M22,66 L58,66 L58,37 L22,37 L22,66 Z M62.535,13 L18.465,13 C15.451,13 13,15.451 13,18.464 L13,31.536 C13,34.549 15.451,37 18.465,37 L20,37 L20,67 C20,67.552 20.447,68 21,68 L59,68 C59.553,68 60,67.552 60,67 L60,37 L62.535,37 C65.549,37 68,34.549 68,31.536 L68,18.464 C68,15.451 65.549,13 62.535,13 L62.535,13 Z" id="aws-codepipeline-AWS-CodePipeline_Icon_64_Squid" fill="#FFFFFF"></path></g></g>'
+  },
+  "codebuild": {
+    "name": "AWS CodeBuild",
+    "markup": '<g transform="translate(2 2) scale(0.75)"><g id="aws-codebuild-Icon-Architecture_64_Arch_AWS-CodeBuild_64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="aws-codebuild-Icon-Architecture-BG_64_Developer-Tools" fill="#C925D1"><rect id="aws-codebuild-Rectangle" x="0" y="0" width="80" height="80"></rect></g><path d="M65.4396329,22 L59.4855152,16.549 L53.5254424,22 L65.4396329,22 Z M57.2017304,15.938 L45.1237743,15.956 L51.5751437,21.083 L57.2017304,15.938 Z M51.7547896,33.5 L42.2484486,37 L60.5346071,37 L51.7547896,33.5 Z M37.7979962,57 L64.5959923,57 L64.5959923,39 L37.7979962,39 L37.7979962,57 Z M49.5226157,22 L42.9372563,16.766 L36.3955677,22 L49.5226157,22 Z M34.3092941,21.115 L40.7487533,15.963 L27.9115206,15.982 L34.3092941,21.115 Z M32.2250055,22 L25.6525488,16.726 L19.0800921,22 L28.8653308,22 L32.2250055,22 Z M27.8728124,24 L19.8423462,24 L27.8728124,31.965 L27.8728124,24 Z M27.8728124,35.083 L18.4478579,43.665 L27.8728124,52.889 L27.8728124,35.083 Z M27.8728124,56.137 L17.9476286,65.839 L17.9476286,66 L27.8728124,66 L27.8728124,56.137 Z M17.9476286,45.963 L17.9476286,63.053 L26.6837754,54.513 L17.9476286,45.963 Z M17.9476286,41.424 L26.6202542,33.528 L17.9476286,24.928 L17.9476286,41.424 Z M16.9551103,21.148 L23.3846443,15.989 L16.9551103,15.999 L16.9551103,21.148 Z M14.9700735,14 L12.9850368,14 L12.9850368,24 L14.9700735,24 L14.9700735,23 L14.9700735,15 L14.9700735,14 Z M68.9332976,23.36 C68.7854124,23.746 68.4171881,24 68.007278,24 L52.6857718,24 L52.6857718,32 L65.9636827,37.074 L65.9626901,37.076 C66.3259519,37.225 66.5810291,37.582 66.5810291,38 L66.5810291,58 C66.5810291,58.552 66.1373734,59 65.5885107,59 L36.8054778,59 C36.2576076,59 35.8129594,58.552 35.8129594,58 L35.8129594,38 C35.8129594,37.572 36.0829244,37.213 36.4590889,37.071 L36.4561113,37.064 L50.7007351,32 L50.7007351,24 L29.8578492,24 L29.8578492,67 C29.8578492,67.552 29.4141934,68 28.8653308,68 L16.9551103,68 C16.4072401,68 15.9625919,67.552 15.9625919,67 L15.9625919,26 L11.9925184,26 C11.4446482,26 11,25.552 11,25 L11,13 C11,12.448 11.4446482,12 11.9925184,12 L15.9625919,12 C16.5114545,12 16.9551103,12.448 16.9551103,13 L16.9551103,13.999 L59.6334004,14 L68.6752429,22.26 C68.977961,22.538 69.0811829,22.975 68.9332976,23.36 L68.9332976,23.36 Z M48.3395338,55.308 L54.1159908,42.083 L52.2996822,41.277 L46.5232252,54.502 L48.3395338,55.308 Z M53.7656318,50.888 L55.0489581,52.415 L59.3366375,48.757 C59.5470513,48.577 59.6731012,48.316 59.6860039,48.039 C59.6989067,47.761 59.5946922,47.49 59.4011511,47.292 L55.8221299,43.633 L54.4087837,45.038 L57.235476,47.928 L53.7656318,50.888 Z M40.8708331,47.984 C40.652479,47.783 40.5343693,47.493 40.5502496,47.195 C40.5651374,46.896 40.7130226,46.621 40.951227,46.443 L45.8215147,42.812 L47.0026116,44.419 L43.1000293,47.33 L46.37534,50.354 L45.0334551,51.829 L40.8708331,47.984 Z" id="aws-codebuild-AWS-CodeBuild_Icon_64_Squid" fill="#FFFFFF"></path></g></g>'
+  },
+  "amplify": {
+    "name": "AWS Amplify",
+    "markup": '<g transform="translate(2 2) scale(0.75)"><g id="aws-amplify-Icon-Architecture_64_Arch_AWS-Amplify_64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="aws-amplify-Icon-Architecture-BG_64_Mobile" fill="#DD344C"><rect id="aws-amplify-Rectangle" x="0" y="0" width="80" height="80"></rect></g><path d="M59.6107389,59.179 L39.5067389,20 L45.2577389,20 L65.3627389,59.179 L59.6107389,59.179 Z M67.8887389,59.722 L46.7587389,18.544 C46.5887389,18.21 46.2447389,18 45.8697389,18 L37.8697389,18 C37.5207389,18 37.1977389,18.181 37.0157389,18.479 C36.8347389,18.776 36.8207389,19.147 36.9797389,19.457 L58.1097389,60.636 C58.2807389,60.969 58.6247389,61.179 58.9997389,61.179 L66.9997389,61.179 C67.3477389,61.179 67.6717389,60.998 67.8527389,60.7 C68.0347389,60.403 68.0487389,60.033 67.8887389,59.722 L67.8887389,59.722 Z M47.5987389,59.179 L32.2147389,30.332 L35.3657389,25.121 L53.3407389,59.179 L47.5987389,59.179 Z M36.3097389,22.624 C36.1407389,22.305 35.8147389,22.101 35.4547389,22.091 C35.1087389,22.07 34.7567389,22.265 34.5697389,22.573 L30.2097389,29.784 C30.0267389,30.086 30.0167389,30.461 30.1817389,30.772 L46.1167389,60.65 C46.2907389,60.975 46.6307389,61.179 46.9997389,61.179 L54.9997389,61.179 C55.3497389,61.179 55.6747389,60.995 55.8557389,60.695 C56.0367389,60.395 56.0477389,60.022 55.8837389,59.712 L36.3097389,22.624 Z M14.7727389,59.179 L28.8847389,35.84 L31.7597389,41.229 L25.1337389,52.678 C24.9547389,52.988 24.9547389,53.369 25.1327389,53.679 C25.3117389,53.988 25.6417389,54.179 25.9997389,54.179 L38.6667389,54.179 L41.3327389,59.179 L14.7727389,59.179 Z M40.1487389,52.708 C39.9747389,52.383 39.6347389,52.179 39.2657389,52.179 L27.7337389,52.179 L33.7687389,41.75 C33.9427389,41.451 33.9487389,41.084 33.7867389,40.779 L29.8227389,33.346 C29.6527389,33.029 29.3267389,32.827 28.9667389,32.817 C28.5827389,32.8 28.2697389,32.992 28.0847389,33.299 L12.1437389,59.661 C11.9577389,59.971 11.9517389,60.356 12.1287389,60.67 C12.3057389,60.985 12.6377389,61.179 12.9997389,61.179 L42.9997389,61.179 C43.3507389,61.179 43.6757389,60.995 43.8567389,60.694 C44.0377389,60.392 44.0477389,60.018 43.8817389,59.708 L40.1487389,52.708 Z" id="aws-amplify-AWS-Amplify_Icon_64_Squid" fill="#FFFFFF"></path></g></g>'
+  },
+  "bedrock": {
+    "name": "Amazon Bedrock",
+    "markup": '<g transform="translate(2 2) scale(0.75)"><g id="aws-bedrock-Icon-Architecture_64_Arch_Amazon-Bedrock_64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="aws-bedrock-Icon-Architecture-BG_64_Machine-Learning" fill="#01A88D"><rect id="aws-bedrock-Rectangle" x="0" y="0" width="80" height="80"></rect></g><g id="aws-bedrock-Icon-Service_64_Amazon-Bedrock_64" transform="translate(12.000000, 12.000000)" fill="#FFFFFF"><path d="M52,26.9998918 C50.897,26.9998918 50,26.1028918 50,24.9998918 C50,23.8968918 50.897,22.9998918 52,22.9998918 C53.103,22.9998918 54,23.8968918 54,24.9998918 C54,26.1028918 53.103,26.9998918 52,26.9998918 L52,26.9998918 Z M20.113,53.9078918 L16.865,52.0138918 L23.53,47.8478918 L22.47,46.1518918 L14.913,50.8748918 L9,47.4258918 L9,38.5348918 L14.555,34.8318918 L13.445,33.1678918 L7.959,36.8248918 L2,33.4198918 L2,28.5798918 L8.496,24.8678918 L7.504,23.1318918 L2,26.2768918 L2,22.5798918 L8,19.1518918 L14,22.5798918 L14,26.4338918 L9.485,29.1428918 L10.515,30.8568918 L15,28.1658918 L19.485,30.8568918 L20.515,29.1428918 L16,26.4338918 L16,22.5348918 L21.555,18.8318918 C21.833,18.6458918 22,18.3338918 22,17.9998918 L22,10.9998918 L20,10.9998918 L20,17.4648918 L14.959,20.8248918 L9,17.4198918 L9,8.57389181 L14,5.65789181 L14,13.9998918 L16,13.9998918 L16,4.49089181 L20.113,2.09189181 L28,4.72089181 L28,33.4338918 L13.485,42.1428918 L14.515,43.8568918 L28,35.7658918 L28,51.2788918 L20.113,53.9078918 Z M50,37.9998918 C50,39.1028918 49.103,39.9998918 48,39.9998918 C46.897,39.9998918 46,39.1028918 46,37.9998918 C46,36.8968918 46.897,35.9998918 48,35.9998918 C49.103,35.9998918 50,36.8968918 50,37.9998918 L50,37.9998918 Z M40,47.9998918 C40,49.1028918 39.103,49.9998918 38,49.9998918 C36.897,49.9998918 36,49.1028918 36,47.9998918 C36,46.8968918 36.897,45.9998918 38,45.9998918 C39.103,45.9998918 40,46.8968918 40,47.9998918 L40,47.9998918 Z M39,7.99989181 C39,6.89689181 39.897,5.99989181 41,5.99989181 C42.103,5.99989181 43,6.89689181 43,7.99989181 C43,9.10289181 42.103,9.99989181 41,9.99989181 C39.897,9.99989181 39,9.10289181 39,7.99989181 L39,7.99989181 Z M52,20.9998918 C50.141,20.9998918 48.589,22.2798918 48.142,23.9998918 L30,23.9998918 L30,18.9998918 L41,18.9998918 C41.553,18.9998918 42,18.5518918 42,17.9998918 L42,11.8578918 C43.72,11.4108918 45,9.85789181 45,7.99989181 C45,5.79389181 43.206,3.99989181 41,3.99989181 C38.794,3.99989181 37,5.79389181 37,7.99989181 C37,9.85789181 38.28,11.4108918 40,11.8578918 L40,16.9998918 L30,16.9998918 L30,3.99989181 C30,3.56889181 29.725,3.18789181 29.316,3.05089181 L20.316,0.050891811 C20.042,-0.039108189 19.744,-0.00910818904 19.496,0.135891811 L7.496,7.13589181 C7.188,7.31489181 7,7.64489181 7,7.99989181 L7,17.4198918 L0.504,21.1318918 C0.192,21.3098918 0,21.6408918 0,21.9998918 L0,33.9998918 C0,34.3588918 0.192,34.6898918 0.504,34.8678918 L7,38.5798918 L7,47.9998918 C7,48.3548918 7.188,48.6848918 7.496,48.8638918 L19.496,55.8638918 C19.65,55.9538918 19.825,55.9998918 20,55.9998918 C20.106,55.9998918 20.213,55.9828918 20.316,55.9488918 L29.316,52.9488918 C29.725,52.8118918 30,52.4308918 30,51.9998918 L30,39.9998918 L37,39.9998918 L37,44.1418918 C35.28,44.5888918 34,46.1418918 34,47.9998918 C34,50.2058918 35.794,51.9998918 38,51.9998918 C40.206,51.9998918 42,50.2058918 42,47.9998918 C42,46.1418918 40.72,44.5888918 39,44.1418918 L39,38.9998918 C39,38.4478918 38.553,37.9998918 38,37.9998918 L30,37.9998918 L30,32.9998918 L42.5,32.9998918 L44.638,35.8498918 C44.239,36.4718918 44,37.2068918 44,37.9998918 C44,40.2058918 45.794,41.9998918 48,41.9998918 C50.206,41.9998918 52,40.2058918 52,37.9998918 C52,35.7938918 50.206,33.9998918 48,33.9998918 C47.316,33.9998918 46.682,34.1878918 46.119,34.4918918 L43.8,31.3998918 C43.611,31.1478918 43.314,30.9998918 43,30.9998918 L30,30.9998918 L30,25.9998918 L48.142,25.9998918 C48.589,27.7198918 50.141,28.9998918 52,28.9998918 C54.206,28.9998918 56,27.2058918 56,24.9998918 C56,22.7938918 54.206,20.9998918 52,20.9998918 L52,20.9998918 Z" id="aws-bedrock-Fill-1"></path></g></g></g>'
+  },
+  "sagemaker": {
+    "name": "Amazon SageMaker AI",
+    "markup": '<g transform="translate(2 2) scale(0.75)"><rect width="80" height="80" fill="#8C4FFF"/><path d="M65.4473 31.1057L58 27.382V20.0002C58 19.6457 57.8125 19.3176 57.5068 19.1379L48.9931 14.1379C48.6836 13.9563 48.2998 13.9538 47.9902 14.132L40 18.7028L32.0098 14.132C31.7002 13.9548 31.3164 13.9572 31.0068 14.1379L22.4932 19.1379C22.1875 19.3176 22 19.6457 22 20.0002V27.382L14.5527 31.1057C14.2139 31.2751 14 31.6213 14 32.0002V48.0002C14 48.3791 14.2139 48.7253 14.5527 48.8947L22 52.6184V60.0002C22 60.3547 22.1875 60.6828 22.4932 60.8625L31.0068 65.8625C31.3154 66.0436 31.6992 66.0456 32.0098 65.8684L40 61.2976L47.9902 65.8684C48.1435 65.9562 48.3154 66.0002 48.4863 66.0002C48.6611 66.0002 48.8369 65.9543 48.9931 65.8625L57.5068 60.8625C57.8125 60.6828 58 60.3547 58 60.0002V52.6184L65.4473 48.8947C65.7861 48.7253 66 48.3791 66 48.0002V32.0002C66 31.6213 65.7861 31.2751 65.4473 31.1057ZM40 43.4768L37 41.7365V38.2873L40 36.5271L43 38.2873V41.7365L40 43.4768ZM31.5205 63.8444L24 59.4279V52.0002C24 51.6213 23.7861 51.2751 23.4473 51.1057L16 47.382V32.6184L23.4473 28.8947C23.7861 28.7253 24 28.3791 24 28.0002V20.5725L31.5205 16.156L39.0019 20.4357V34.7939L35.4941 36.8523C35.1875 37.0315 35 37.3596 35 37.7146V42.3122C35 42.6687 35.1894 42.9983 35.498 43.177L39.002 45.2099V59.5647L31.5205 63.8444ZM64 47.382L56.5527 51.1057C56.2138 51.2751 56 51.6213 56 52.0002V59.4279L48.4795 63.8444L41.0019 59.5669V45.2076L44.5019 43.1769C44.8105 42.9982 45 42.6686 45 42.3122V37.7145C45 37.3596 44.8125 37.0314 44.5058 36.8522L41.0019 34.7961V20.4335L48.4795 16.1559L56 20.5724V28.0002C56 28.3791 56.2139 28.7253 56.5527 28.8947L64 32.6183V47.382Z" fill="white"/></g>'
+  }
+};
+
+// ../../packages/cloud-icons/src/azure.generated.ts
+var AZURE_ICONS = {
+  "resource-group": {
+    "name": "Resource group",
+    "nameJa": "\u30EA\u30BD\u30FC\u30B9 \u30B0\u30EB\u30FC\u30D7",
+    "markup": '<g transform="scale(3.5555)"><g><g><path d="M.5,15.08a.16.16,0,0,0,.08.14l1.16.65L3.7,17a.17.17,0,0,0,.23-.06l.66-1.12a.16.16,0,0,0-.06-.21l-2.3-1.3a.17.17,0,0,1-.08-.14V3.85a.16.16,0,0,1,.08-.14l2.3-1.3a.16.16,0,0,0,.06-.21L3.93,1.08A.17.17,0,0,0,3.7,1L1.78,2.11l-1.2.67a.16.16,0,0,0-.08.14V15.08Z" fill="#949494" /><path d="M2.14,3.77l.06-.06,2.3-1.3a.14.14,0,0,0,.06-.21L3.9,1.08A.15.15,0,0,0,3.68,1L1.75,2.11.56,2.78s-.05,0-.06.06l.9.51Z" fill="#a3a3a3" /><path d="M4.5,15.59l-2.3-1.3a.22.22,0,0,1-.07-.09l-1.62,1,.05,0,1.15.65,2,1.11a.15.15,0,0,0,.22-.06l.66-1.12A.14.14,0,0,0,4.5,15.59Z" fill="#a3a3a3" /></g><path d="M17.5,15.08a.16.16,0,0,1-.08.14l-1.16.65L14.3,17a.17.17,0,0,1-.23-.06l-.66-1.12a.16.16,0,0,1,.06-.21l2.3-1.3a.17.17,0,0,0,.08-.14V3.85a.16.16,0,0,0-.08-.14l-2.3-1.3a.16.16,0,0,1-.06-.21l.66-1.12A.17.17,0,0,1,14.3,1l1.92,1.09,1.2.67a.16.16,0,0,1,.08.14V15.08Z" fill="#949494" /><path d="M15.86,3.77l-.06-.06-2.3-1.3a.14.14,0,0,1-.06-.21l.66-1.12A.15.15,0,0,1,14.32,1l1.93,1.09,1.19.67s0,0,.06.06l-.9.51Z" fill="#a3a3a3" /><path d="M13.5,15.59l2.3-1.3a.22.22,0,0,0,.07-.09l1.62,1,0,0-1.15.65-2,1.11a.15.15,0,0,1-.22-.06l-.66-1.12A.14.14,0,0,1,13.5,15.59Z" fill="#a3a3a3" /><polygon points="14.31 5.93 14.31 12.07 8.99 15.16 8.99 9.01 14.31 5.93" fill="#32bedd" /><polygon points="14.31 5.93 9 9.02 3.68 5.93 9 2.84 14.31 5.93" fill="#9cebff" /><polygon points="8.99 9.02 8.99 15.16 3.68 12.07 3.68 5.93 8.99 9.02" fill="#50e6ff" /><polygon points="3.68 12.07 8.99 9.01 8.99 15.16 3.68 12.07" fill="#9cebff" /><polygon points="14.31 12.07 8.99 9.01 8.99 15.16 14.31 12.07" fill="#50e6ff" /></g></g>'
+  },
+  "azure-functions": {
+    "name": "Azure Functions",
+    "nameJa": "Azure Functions",
+    "markup": '<g transform="scale(3.5555)"><defs><linearGradient id="azure-azure-functions-b403aca7-f387-4434-96b4-ae157edc835f" x1="-175.993" y1="-343.723" x2="-175.993" y2="-359.232" gradientTransform="translate(212.573 370.548) scale(1.156 1.029)" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fea11b" /><stop offset="0.284" stop-color="#fea51a" /><stop offset="0.547" stop-color="#feb018" /><stop offset="0.8" stop-color="#ffc314" /><stop offset="1" stop-color="#ffd70f" /></linearGradient></defs><g><path d="M2.37,7.475H3.2a.267.267,0,0,1,.267.267v6.148a.533.533,0,0,1-.533.533H2.1a0,0,0,0,1,0,0V7.741a.267.267,0,0,1,.267-.267Z" transform="translate(12.507 16.705) rotate(134.919)" fill="#50e6ff" /><path d="M2.325,3.6h.833a.267.267,0,0,1,.267.267v6.583a0,0,0,0,1,0,0H2.591a.533.533,0,0,1-.533-.533V3.865A.267.267,0,0,1,2.325,3.6Z" transform="translate(5.759 0.114) rotate(44.919)" fill="#1490df" /></g><g><path d="M14.53,7.475h.833a.533.533,0,0,1,.533.533v6.148a.267.267,0,0,1-.267.267H14.8a.267.267,0,0,1-.267-.267V7.475a0,0,0,0,1,0,0Z" transform="translate(12.223 -7.555) rotate(45.081)" fill="#50e6ff" /><path d="M15.108,3.6h.833a0,0,0,0,1,0,0v6.583a.267.267,0,0,1-.267.267h-.833a.267.267,0,0,1-.267-.267V4.131a.533.533,0,0,1,.533-.533Z" transform="translate(31.022 1.222) rotate(135.081)" fill="#1490df" /></g><path d="M8.459,9.9H4.87a.193.193,0,0,1-.2-.181.166.166,0,0,1,.018-.075L8.991,1.13a.206.206,0,0,1,.186-.106h4.245a.193.193,0,0,1,.2.181.165.165,0,0,1-.035.1L8.534,7.966h4.928a.193.193,0,0,1,.2.181.176.176,0,0,1-.052.122L5.421,16.788c-.077.046-.624.5-.356-.189h0Z" fill="url(#azure-azure-functions-b403aca7-f387-4434-96b4-ae157edc835f)" /></g>'
+  },
+  "app-service": {
+    "name": "Azure App Service",
+    "nameJa": "Azure App Service",
+    "markup": '<g transform="scale(3.5555)"><defs><radialGradient id="azure-app-service-e2cf8746-c9a8-4eee-86c2-4951983c6032" cx="13428.81" cy="3518.86" r="56.67" gradientTransform="translate(-2005.33 -518.83) scale(0.15)" gradientUnits="userSpaceOnUse"><stop offset="0.18" stop-color="#5ea0ef" /><stop offset="1" stop-color="#0078d4" /></radialGradient><linearGradient id="azure-app-service-bdd213dd-d313-473c-8ff4-0133fd3a9033" x1="4.4" y1="11.48" x2="4.37" y2="7.53" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#ccc" /><stop offset="1" stop-color="#fcfcfc" /></linearGradient><linearGradient id="azure-app-service-afcc63c5-3649-4476-a742-bcb53a569f3c" x1="10.13" y1="15.45" x2="10.13" y2="11.9" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#ccc" /><stop offset="1" stop-color="#fcfcfc" /></linearGradient><linearGradient id="azure-app-service-bd873f0b-9954-4aa5-a3df-9f4c64e8729d" x1="14.18" y1="11.15" x2="14.18" y2="7.38" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#ccc" /><stop offset="1" stop-color="#fcfcfc" /></linearGradient></defs><path id="azure-app-service-ee75dd06-1aca-4f76-9d11-d05a284020ad" d="M14.21,15.72A8.5,8.5,0,0,1,3.79,2.28l.09-.06a8.5,8.5,0,0,1,10.33,13.5" fill="url(#azure-app-service-e2cf8746-c9a8-4eee-86c2-4951983c6032)" /><path d="M6.69,7.23A13,13,0,0,1,15.6,3.65a8.47,8.47,0,0,0-1.49-1.44,14.34,14.34,0,0,0-4.69,1.1A12.54,12.54,0,0,0,5.34,6.13,2.76,2.76,0,0,1,6.69,7.23Z" fill="#fff" opacity="0.6" /><path d="M2.48,10.65a17.86,17.86,0,0,0-.83,2.62,7.82,7.82,0,0,0,.62.92c.18.23.35.44.55.65A17.94,17.94,0,0,1,3.9,11.37,2.76,2.76,0,0,1,2.48,10.65Z" fill="#fff" opacity="0.6" /><path d="M3.46,6.11a12,12,0,0,1-.69-2.94,8.15,8.15,0,0,0-1.1,1.45A12.69,12.69,0,0,0,2.24,7,2.69,2.69,0,0,1,3.46,6.11Z" fill="#f2f2f2" opacity="0.55" /><circle cx="4.38" cy="8.68" r="2.73" fill="url(#azure-app-service-bdd213dd-d313-473c-8ff4-0133fd3a9033)" /><path d="M8.36,13.67A1.77,1.77,0,0,1,8.9,12.4a11.88,11.88,0,0,1-2.53-1.86,2.74,2.74,0,0,1-1.49.83,13.1,13.1,0,0,0,1.45,1.28A12.12,12.12,0,0,0,8.38,13.9,1.79,1.79,0,0,1,8.36,13.67Z" fill="#f2f2f2" opacity="0.55" /><path d="M14.66,13.88a12,12,0,0,1-2.76-.32.41.41,0,0,1,0,.11,1.75,1.75,0,0,1-.51,1.24,13.69,13.69,0,0,0,3.42.24A8.21,8.21,0,0,0,16,13.81,11.5,11.5,0,0,1,14.66,13.88Z" fill="#f2f2f2" opacity="0.55" /><circle cx="10.13" cy="13.67" r="1.78" fill="url(#azure-app-service-afcc63c5-3649-4476-a742-bcb53a569f3c)" /><path d="M12.32,8.93a1.83,1.83,0,0,1,.61-1A25.5,25.5,0,0,1,8.47,3.79a16.91,16.91,0,0,1-2-2.92,7.64,7.64,0,0,0-1.09.42A18.14,18.14,0,0,0,7.53,4.47,26.44,26.44,0,0,0,12.32,8.93Z" fill="#f2f2f2" opacity="0.7" /><circle cx="14.18" cy="9.27" r="1.89" fill="url(#azure-app-service-bd873f0b-9954-4aa5-a3df-9f4c64e8729d)" /><path d="M17.35,10.54,17,10.37l0,0-.3-.16-.06,0L16.38,10l-.07,0L16,9.8a1.76,1.76,0,0,1-.64.92c.12.08.25.15.38.22l.08.05.35.19,0,0,.86.45h0a8.63,8.63,0,0,0,.29-1.11Z" fill="#f2f2f2" opacity="0.55" /><circle cx="4.38" cy="8.68" r="2.73" fill="url(#azure-app-service-bdd213dd-d313-473c-8ff4-0133fd3a9033)" /><circle cx="10.13" cy="13.67" r="1.78" fill="url(#azure-app-service-afcc63c5-3649-4476-a742-bcb53a569f3c)" /></g>'
+  },
+  "app-service-plan": {
+    "name": "App Service plan",
+    "nameJa": "App Service \u30D7\u30E9\u30F3",
+    "markup": '<g transform="scale(3.5555)"><defs><linearGradient id="azure-app-service-plan-a773af38-43e4-4fd2-9485-f8aac63ca91b" x1="5.57" y1="17.5" x2="5.57" y2="0.5" gradientUnits="userSpaceOnUse"><stop offset="0.05" stop-color="#949494" /><stop offset="0.36" stop-color="#979797" /><stop offset="0.54" stop-color="#9f9f9f" /><stop offset="0.69" stop-color="#adadad" /><stop offset="0.73" stop-color="#b3b3b3" /></linearGradient><linearGradient id="azure-app-service-plan-b4779ae6-74a5-486d-8aad-cd011859785a" x1="10.56" y1="6.02" x2="10.56" y2="19.71" gradientUnits="userSpaceOnUse"><stop offset="0.18" stop-color="#5ea0ef" /><stop offset="1" stop-color="#0078d4" /></linearGradient></defs><path d="M10.56,16.93a.56.56,0,0,1-.57.57H1.14a.56.56,0,0,1-.56-.57V1.07A.56.56,0,0,1,1.14.5H10a.56.56,0,0,1,.57.57Z" fill="url(#azure-app-service-plan-a773af38-43e4-4fd2-9485-f8aac63ca91b)" /><path d="M2,6.46A1.08,1.08,0,0,1,3.13,5.38h5A1.08,1.08,0,0,1,9.18,6.46h0A1.08,1.08,0,0,1,8.1,7.55h-5A1.09,1.09,0,0,1,2,6.46Z" fill="#003067" /><path d="M2,3.24A1.09,1.09,0,0,1,3.13,2.15h5A1.08,1.08,0,0,1,9.18,3.24h0A1.08,1.08,0,0,1,8.1,4.32h-5A1.08,1.08,0,0,1,2,3.24Z" fill="#003067" /><circle cx="3.17" cy="3.24" r="0.73" fill="#50e6ff" /><circle cx="3.17" cy="6.46" r="0.73" fill="#50e6ff" /><path d="M17.42,14.38a3.12,3.12,0,0,0-2.67-3,3.93,3.93,0,0,0-4-3.8,4,4,0,0,0-3.83,2.66A3.7,3.7,0,0,0,3.7,13.83,3.77,3.77,0,0,0,7.56,17.5l.34,0h6.26l.17,0A3.15,3.15,0,0,0,17.42,14.38Z" fill="url(#azure-app-service-plan-b4779ae6-74a5-486d-8aad-cd011859785a)" /><rect width="18" height="18" fill="none" /></g>'
+  },
+  "static-web-apps": {
+    "name": "Azure Static Web Apps",
+    "nameJa": "Azure Static Web Apps",
+    "markup": '<g transform="scale(3.5555)"><defs><linearGradient id="azure-static-web-apps-e6ad4df9-0ab7-4b49-9706-620b42380f0b" x1="9" y1="16.236" x2="9" y2="5.599" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#005ba1" /><stop offset="0.775" stop-color="#0078d4" /></linearGradient></defs><g id="azure-static-web-apps-e7885b9c-9714-4276-bd41-591cb7e086a5"><path d="M0,5.6H18a0,0,0,0,1,0,0V15.635a.6.6,0,0,1-.6.6H.6a.6.6,0,0,1-.6-.6V5.6A0,0,0,0,1,0,5.6Z" fill="url(#azure-static-web-apps-e6ad4df9-0ab7-4b49-9706-620b42380f0b)" /><rect x="1.309" y="6.657" width="15.527" height="8.514" rx="0.6" fill="#5ea0ef" opacity="0.6" /><path d="M.6,1.764H17.4a.6.6,0,0,1,.6.6V5.6a0,0,0,0,1,0,0H0a0,0,0,0,1,0,0V2.365A.6.6,0,0,1,.6,1.764Z" fill="#005ba1" /><path d="M7.109,13.217l-.321.32a.144.144,0,0,1-.205,0L4.258,11.205a.29.29,0,0,1,0-.41l.321-.32L7.11,13.012A.145.145,0,0,1,7.109,13.217Zm3.653,0,.321.32a.144.144,0,0,0,.205,0l2.325-2.332a.29.29,0,0,0,0-.41l-.322-.32-2.53,2.537A.145.145,0,0,0,10.762,13.217Z" fill="#fff" opacity="0.8" /><path d="M6.831,8.433l.32.321a.144.144,0,0,1,0,.205L4.576,11.527l-.32-.322a.289.289,0,0,1,0-.41l2.37-2.363A.145.145,0,0,1,6.831,8.433Zm4.207,0-.32.321a.144.144,0,0,0,0,.205l2.575,2.568.32-.321a.292.292,0,0,0,0-.411l-2.37-2.362A.144.144,0,0,0,11.038,8.434Z" fill="#fff" /><path d="M8.159,14.363,7.646,14.2a.105.105,0,0,1-.067-.131L9.669,7.54a.1.1,0,0,1,.13-.067l.513.164a.1.1,0,0,1,.067.13L8.289,14.3A.1.1,0,0,1,8.159,14.363Z" fill="#fff" /><path d="M3.166,3.847a.76.76,0,1,1-.76-.76A.76.76,0,0,1,3.166,3.847ZM4.8,3.087a.76.76,0,1,0,.76.76A.76.76,0,0,0,4.8,3.087Zm2.393,0a.76.76,0,1,0,.76.76A.76.76,0,0,0,7.191,3.087Z" fill="#fff" /></g></g>'
+  },
+  "container-apps": {
+    "name": "Azure Container Apps",
+    "nameJa": "Azure Container Apps",
+    "markup": '<g transform="scale(3.5555)"><defs><linearGradient id="azure-container-apps-b27f1ad0-7d11-4247-9da3-91bce6211f32" x1="8.798" y1="8.703" x2="14.683" y2="8.703" gradientUnits="userSpaceOnUse"><stop offset="0.001" stop-color="#773adc" /><stop offset="1" stop-color="#552f99" /></linearGradient><linearGradient id="azure-container-apps-b2f92112-4ca9-4b17-a019-c9f26c1a4a8f" x1="5.764" y1="3.777" x2="5.764" y2="13.78" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#a67af4" /><stop offset="0.999" stop-color="#773adc" /></linearGradient></defs><g id="azure-container-apps-b8a0486a-5501-4d92-b540-a766c4b3b548"><g><g><g><path d="M16.932,11.578a8.448,8.448,0,0,1-7.95,5.59,8.15,8.15,0,0,1-2.33-.33,2.133,2.133,0,0,0,.18-.83c.01,0,.03.01.04.01a7.422,7.422,0,0,0,2.11.3,7.646,7.646,0,0,0,6.85-4.28l.01-.01Z" fill="#32bedd" /><path d="M3.582,14.068a2.025,2.025,0,0,0-.64.56,8.6,8.6,0,0,1-1.67-2.44l1.04.23v.26a.6.6,0,0,0,.47.59l.14.03a6.136,6.136,0,0,0,.62.73Z" fill="#32bedd" /><path d="M12.352.958a2.28,2.28,0,0,0-.27.81c-.02-.01-.05-.02-.07-.03a7.479,7.479,0,0,0-3.03-.63,7.643,7.643,0,0,0-5.9,2.8l-.29.06a.6.6,0,0,0-.48.58v.46l-1.02.19A8.454,8.454,0,0,1,8.982.268,8.6,8.6,0,0,1,12.352.958Z" fill="#32bedd" /><path d="M16.872,5.7l-1.09-.38a6.6,6.6,0,0,0-.72-1.16c-.02-.03-.04-.05-.05-.07a2.083,2.083,0,0,0,.72-.45A7.81,7.81,0,0,1,16.872,5.7Z" fill="#32bedd" /><path d="M10.072,11.908l2.54.56L8.672,14.1c-.02,0-.03.01-.05.01a.154.154,0,0,1-.15-.15V3.448a.154.154,0,0,1,.15-.15.09.09,0,0,1,.05.01l4.46,1.56-3.05.57a.565.565,0,0,0-.44.54v5.4A.537.537,0,0,0,10.072,11.908Z" fill="#fff" /><g><g id="azure-container-apps-e918f286-5032-4942-ad29-ea17e6f1cc90"><path d="M1.1,5.668l1.21-.23v6.55l-1.23-.27-.99-.22a.111.111,0,0,1-.09-.12v-5.4a.12.12,0,0,1,.09-.12Z" fill="#a67af4" /></g><g><g id="azure-container-apps-a47a99dd-4d47-4c70-8c42-c5ac274ce496"><g><path d="M10.072,11.908l2.54.56L8.672,14.1c-.02,0-.03.01-.05.01a.154.154,0,0,1-.15-.15V3.448a.154.154,0,0,1,.15-.15.09.09,0,0,1,.05.01l4.46,1.56-3.05.57a.565.565,0,0,0-.44.54v5.4A.537.537,0,0,0,10.072,11.908Z" fill="url(#azure-container-apps-b27f1ad0-7d11-4247-9da3-91bce6211f32)" /><path d="M8.586,3.3,2.878,4.378a.177.177,0,0,0-.14.175V12.68a.177.177,0,0,0,.137.174L8.581,14.1a.176.176,0,0,0,.21-.174V3.478A.175.175,0,0,0,8.619,3.3Z" fill="url(#azure-container-apps-b2f92112-4ca9-4b17-a019-c9f26c1a4a8f)" /></g></g><polygon points="5.948 4.921 5.948 12.483 7.934 12.814 7.934 4.564 5.948 4.921" fill="#b796f9" opacity="0.5" /><polygon points="3.509 5.329 3.509 11.954 5.238 12.317 5.238 5.031 3.509 5.329" fill="#b796f9" opacity="0.5" /></g></g></g><path d="M16,2.048a1.755,1.755,0,1,1-1.76-1.76A1.756,1.756,0,0,1,16,2.048Z" fill="#32bedd" /><circle cx="4.65" cy="15.973" r="1.759" fill="#32bedd" /></g><path d="M18,6.689v3.844a.222.222,0,0,1-.133.2l-.766.316-3.07,1.268-.011,0a.126.126,0,0,1-.038,0,.1.1,0,0,1-.1-.1V5.234a.1.1,0,0,1,.054-.088l0,0,.019,0a.031.031,0,0,1,.019,0,.055.055,0,0,1,.034.008l.011,0,.012,0L17.05,6.2l.8.282A.213.213,0,0,1,18,6.689Z" fill="#773adc" /><path d="M13.959,5.14l-3.8.715a.118.118,0,0,0-.093.117v5.409a.118.118,0,0,0,.091.116l3.8.831a.115.115,0,0,0,.137-.09.109.109,0,0,0,0-.026V5.256a.117.117,0,0,0-.115-.118A.082.082,0,0,0,13.959,5.14Z" fill="#a67af4" /></g></g></g>'
+  },
+  "aks": {
+    "name": "Azure Kubernetes Service (AKS)",
+    "nameJa": "Azure Kubernetes Service (AKS)",
+    "markup": '<g transform="scale(3.5555)"><defs><linearGradient id="azure-aks-b70c9cf1-bab8-47e0-bbdb-ce1cd664d268" x1="2.94" y1="3.74" x2="8.67" y2="3.74" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#b77af4" /><stop offset="1" stop-color="#773adc" /></linearGradient><linearGradient id="azure-aks-beb69953-bd96-4515-8843-ac12546af936" x1="9.13" y1="3.79" x2="14.85" y2="3.79" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#b77af4" /><stop offset="1" stop-color="#773adc" /></linearGradient><linearGradient id="azure-aks-a39c76e8-547e-4eb4-bc25-d81c0f8cda62" x1="0.01" y1="9.12" x2="5.73" y2="9.12" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#b77af4" /><stop offset="1" stop-color="#773adc" /></linearGradient><linearGradient id="azure-aks-f0a2a491-17dc-4bb8-bbfc-ee58a5cf47da" x1="6.18" y1="9.08" x2="11.9" y2="9.08" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#b77af4" /><stop offset="1" stop-color="#773adc" /></linearGradient><linearGradient id="azure-aks-efc6a56d-8585-417d-931a-1dac2114ccd0" x1="12.35" y1="9.13" x2="18.08" y2="9.13" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#b77af4" /><stop offset="1" stop-color="#773adc" /></linearGradient><linearGradient id="azure-aks-e399aa93-341f-4df2-9c02-603b82b484c2" x1="2.87" y1="14.56" x2="8.6" y2="14.56" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#b77af4" /><stop offset="1" stop-color="#773adc" /></linearGradient><linearGradient id="azure-aks-a152bba0-ba2b-483a-b8c1-0ae7de355990" x1="9.05" y1="14.6" x2="14.78" y2="14.6" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#b77af4" /><stop offset="1" stop-color="#773adc" /></linearGradient></defs><polygon points="5.8 1.22 2.94 1.75 2.94 5.65 5.8 6.26 8.67 5.11 8.67 2.2 5.8 1.22" fill="url(#azure-aks-b70c9cf1-bab8-47e0-bbdb-ce1cd664d268)" /><path d="M5.91,6.2,8.53,5.14A.2.2,0,0,0,8.65,5V2.36a.21.21,0,0,0-.13-.18l-2.65-.9H5.75l-2.6.48A.2.2,0,0,0,3,1.94V5.47a.19.19,0,0,0,.15.19l2.63.55A.32.32,0,0,0,5.91,6.2Z" fill="none" /><path d="M2.94,1.75v3.9l2.89.61v-5Zm1.22,3.6-.81-.16v-3l.81-.13Zm1.26.23-.93-.15V2l.93-.16Z" fill="#341a6e" /><polygon points="11.99 1.27 9.13 1.8 9.13 5.7 11.99 6.31 14.85 5.15 14.85 2.25 11.99 1.27" fill="url(#azure-aks-beb69953-bd96-4515-8843-ac12546af936)" /><path d="M9.13,1.8V5.7L12,6.31v-5Zm1.21,3.6-.81-.16v-3l.81-.13Zm1.26.23-.93-.15V2.05l.93-.17Z" fill="#341a6e" /><polygon points="2.87 6.6 0.01 7.13 0.01 11.03 2.87 11.64 5.74 10.49 5.74 7.58 2.87 6.6" fill="url(#azure-aks-a39c76e8-547e-4eb4-bc25-d81c0f8cda62)" /><path d="M0,7.13V11l2.89.61v-5Zm1.21,3.61-.81-.17v-3l.81-.14ZM2.48,11l-.93-.15V7.38l.93-.16Z" fill="#341a6e" /><polygon points="9.04 6.56 6.18 7.09 6.18 10.99 9.04 11.61 11.9 10.45 11.9 7.54 9.04 6.56" fill="url(#azure-aks-f0a2a491-17dc-4bb8-bbfc-ee58a5cf47da)" /><path d="M6.18,7.09V11l2.88.61v-5ZM7.39,10.7l-.81-.17v-3l.81-.14Zm1.26.22-.93-.15V7.34l.93-.16Z" fill="#341a6e" /><polygon points="15.21 6.61 12.35 7.14 12.35 11.04 15.21 11.65 18.08 10.5 18.08 7.59 15.21 6.61" fill="url(#azure-aks-efc6a56d-8585-417d-931a-1dac2114ccd0)" /><path d="M12.35,7.14V11l2.89.61v-5Zm1.22,3.61-.81-.17v-3l.81-.14Zm1.26.22-.93-.15V7.39l.93-.16Z" fill="#341a6e" /><polygon points="5.73 12.04 2.87 12.56 2.87 16.46 5.73 17.08 8.6 15.92 8.6 13.02 5.73 12.04" fill="url(#azure-aks-e399aa93-341f-4df2-9c02-603b82b484c2)" /><path d="M5.84,17,8.45,16a.18.18,0,0,0,.12-.18v-2.6A.2.2,0,0,0,8.44,13L5.8,12.1a.17.17,0,0,0-.12,0l-2.6.47a.19.19,0,0,0-.16.19v3.54a.19.19,0,0,0,.15.19L5.7,17A.23.23,0,0,0,5.84,17Z" fill="none" /><path d="M2.87,12.56v3.9l2.89.62V12Zm1.22,3.61L3.28,16V13l.81-.14Zm1.26.23-.93-.15V12.81l.93-.16Z" fill="#341a6e" /><polygon points="11.91 12.08 9.05 12.61 9.05 16.51 11.91 17.12 14.78 15.97 14.78 13.06 11.91 12.08" fill="url(#azure-aks-a152bba0-ba2b-483a-b8c1-0ae7de355990)" /><path d="M9.05,12.61v3.9l2.89.61v-5Zm1.22,3.61-.81-.17v-3l.81-.14Zm1.26.22-.93-.15V12.86l.93-.16Z" fill="#341a6e" /></g>'
+  },
+  "storage-account": {
+    "name": "Storage account",
+    "nameJa": "\u30B9\u30C8\u30EC\u30FC\u30B8 \u30A2\u30AB\u30A6\u30F3\u30C8",
+    "markup": '<g transform="scale(3.5555)"><defs><linearGradient id="azure-storage-account-ad4c4f96-09aa-4f91-ba10-5cb8ad530f74" x1="9" y1="15.83" x2="9" y2="5.79" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#b3b3b3" /><stop offset="0.26" stop-color="#c1c1c1" /><stop offset="1" stop-color="#e6e6e6" /></linearGradient></defs><path d="M.5,5.79h17a0,0,0,0,1,0,0v9.48a.57.57,0,0,1-.57.57H1.07a.57.57,0,0,1-.57-.57V5.79A0,0,0,0,1,.5,5.79Z" fill="url(#azure-storage-account-ad4c4f96-09aa-4f91-ba10-5cb8ad530f74)" /><path d="M1.07,2.17H16.93a.57.57,0,0,1,.57.57V5.79a0,0,0,0,1,0,0H.5a0,0,0,0,1,0,0V2.73A.57.57,0,0,1,1.07,2.17Z" fill="#37c2b1" /><path d="M2.81,6.89H15.18a.27.27,0,0,1,.26.27v1.4a.27.27,0,0,1-.26.27H2.81a.27.27,0,0,1-.26-.27V7.16A.27.27,0,0,1,2.81,6.89Z" fill="#fff" /><path d="M2.82,9.68H15.19a.27.27,0,0,1,.26.27v1.41a.27.27,0,0,1-.26.27H2.82a.27.27,0,0,1-.26-.27V10A.27.27,0,0,1,2.82,9.68Z" fill="#37c2b1" /><path d="M2.82,12.5H15.19a.27.27,0,0,1,.26.27v1.41a.27.27,0,0,1-.26.27H2.82a.27.27,0,0,1-.26-.27V12.77A.27.27,0,0,1,2.82,12.5Z" fill="#258277" /></g>'
+  },
+  "cosmos-db": {
+    "name": "Azure Cosmos DB",
+    "nameJa": "Azure Cosmos DB",
+    "markup": '<g transform="scale(3.5555)"><defs><radialGradient id="azure-cosmos-db-b25d0836-964a-4c84-8c20-855f66e8345e" cx="-105.006" cy="-10.409" r="5.954" gradientTransform="translate(117.739 19.644) scale(1.036 1.027)" gradientUnits="userSpaceOnUse"><stop offset="0.183" stop-color="#5ea0ef" /><stop offset="1" stop-color="#0078d4" /></radialGradient><clipPath id="azure-cosmos-db-b36c7f5d-2ef1-4760-8a25-eeb9661f4e47"><path d="M14.969,7.53A6.137,6.137,0,1,1,7.574,2.987,6.137,6.137,0,0,1,14.969,7.53Z" fill="none" /></clipPath></defs><path d="M2.954,5.266a.175.175,0,0,1-.176-.176h0A2.012,2.012,0,0,0,.769,3.081a.176.176,0,0,1-.176-.175h0a.176.176,0,0,1,.176-.176A2.012,2.012,0,0,0,2.778.72.175.175,0,0,1,2.954.544h0A.175.175,0,0,1,3.13.72h0A2.012,2.012,0,0,0,5.139,2.729a.175.175,0,0,1,.176.176h0a.175.175,0,0,1-.176.176h0A2.011,2.011,0,0,0,3.13,5.09.177.177,0,0,1,2.954,5.266Z" fill="#50e6ff" /><path d="M15.611,17.456a.141.141,0,0,1-.141-.141h0a1.609,1.609,0,0,0-1.607-1.607.141.141,0,0,1-.141-.14h0a.141.141,0,0,1,.141-.141h0a1.608,1.608,0,0,0,1.607-1.607.141.141,0,0,1,.141-.141h0a.141.141,0,0,1,.141.141h0a1.608,1.608,0,0,0,1.607,1.607.141.141,0,1,1,0,.282h0a1.609,1.609,0,0,0-1.607,1.607A.141.141,0,0,1,15.611,17.456Z" fill="#50e6ff" /><g><path d="M14.969,7.53A6.137,6.137,0,1,1,7.574,2.987,6.137,6.137,0,0,1,14.969,7.53Z" fill="url(#azure-cosmos-db-b25d0836-964a-4c84-8c20-855f66e8345e)" /><g clip-path="url(#azure-cosmos-db-b36c7f5d-2ef1-4760-8a25-eeb9661f4e47)"><path d="M5.709,13.115A1.638,1.638,0,1,0,5.714,9.84,1.307,1.307,0,0,0,5.721,9.7,1.651,1.651,0,0,0,4.06,8.064H2.832a6.251,6.251,0,0,0,1.595,5.051Z" fill="#f2f2f2" /><path d="M15.045,7.815c0-.015,0-.03-.007-.044a5.978,5.978,0,0,0-1.406-2.88,1.825,1.825,0,0,0-.289-.09,1.806,1.806,0,0,0-2.3,1.663,2,2,0,0,0-.2-.013,1.737,1.737,0,0,0-.581,3.374,1.451,1.451,0,0,0,.541.1h2.03A13.453,13.453,0,0,0,15.045,7.815Z" fill="#f2f2f2" /></g></g><path d="M17.191,3.832c-.629-1.047-2.1-1.455-4.155-1.149a14.606,14.606,0,0,0-2.082.452,6.456,6.456,0,0,1,1.528.767c.241-.053.483-.116.715-.151A7.49,7.49,0,0,1,14.3,3.662a2.188,2.188,0,0,1,1.959.725h0c.383.638.06,1.729-.886,3a16.723,16.723,0,0,1-4.749,4.051A16.758,16.758,0,0,1,4.8,13.7c-1.564.234-2.682,0-3.065-.636s-.06-1.73.886-2.995c.117-.157.146-.234.279-.392a6.252,6.252,0,0,1,.026-1.63A11.552,11.552,0,0,0,1.756,9.419C.517,11.076.181,12.566.809,13.613a3.165,3.165,0,0,0,2.9,1.249,8.434,8.434,0,0,0,1.251-.1,17.855,17.855,0,0,0,6.219-2.4,17.808,17.808,0,0,0,5.061-4.332C17.483,6.369,17.819,4.88,17.191,3.832Z" fill="#50e6ff" /></g>'
+  },
+  "sql-database": {
+    "name": "Azure SQL Database",
+    "nameJa": "Azure SQL Database",
+    "markup": '<g transform="scale(3.5555)"><defs><linearGradient id="azure-sql-database-ef16bf9d-a8b6-4181-b6cd-66fc5203f956" x1="2.59" y1="10.16" x2="15.41" y2="10.16" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#005ba1" /><stop offset="0.07" stop-color="#0060a9" /><stop offset="0.36" stop-color="#0071c8" /><stop offset="0.52" stop-color="#0078d4" /><stop offset="0.64" stop-color="#0074cd" /><stop offset="0.82" stop-color="#006abb" /><stop offset="1" stop-color="#005ba1" /></linearGradient><radialGradient id="azure-sql-database-bf3846c3-4d74-4743-ab9a-f334c248bd92" cx="9.36" cy="10.57" r="7.07" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#f2f2f2" /><stop offset="0.58" stop-color="#eee" /><stop offset="1" stop-color="#e6e6e6" /></radialGradient></defs><path d="M9,5.14c-3.54,0-6.41-1-6.41-2.32V15.18c0,1.27,2.82,2.3,6.32,2.32H9c3.54,0,6.41-1,6.41-2.32V2.82C15.41,4.11,12.54,5.14,9,5.14Z" fill="url(#azure-sql-database-ef16bf9d-a8b6-4181-b6cd-66fc5203f956)" /><path d="M15.41,2.82c0,1.29-2.87,2.32-6.41,2.32s-6.41-1-6.41-2.32S5.46.5,9,.5s6.41,1,6.41,2.32" fill="#e8e8e8" /><path d="M13.92,2.63c0,.82-2.21,1.48-4.92,1.48S4.08,3.45,4.08,2.63,6.29,1.16,9,1.16s4.92.66,4.92,1.47" fill="#50e6ff" /><path d="M9,3a11.55,11.55,0,0,0-3.89.57A11.42,11.42,0,0,0,9,4.11a11.15,11.15,0,0,0,3.89-.58A11.84,11.84,0,0,0,9,3Z" fill="#198ab3" /><path d="M12.9,11.4V8H12v4.13h2.46V11.4ZM5.76,9.73a1.83,1.83,0,0,1-.51-.31.44.44,0,0,1-.12-.32.34.34,0,0,1,.15-.3.68.68,0,0,1,.42-.12,1.62,1.62,0,0,1,1,.29V8.11a2.58,2.58,0,0,0-1-.16,1.64,1.64,0,0,0-1.09.34,1.08,1.08,0,0,0-.42.89c0,.51.32.91,1,1.21a2.88,2.88,0,0,1,.62.36.42.42,0,0,1,.15.32.38.38,0,0,1-.16.31.81.81,0,0,1-.45.11,1.66,1.66,0,0,1-1.09-.42V12a2.17,2.17,0,0,0,1.07.24,1.88,1.88,0,0,0,1.18-.33A1.08,1.08,0,0,0,6.84,11a1.05,1.05,0,0,0-.25-.7A2.42,2.42,0,0,0,5.76,9.73ZM11,11.32a2.34,2.34,0,0,0,.33-1.26A2.32,2.32,0,0,0,11,9a1.81,1.81,0,0,0-.7-.75,2,2,0,0,0-1-.26,2.11,2.11,0,0,0-1.08.27A1.86,1.86,0,0,0,7.49,9a2.46,2.46,0,0,0-.26,1.14,2.26,2.26,0,0,0,.24,1,1.76,1.76,0,0,0,.69.74,2.06,2.06,0,0,0,1,.3l.86,1h1.21L10,12.08A1.79,1.79,0,0,0,11,11.32ZM10,11.07a.94.94,0,0,1-.76.35.92.92,0,0,1-.76-.36,1.52,1.52,0,0,1-.29-1,1.53,1.53,0,0,1,.29-1,1,1,0,0,1,.78-.37.87.87,0,0,1,.75.37,1.62,1.62,0,0,1,.27,1A1.46,1.46,0,0,1,10,11.07Z" fill="url(#azure-sql-database-bf3846c3-4d74-4743-ab9a-f334c248bd92)" /></g>'
+  },
+  "sql-server": {
+    "name": "Azure SQL Database logical server",
+    "nameJa": "Azure SQL Database \u306E\u8AD6\u7406\u30B5\u30FC\u30D0\u30FC",
+    "markup": '<g transform="scale(3.5555)"><defs><linearGradient id="azure-sql-server-b39dcf83-187e-4c64-98df-431bb60809d2" x1="0.5" y1="10.04" x2="13.18" y2="10.04" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#005ba1" /><stop offset="0.07" stop-color="#0060a9" /><stop offset="0.36" stop-color="#0071c8" /><stop offset="0.52" stop-color="#0078d4" /><stop offset="0.64" stop-color="#0074cd" /><stop offset="0.82" stop-color="#006abb" /><stop offset="1" stop-color="#005ba1" /></linearGradient></defs><path d="M6.84,5.09c-3.5,0-6.34-1-6.34-2.3V15c0,1.26,2.79,2.28,6.25,2.3h.09c3.5,0,6.34-1,6.34-2.3V2.79C13.18,4.06,10.34,5.09,6.84,5.09Z" fill="url(#azure-sql-server-b39dcf83-187e-4c64-98df-431bb60809d2)" /><path d="M13.18,2.79c0,1.27-2.84,2.3-6.34,2.3S.5,4.06.5,2.79,3.34.49,6.84.49s6.34,1,6.34,2.3" fill="#e8e8e8" /><path d="M11.7,2.6c0,.81-2.18,1.46-4.86,1.46S2,3.41,2,2.6,4.16,1.14,6.84,1.14,11.7,1.8,11.7,2.6" fill="#50e6ff" /><path d="M6.84,2.94A12,12,0,0,0,3,3.49a11.25,11.25,0,0,0,3.85.57,11.25,11.25,0,0,0,3.85-.57A12,12,0,0,0,6.84,2.94Z" fill="#198ab3" /><path d="M10.74,11.1V7.72H9.81v4.14h2.46V11.1ZM3.59,9.43a1.92,1.92,0,0,1-.51-.31A.44.44,0,0,1,3,8.8a.38.38,0,0,1,.16-.31.72.72,0,0,1,.42-.11,1.67,1.67,0,0,1,1,.29V7.81a2.67,2.67,0,0,0-1-.16A1.74,1.74,0,0,0,2.38,8a1.13,1.13,0,0,0-.41.9c0,.51.32.91,1,1.21a2.9,2.9,0,0,1,.61.36.4.4,0,0,1,.16.32.38.38,0,0,1-.16.31.75.75,0,0,1-.45.12A1.6,1.6,0,0,1,2,10.77v.93a2.29,2.29,0,0,0,1.07.23,2,2,0,0,0,1.18-.32,1.1,1.1,0,0,0,.43-.92,1,1,0,0,0-.25-.7A2.42,2.42,0,0,0,3.59,9.43ZM8.79,11a2.4,2.4,0,0,0,.33-1.27,2.32,2.32,0,0,0-.25-1.1,1.81,1.81,0,0,0-.7-.75,2,2,0,0,0-1-.26,2.18,2.18,0,0,0-1.09.27,1.87,1.87,0,0,0-.73.77,2.41,2.41,0,0,0-.26,1.15,2.26,2.26,0,0,0,.24,1.05,1.83,1.83,0,0,0,.68.75,2,2,0,0,0,1,.29l.85,1H9.05l-1.2-1.11A1.81,1.81,0,0,0,8.79,11Zm-.93-.26a1,1,0,0,1-1.53,0,1.51,1.51,0,0,1-.28-1,1.48,1.48,0,0,1,.29-1,.92.92,0,0,1,.78-.37.89.89,0,0,1,.75.37,1.62,1.62,0,0,1,.27,1A1.46,1.46,0,0,1,7.86,10.77Z" fill="#f2f2f2" /><path d="M14.81,17.49l.24-.79.47-.27.81.36.52-.53V16.2l-.37-.71.22-.5.81-.29.09,0v-.73l-.1,0-.8-.24-.26-.46.35-.82-.53-.51H16.2l-.71.36L15,12l-.32-.89h-.74l0,.11-.24.79-.51.22-.87-.4-.51.53.05.1.38.74-.2.51L11.1,14v.74l.11,0,.79.24.22.51-.39.86.53.52.09-.05.74-.38.51.2.34.89h.73Zm-1.2-2.36a1.06,1.06,0,1,1,1.49-1.52,1.06,1.06,0,0,1-1.49,1.52Z" fill="#949494" /></g>'
+  },
+  "cache-for-redis": {
+    "name": "Azure Cache for Redis",
+    "nameJa": "Azure Cache for Redis",
+    "markup": '<g transform="scale(3.5555)"><defs><linearGradient id="azure-cache-for-redis-ac420e47-f190-46df-ab14-7e1f8fa3a93d" x1="9.5" y1="7.37" x2="17.5" y2="7.37" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#005ba1" /><stop offset="0.07" stop-color="#0060a9" /><stop offset="0.36" stop-color="#0071c8" /><stop offset="0.52" stop-color="#0078d4" /><stop offset="1" stop-color="#005ba1" /></linearGradient><linearGradient id="azure-cache-for-redis-a51ffd84-af0a-457a-abee-1f70656da56f" x1="0.5" y1="7.37" x2="8.5" y2="7.37" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#005ba1" /><stop offset="0.07" stop-color="#0060a9" /><stop offset="0.36" stop-color="#0071c8" /><stop offset="0.52" stop-color="#0078d4" /><stop offset="1" stop-color="#005ba1" /></linearGradient><linearGradient id="azure-cache-for-redis-bbb4b87e-b1f0-4042-b6d6-9b91b5dac799" x1="5" y1="11.9" x2="13" y2="11.9" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#005ba1" /><stop offset="0.07" stop-color="#0060a9" /><stop offset="0.36" stop-color="#0071c8" /><stop offset="0.52" stop-color="#0078d4" /><stop offset="1" stop-color="#005ba1" /></linearGradient></defs><path d="M13.5,4.62c-2.21,0-4-.57-4-1.28v6.79c0,.69,1.76,1.26,3.95,1.27h.05c2.21,0,4-.57,4-1.27V3.34C17.5,4.05,15.71,4.62,13.5,4.62Z" fill="url(#azure-cache-for-redis-ac420e47-f190-46df-ab14-7e1f8fa3a93d)" /><path d="M17.5,3.34c0,.71-1.79,1.28-4,1.28s-4-.57-4-1.28,1.79-1.27,4-1.27,4,.57,4,1.27" fill="#e8e8e8" /><path d="M16.57,3.24c0,.45-1.38.81-3.07.81s-3.07-.36-3.07-.81,1.38-.81,3.07-.81,3.07.36,3.07.81" fill="#50e6ff" /><path d="M13.5,3.43a8.65,8.65,0,0,0-2.43.3,7.8,7.8,0,0,0,2.43.32,7.8,7.8,0,0,0,2.43-.32A8.65,8.65,0,0,0,13.5,3.43Z" fill="#32bedd" /><path d="M4.5,4.62c-2.21,0-4-.57-4-1.28v6.79c0,.69,1.76,1.26,4,1.27h0c2.21,0,4-.57,4-1.27V3.34C8.5,4.05,6.71,4.62,4.5,4.62Z" fill="url(#azure-cache-for-redis-a51ffd84-af0a-457a-abee-1f70656da56f)" /><path d="M8.5,3.34c0,.71-1.79,1.28-4,1.28s-4-.57-4-1.28,1.79-1.27,4-1.27,4,.57,4,1.27" fill="#e8e8e8" /><path d="M7.57,3.24c0,.45-1.38.81-3.07.81s-3.07-.36-3.07-.81,1.38-.81,3.07-.81,3.07.36,3.07.81" fill="#50e6ff" /><path d="M4.5,3.43a8.65,8.65,0,0,0-2.43.3,7.8,7.8,0,0,0,2.43.32,7.8,7.8,0,0,0,2.43-.32A8.65,8.65,0,0,0,4.5,3.43Z" fill="#32bedd" /><g><path d="M9,9.15c-2.21,0-4-.57-4-1.28v6.79c0,.7,1.76,1.26,3.95,1.27H9c2.21,0,4-.57,4-1.27V7.87C13,8.58,11.21,9.15,9,9.15Z" fill="url(#azure-cache-for-redis-bbb4b87e-b1f0-4042-b6d6-9b91b5dac799)" /><path d="M13,7.87c0,.71-1.79,1.28-4,1.28S5,8.58,5,7.87,6.79,6.6,9,6.6s4,.57,4,1.27" fill="#e8e8e8" /><path d="M12.07,7.77c0,.45-1.38.81-3.07.81s-3.07-.36-3.07-.81S7.31,7,9,7s3.07.36,3.07.81" fill="#50e6ff" /><path d="M9,8a8.65,8.65,0,0,0-2.43.3A7.8,7.8,0,0,0,9,8.58a7.8,7.8,0,0,0,2.43-.32A8.65,8.65,0,0,0,9,8Z" fill="#32bedd" /></g></g>'
+  },
+  "managed-redis": {
+    "name": "Azure Managed Redis",
+    "nameJa": "Azure Managed Redis",
+    "markup": '<g transform="scale(3.5555)"><defs><linearGradient id="azure-managed-redis-uuid-e275200f-8047-483d-9165-335881dc0492" x1=".562" y1="2.684" x2="17.561" y2="19.437" gradientTransform="translate(0 20) scale(1 -1)" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#757575" /><stop offset=".915" stop-color="#b0b0b0" /></linearGradient><linearGradient id="azure-managed-redis-uuid-a8467988-fb81-47a9-9300-4fac9dcb97a4" x1="13.321" y1="15.339" x2="4.581" y2="6.563" gradientTransform="translate(0 20) scale(1 -1)" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#0078d4" /><stop offset="1" stop-color="#005ba1" /></linearGradient></defs><path d="M9,.5c.276,0,.5.224.5.5v1h2v-1c0-.276.224-.5.5-.5s.5.224.5.5v1h1.5c1.105,0,2,.895,2,2v1.5h1c.276,0,.5.224.5.5s-.224.5-.5.5h-1v2h1c.276,0,.5.224.5.5s-.224.5-.5.5h-1v2h1c.276,0,.5.224.5.5s-.224.5-.5.5h-1v1.5c0,1.105-.895,2-2,2h-1.5v1c0,.276-.224.5-.5.5s-.5-.224-.5-.5v-1h-2v1c0,.276-.224.5-.5.5s-.5-.224-.5-.5v-1h-2v1c0,.276-.224.5-.5.5s-.5-.224-.5-.5v-1h-1.5c-1.105,0-2-.895-2-2v-1.5h-1c-.276,0-.5-.224-.5-.5s.224-.5.5-.5h1v-2h-1c-.276,0-.5-.224-.5-.5s.224-.5.5-.5h1v-2h-1c-.276,0-.5-.224-.5-.5s.224-.5.5-.5h1v-1.5c0-1.105.895-2,2-2h1.5v-1c0-.276.224-.5.5-.5s.5.224.5.5v1h2v-1c0-.276.224-.5.5-.5ZM8.984,3h-2.968c-.005,0-.01,0-.016,0s-.011,0-.016,0h-1.984c-.552,0-1,.448-1,1v10c0,.552.448,1,1,1h1.984c.005,0,.01,0,.016,0s.011,0,.016,0h2.968c.005,0,.01,0,.016,0s.011,0,.016,0h2.968c.005,0,.01,0,.016,0,.005,0,.01,0,.016,0h1.984c.552,0,1-.448,1-1v-1.978c0-.007,0-.015,0-.022s0-.015,0-.022v-2.955c0-.007,0-.015,0-.022s0-.015,0-.022v-2.955c0-.007,0-.015,0-.022s0-.015,0-.022v-1.978c0-.552-.448-1-1-1h-1.984c-.005,0-.01,0-.016,0-.005,0-.011,0-.016,0h-2.968c-.005,0-.01,0-.016,0s-.011,0-.016,0Z" fill="url(#azure-managed-redis-uuid-e275200f-8047-483d-9165-335881dc0492)" fill-rule="evenodd" /><rect x="4" y="4" width="10" height="10" rx=".5" ry=".5" fill="url(#azure-managed-redis-uuid-a8467988-fb81-47a9-9300-4fac9dcb97a4)" /><path d="M12.124,9.31c-.484.567-1.007,1.214-2.053,1.214-.934,0-1.282-.765-1.307-1.387.205.402.605.728,1.229.713,1.201-.036,2.024-1.043,2.024-1.961,0-1.097-.881-1.889-2.411-1.889-1.094,0-2.45.387-3.341.998-.01.63.368,1.448.504,1.358.772-.516,1.385-.848,1.979-1.014-.879.911-2.989,3.026-3.248,3.398.029.342.484,1.259.707,1.259.068,0,.126-.036.194-.099.636-.664,1.155-1.259,1.616-1.833.065.841.51,1.869,1.754,1.869,1.114,0,2.218-.747,2.721-2.429.058-.207-.213-.369-.368-.198ZM10.855,7.952c0,.531-.562.792-1.075.792-.274,0-.485-.067-.652-.154.307-.431.61-.874.936-1.347.575.09.79.387.79.709Z" fill="#fff" /></g>'
+  },
+  "key-vault": {
+    "name": "Azure Key Vault",
+    "nameJa": "Azure Key Vault",
+    "markup": '<g transform="scale(3.5555)"><defs><radialGradient id="azure-key-vault-fb114c93-7c16-4540-899a-0796041629e6" cx="9" cy="9" r="8.5" gradientUnits="userSpaceOnUse"><stop offset="0.18" stop-color="#5ea0ef" /><stop offset="0.56" stop-color="#5c9fee" /><stop offset="0.69" stop-color="#559ced" /><stop offset="0.78" stop-color="#4a97e9" /><stop offset="0.86" stop-color="#3990e4" /><stop offset="0.93" stop-color="#2387de" /><stop offset="0.99" stop-color="#087bd6" /><stop offset="1" stop-color="#0078d4" /></radialGradient><radialGradient id="azure-key-vault-ec478bd3-5b38-4e7f-b661-11f355578bff" cx="38.95" cy="182.07" r="9.88" gradientTransform="translate(-28.71 -163.24) scale(0.94 0.94)" gradientUnits="userSpaceOnUse"><stop offset="0.27" stop-color="#ffd70f" /><stop offset="0.49" stop-color="#ffcb12" /><stop offset="0.88" stop-color="#feac19" /><stop offset="1" stop-color="#fea11b" /></radialGradient></defs><path id="azure-key-vault-aacf8311-a317-400f-b613-74bd00da5ce3" d="M9,.5A8.5,8.5,0,1,0,17.5,9,8.51,8.51,0,0,0,9,.5ZM9,16.34A7.34,7.34,0,1,1,16.34,9,7.34,7.34,0,0,1,9,16.34Z" fill="url(#azure-key-vault-fb114c93-7c16-4540-899a-0796041629e6)" /><circle cx="9" cy="9" r="7.34" fill="#fff" /><g><path id="azure-key-vault-bd983c41-db73-40ec-a4f4-da1213fc9924" d="M13.44,7.33a1.84,1.84,0,0,0,0-2.59h0L10.29,1.58a1.83,1.83,0,0,0-2.58,0h0L4.56,4.74a1.84,1.84,0,0,0,0,2.59L7.18,10a.51.51,0,0,1,.15.36v4.88a.63.63,0,0,0,.18.44l1.2,1.2a.41.41,0,0,0,.58,0l1.16-1.16h0l.68-.68a.25.25,0,0,0,0-.34l-.49-.49a.27.27,0,0,1,0-.37l.49-.49a.25.25,0,0,0,0-.34l-.49-.49a.27.27,0,0,1,0-.37l.49-.49a.25.25,0,0,0,0-.34l-.68-.69v-.25ZM9,2.35A1,1,0,0,1,9,4.42,1,1,0,1,1,9,2.35Z" fill="url(#azure-key-vault-ec478bd3-5b38-4e7f-b661-11f355578bff)" /><path id="azure-key-vault-ad2e7e44-9bfd-4775-8bf4-8ef26a544921" d="M8.18,15.3h0a.23.23,0,0,0,.38-.17v-4a.24.24,0,0,0-.11-.2h0a.22.22,0,0,0-.34.2v4A.28.28,0,0,0,8.18,15.3Z" fill="#ff9300" opacity="0.75" /><rect id="azure-key-vault-a996fbff-3936-4b24-b407-369336c143ba" x="6.48" y="5.79" width="5.17" height="0.61" rx="0.28" fill="#ff9300" opacity="0.75" /><rect id="azure-key-vault-bb12d31c-3352-4a18-87dd-a169a4a8721d" x="6.48" y="6.78" width="5.17" height="0.61" rx="0.28" fill="#ff9300" opacity="0.75" /></g></g>'
+  },
+  "service-bus": {
+    "name": "Azure Service Bus",
+    "nameJa": "Azure Service Bus",
+    "markup": '<g transform="scale(3.5555)"><defs><linearGradient id="azure-service-bus-bbd02878-309a-4490-8196-946338d0f593" x1="8.995" y1="10.299" x2="8.995" y2="13.199" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#005ba1" /><stop offset="0.258" stop-color="#00589d" /><stop offset="0.525" stop-color="#004f90" /><stop offset="0.796" stop-color="#003f7c" /><stop offset="1" stop-color="#003067" /></linearGradient></defs><g><g id="azure-service-bus-b532e600-3623-4be6-9fa6-30d05fff56b1"><polygon points="13.387 7.4 13.382 7.396 13.382 7.384 13.363 7.384 8.997 4.405 4.631 7.384 4.612 7.384 4.612 7.396 4.606 7.4 4.612 7.4 4.612 13.201 13.382 13.201 13.382 7.4 13.387 7.4" fill="#50e6ff" /><path d="M4.606,7.4c0-.1.008,5.681.008,5.8L8.995,10.3Z" fill="#32bedd" /><path d="M13.384,7.4,8.995,10.3,13.376,13.2C13.376,13.083,13.384,7.3,13.384,7.4Z" fill="#198ab3" /><polygon points="8.995 10.299 4.614 13.194 4.614 13.199 13.376 13.199 13.376 13.194 8.995 10.299" fill="url(#azure-service-bus-bbd02878-309a-4490-8196-946338d0f593)" /><g><path d="M1.072,1.43h1.29a0,0,0,0,1,0,0v3.6a.286.286,0,0,1-.286.286H.786A.286.286,0,0,1,.5,5.035V2A.572.572,0,0,1,1.072,1.43Z" fill="#999" /><path d="M1.072,1.43h1.29a0,0,0,0,1,0,0v3.6a.286.286,0,0,1-.286.286H.786A.286.286,0,0,1,.5,5.035V2A.572.572,0,0,1,1.072,1.43Z" fill="#999" opacity="0.5" /></g><g><path d="M15.638,1.43h1.29A.572.572,0,0,1,17.5,2V5.035a.286.286,0,0,1-.286.286h-1.29a.286.286,0,0,1-.286-.286V1.43A0,0,0,0,1,15.638,1.43Z" fill="#999" /><path d="M15.638,1.43h1.29A.572.572,0,0,1,17.5,2V5.035a.286.286,0,0,1-.286.286h-1.29a.286.286,0,0,1-.286-.286V1.43A0,0,0,0,1,15.638,1.43Z" fill="#999" opacity="0.5" /></g><path d="M8.66-6.163H9.907a0,0,0,0,1,0,0v17a0,0,0,0,1,0,0H8.66a.567.567,0,0,1-.567-.567V-5.6A.567.567,0,0,1,8.66-6.163Z" transform="translate(11.337 -6.663) rotate(90)" fill="#949494" /><g><path d="M.786,12.679h1.29a.286.286,0,0,1,.286.286v3.6a0,0,0,0,1,0,0H1.072A.572.572,0,0,1,.5,16V12.965A.286.286,0,0,1,.786,12.679Z" fill="#999" /><path d="M.786,12.679h1.29a.286.286,0,0,1,.286.286v3.6a0,0,0,0,1,0,0H1.072A.572.572,0,0,1,.5,16V12.965A.286.286,0,0,1,.786,12.679Z" fill="#999" opacity="0.5" /></g><g><path d="M15.924,12.679h1.29a.286.286,0,0,1,.286.286V16a.572.572,0,0,1-.572.572h-1.29a0,0,0,0,1,0,0v-3.6A.286.286,0,0,1,15.924,12.679Z" fill="#999" /><path d="M15.924,12.679h1.29a.286.286,0,0,1,.286.286V16a.572.572,0,0,1-.572.572h-1.29a0,0,0,0,1,0,0v-3.6A.286.286,0,0,1,15.924,12.679Z" fill="#999" opacity="0.5" /></g><path d="M8.66,7.163H9.907a0,0,0,0,1,0,0v17a0,0,0,0,1,0,0H8.66a.567.567,0,0,1-.567-.567V7.73A.567.567,0,0,1,8.66,7.163Z" transform="translate(-6.663 24.663) rotate(-90)" fill="#949494" /></g></g></g>'
+  },
+  "event-hubs": {
+    "name": "Azure Event Hubs",
+    "nameJa": "Azure Event Hubs",
+    "markup": '<g transform="scale(3.5555)"><g><g id="azure-event-hubs-a53a4de8-371c-49da-a662-c4631299fc03"><path d="M10.83,8.42a.26.26,0,0,1-.24.27H8.5a.26.26,0,0,1-.27-.24V6.89a.26.26,0,0,1,.24-.27h2.09a.26.26,0,0,1,.27.24V8.42Z" fill="#76bc2d" /><path d="M14.54,10a.26.26,0,0,1-.24.27H12.21a.26.26,0,0,1-.27-.24V8.48a.26.26,0,0,1,.24-.27h2.09a.26.26,0,0,1,.27.24V10Z" fill="#76bc2d" /><path d="M10.83,11.6a.26.26,0,0,1-.24.27H8.5a.26.26,0,0,1-.27-.24V10.07a.26.26,0,0,1,.24-.27h2.09a.26.26,0,0,1,.27.24V11.6Z" fill="#76bc2d" /><path d="M7.12,6.84a.25.25,0,0,1-.23.26H4.74a.26.26,0,0,1-.27-.23V5.25A.26.26,0,0,1,4.71,5H6.8c.22,0,.32.11.32.27Z" fill="#86d633" /><path d="M7.12,10a.25.25,0,0,1-.23.27H4.74A.26.26,0,0,1,4.47,10V8.42a.26.26,0,0,1,.24-.26H6.8c.22,0,.32.11.32.26Z" fill="#76bc2d" /><path d="M7.12,13.19a.25.25,0,0,1-.23.27H4.74a.26.26,0,0,1-.27-.24V11.6a.25.25,0,0,1,.24-.26H6.8c.22,0,.32.1.32.26Z" fill="#76bc2d" /><g><path d="M1.07,1.51H2.36a0,0,0,0,1,0,0v3.6a.29.29,0,0,1-.29.29H.79A.29.29,0,0,1,.5,5.11v-3A.57.57,0,0,1,1.07,1.51Z" fill="#999" /><path d="M1.07,1.51H2.36a0,0,0,0,1,0,0v3.6a.29.29,0,0,1-.29.29H.79A.29.29,0,0,1,.5,5.11v-3A.57.57,0,0,1,1.07,1.51Z" fill="#999" opacity="0.5" /></g><g><path d="M15.64,1.51h1.29a.57.57,0,0,1,.57.57v3a.29.29,0,0,1-.29.29H15.92a.29.29,0,0,1-.29-.29V1.51A0,0,0,0,1,15.64,1.51Z" fill="#999" /><path d="M15.64,1.51h1.29a.57.57,0,0,1,.57.57v3a.29.29,0,0,1-.29.29H15.92a.29.29,0,0,1-.29-.29V1.51A0,0,0,0,1,15.64,1.51Z" fill="#999" opacity="0.5" /></g><path d="M8.66-6.08H9.91a0,0,0,0,1,0,0v17a0,0,0,0,1,0,0H8.66a.57.57,0,0,1-.57-.57V-5.52A.57.57,0,0,1,8.66-6.08Z" transform="translate(11.42 -6.58) rotate(90)" fill="#949494" /><g><path d="M.79,12.76H2.08a.29.29,0,0,1,.29.29v3.6a0,0,0,0,1,0,0H1.07a.57.57,0,0,1-.57-.57V13A.29.29,0,0,1,.79,12.76Z" fill="#999" /><path d="M.79,12.76H2.08a.29.29,0,0,1,.29.29v3.6a0,0,0,0,1,0,0H1.07a.57.57,0,0,1-.57-.57V13A.29.29,0,0,1,.79,12.76Z" fill="#999" opacity="0.5" /></g><g><path d="M15.92,12.76h1.29a.29.29,0,0,1,.29.29v3a.57.57,0,0,1-.57.57H15.64a0,0,0,0,1,0,0V13A.29.29,0,0,1,15.92,12.76Z" fill="#999" /><path d="M15.92,12.76h1.29a.29.29,0,0,1,.29.29v3a.57.57,0,0,1-.57.57H15.64a0,0,0,0,1,0,0V13A.29.29,0,0,1,15.92,12.76Z" fill="#999" opacity="0.5" /></g><path d="M8.66,7.24H9.91a0,0,0,0,1,0,0v17a0,0,0,0,1,0,0H8.66a.57.57,0,0,1-.57-.57V7.81A.57.57,0,0,1,8.66,7.24Z" transform="translate(-6.74 24.74) rotate(-90)" fill="#949494" /></g></g></g>'
+  },
+  "api-management": {
+    "name": "Azure API Management",
+    "nameJa": "Azure API Management",
+    "markup": '<g transform="scale(3.5555)"><defs><linearGradient id="azure-api-management-bf8a9583-aae9-48ff-87d8-fb8f44e7d6bd" x1="9" y1="16.82" x2="9" y2="1.18" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#198ab3" /><stop offset="0.09" stop-color="#1f9dc4" /><stop offset="0.24" stop-color="#28b5d9" /><stop offset="0.4" stop-color="#2dc6e9" /><stop offset="0.57" stop-color="#31d1f2" /><stop offset="0.78" stop-color="#32d4f5" /></linearGradient><linearGradient id="azure-api-management-f9b1bb8c-728e-4abf-bce5-6c11ac170c5b" x1="8.36" y1="11.35" x2="8.36" y2="14.46" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#c69aeb" /><stop offset="1" stop-color="#6f4bb2" /></linearGradient></defs><path d="M14.18,5.89A4.85,4.85,0,0,0,9.23,1.18,5,5,0,0,0,4.48,4.47,4.61,4.61,0,0,0,.5,9,4.67,4.67,0,0,0,5.29,13.5a3,3,0,0,0,.42,0h1.2a1.47,1.47,0,0,1-.11-.56v0A1.51,1.51,0,0,1,7,12.21H5.6l-.31,0A3.41,3.41,0,0,1,1.77,9,3.33,3.33,0,0,1,4.68,5.73l.76-.12.25-.73A3.73,3.73,0,0,1,9.23,2.45,3.6,3.6,0,0,1,12.91,5.9V7L14,7.15a2.59,2.59,0,0,1,2.26,2.49,2.63,2.63,0,0,1-2.62,2.54h-.15l-.08,0h-1A3.92,3.92,0,0,0,8.54,9a.64.64,0,1,0,0,1.27,2.65,2.65,0,0,1,0,5.29.64.64,0,1,0,0,1.27,3.92,3.92,0,0,0,3.87-3.34h1.05a.64.64,0,0,0,.2,0A3.91,3.91,0,0,0,17.5,9.64,3.86,3.86,0,0,0,14.18,5.89Z" fill="url(#azure-api-management-bf8a9583-aae9-48ff-87d8-fb8f44e7d6bd)" /><rect x="6.8" y="11.35" width="3.12" height="3.12" rx="1.54" fill="url(#azure-api-management-f9b1bb8c-728e-4abf-bce5-6c11ac170c5b)" /></g>'
+  },
+  "virtual-network": {
+    "name": "Azure Virtual Network",
+    "nameJa": "Azure Virtual Network",
+    "markup": '<g transform="scale(3.5555)"><defs><linearGradient id="azure-virtual-network-f020fb7e-2243-4501-8153-5d69bd3c34f7" x1="9.88" y1="8.59" x2="11.52" y2="10.23" gradientTransform="translate(2.03 -0.4) rotate(-0.08)" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#86d633" /><stop offset="1" stop-color="#5e9624" /></linearGradient><linearGradient id="azure-virtual-network-b3c2bc94-8c7c-48a2-9719-6ee899a43a97" x1="6.18" y1="8.59" x2="7.81" y2="10.23" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#86d633" /><stop offset="1" stop-color="#5e9624" /></linearGradient><linearGradient id="azure-virtual-network-e900c35d-0958-4d4f-b28f-302eeaaf52f5" x1="2.48" y1="8.59" x2="4.11" y2="10.23" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#86d633" /><stop offset="1" stop-color="#5e9624" /></linearGradient></defs><circle cx="12.74" cy="8.99" r="1.16" fill="url(#azure-virtual-network-f020fb7e-2243-4501-8153-5d69bd3c34f7)" /><circle cx="9.04" cy="9" r="1.16" fill="url(#azure-virtual-network-b3c2bc94-8c7c-48a2-9719-6ee899a43a97)" /><circle cx="5.34" cy="9" r="1.16" fill="url(#azure-virtual-network-e900c35d-0958-4d4f-b28f-302eeaaf52f5)" /><path d="M2.61,7.28h.94a.3.3,0,0,1,.3.3v6.94a.6.6,0,0,1-.6.6H2.31a0,0,0,0,1,0,0V7.58a.3.3,0,0,1,.3-.3Z" transform="translate(13.18 16.93) rotate(134.92)" fill="#50e6ff" /><path d="M2.56,2.91H3.5a.3.3,0,0,1,.3.3v7.43a0,0,0,0,1,0,0H2.86a.6.6,0,0,1-.6-.6V3.21a.3.3,0,0,1,.3-.3Z" transform="translate(5.66 -0.16) rotate(44.92)" fill="#1490df" /><path d="M14.15,7.28h.94a.6.6,0,0,1,.6.6v6.94a.3.3,0,0,1-.3.3h-.94a.3.3,0,0,1-.3-.3V7.28a0,0,0,0,1,0,0Z" transform="translate(12.32 -7.28) rotate(45.08)" fill="#50e6ff" /><path d="M14.81,2.91h.94a0,0,0,0,1,0,0v7.43a.3.3,0,0,1-.3.3H14.5a.3.3,0,0,1-.3-.3V3.51a.6.6,0,0,1,.6-.6Z" transform="translate(30.36 0.99) rotate(135.08)" fill="#1490df" /></g>'
+  },
+  "subnet": {
+    "name": "Subnet",
+    "nameJa": "\u30B5\u30D6\u30CD\u30C3\u30C8",
+    "markup": '<g transform="scale(3.5555)"><defs><linearGradient id="azure-subnet-bceb60dd-8b8c-4098-94f8-aeb4db2edaef" x1="9.033" y1="10.305" x2="9.033" y2="7.695" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#5e9624" /><stop offset="0.241" stop-color="#6fb02a" /><stop offset="0.501" stop-color="#7cc52f" /><stop offset="0.756" stop-color="#83d232" /><stop offset="1" stop-color="#86d633" /></linearGradient></defs><g id="azure-subnet-ac75c21e-2a93-464f-8048-f1518dab8b75"><g><path d="M9.031,7.7A1.305,1.305,0,1,0,10.338,9,1.305,1.305,0,0,0,9.031,7.7Z" fill="url(#azure-subnet-bceb60dd-8b8c-4098-94f8-aeb4db2edaef)" /><g><path d="M2.961,7.374h.888a.284.284,0,0,1,.284.284v6.551a.568.568,0,0,1-.568.568H2.677a0,0,0,0,1,0,0V7.659A.284.284,0,0,1,2.961,7.374Z" transform="translate(13.653 16.485) rotate(134.919)" fill="#50e6ff" /><path d="M2.913,3.244H3.8a.284.284,0,0,1,.284.284v7.015a0,0,0,0,1,0,0H3.2a.568.568,0,0,1-.568-.568V3.528a.284.284,0,0,1,.284-.284Z" transform="translate(5.847 -0.358) rotate(44.919)" fill="#1490df" /><path d="M13.867,7.374h.888a.568.568,0,0,1,.568.568v6.551a.284.284,0,0,1-.284.284h-.888a.284.284,0,0,1-.284-.284V7.374a0,0,0,0,1,0,0Z" transform="translate(12.132 -7.079) rotate(45.081)" fill="#50e6ff" /><path d="M14.483,3.244h.888a0,0,0,0,1,0,0v7.015a.284.284,0,0,1-.284.284H14.2a.284.284,0,0,1-.284-.284V3.812a.568.568,0,0,1,.568-.568Z" transform="translate(29.879 1.435) rotate(135.081)" fill="#1490df" /></g></g></g></g>'
+  },
+  "front-door": {
+    "name": "Azure Front Door",
+    "nameJa": "Azure Front Door",
+    "markup": '<g transform="scale(3.5555)"><defs><linearGradient id="azure-front-door-aa2ee697-e8d1-4da1-a8c5-64c8ebbb74cf" x1="9" y1="13.83" x2="9" y2="1.07" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#0078d4" /><stop offset="0.82" stop-color="#5ea0ef" /></linearGradient></defs><path d="M18,9.83A4,4,0,0,0,14.49,6,5.1,5.1,0,0,0,9.24,1.07a5.23,5.23,0,0,0-5,3.41A4.83,4.83,0,0,0,0,9.12a4.9,4.9,0,0,0,5.07,4.71l.44,0h8.21a.78.78,0,0,0,.22,0A4.09,4.09,0,0,0,18,9.83Z" fill="url(#azure-front-door-aa2ee697-e8d1-4da1-a8c5-64c8ebbb74cf)" /><path id="azure-front-door-f0276135-0079-4897-a518-21eb63472c16" d="M6.63,6.82h5.06v7H6.63Z" fill="#f2f2f2" /><path id="azure-front-door-e528878d-2ed7-4392-94e6-99c6fc971bcb" d="M12.61,6.37l-3.49-2a.25.25,0,0,0-.31.15s0,.06,0,.08V16.68a.25.25,0,0,0,.24.25h.08l3.49-2.06a.25.25,0,0,0,.17-.23v-8A.26.26,0,0,0,12.61,6.37Z" fill="#50e6ff" /></g>'
+  },
+  "application-insights": {
+    "name": "Application Insights",
+    "nameJa": "Application Insights",
+    "markup": '<g transform="scale(3.5555)"><defs><radialGradient id="azure-application-insights-a7a1c431-6c6d-4a8f-9a69-8da437e5b0c5" cx="9" cy="7.35" r="6.42" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#b77af4" /><stop offset="0.21" stop-color="#b378f2" /><stop offset="0.43" stop-color="#a672ed" /><stop offset="0.65" stop-color="#9267e4" /><stop offset="0.88" stop-color="#7559d8" /><stop offset="1" stop-color="#624fd0" /></radialGradient><linearGradient id="azure-application-insights-ec0c4f0d-5c8e-4882-96a1-89d61808eb49" x1="9.02" y1="3.91" x2="9.08" y2="11.49" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#f2f2f2" /><stop offset="0.23" stop-color="#f1f1f2" stop-opacity="0.99" /><stop offset="0.37" stop-color="#ededf1" stop-opacity="0.95" /><stop offset="0.48" stop-color="#e7e5f0" stop-opacity="0.89" /><stop offset="0.58" stop-color="#dedbee" stop-opacity="0.81" /><stop offset="0.67" stop-color="#d3ceeb" stop-opacity="0.7" /><stop offset="0.76" stop-color="#c4bee8" stop-opacity="0.57" /><stop offset="0.84" stop-color="#b4abe5" stop-opacity="0.41" /><stop offset="0.92" stop-color="#a095e1" stop-opacity="0.22" /><stop offset="0.99" stop-color="#8b7ddc" stop-opacity="0.02" /><stop offset="1" stop-color="#897bdc" stop-opacity="0" /></linearGradient></defs><path d="M10.23,17.39l.81-.87V14.2H7v2.32l.81.87A.32.32,0,0,0,8,17.5h2A.32.32,0,0,0,10.23,17.39Z" fill="#cecece" /><path d="M9,.5A5.89,5.89,0,0,0,3.09,7.07c.27,2.47,2.62,3.62,3.29,6.75a.49.49,0,0,0,.47.38h4.3a.49.49,0,0,0,.47-.38c.67-3.13,3-4.28,3.29-6.75A5.89,5.89,0,0,0,9,.5ZM7,14.2" fill="url(#azure-application-insights-a7a1c431-6c6d-4a8f-9a69-8da437e5b0c5)" /><path d="M11.46,3.79a1.4,1.4,0,0,0-1.35,1.44V6H8V5.23A1.41,1.41,0,0,0,6.59,3.79,1.4,1.4,0,0,0,5.24,5.23,1.41,1.41,0,0,0,6.59,6.68h.64v6a.36.36,0,0,0,.72,0v-6h2.16v6a.36.36,0,1,0,.72,0v-6h.63a1.4,1.4,0,0,0,1.35-1.45A1.4,1.4,0,0,0,11.46,3.79ZM7.23,6H6.55a.74.74,0,0,1-.68-.77.74.74,0,0,1,.68-.77.74.74,0,0,1,.68.77Zm4.28,0h-.68V5.19a.68.68,0,1,1,1.35,0A.73.73,0,0,1,11.51,6Z" fill="url(#azure-application-insights-ec0c4f0d-5c8e-4882-96a1-89d61808eb49)" /><polygon points="6.96 15.8 11.04 15.01 11.04 14.56 6.96 15.36 6.96 15.8" fill="#999" /><polygon points="11.04 16.11 11.04 15.67 6.96 16.48 6.96 16.52 7.27 16.86 11.04 16.11" fill="#999" /></g>'
+  },
+  "log-analytics": {
+    "name": "Log Analytics workspace",
+    "nameJa": "Log Analytics \u30EF\u30FC\u30AF\u30B9\u30DA\u30FC\u30B9",
+    "markup": '<g transform="scale(3.5555)"><defs><linearGradient id="azure-log-analytics-a997e203-1d7d-4cb9-b131-5dc44e029b46" x1="5.23" y1="17.45" x2="5.23" y2="8.09" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#1988d9" /><stop offset="0.9" stop-color="#54aef0" /></linearGradient><linearGradient id="azure-log-analytics-e122e9d8-aee5-4f1a-a60e-b1eae355daa5" x1="11.5" y1="12.45" x2="11.5" y2="0.55" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#198ab3" /><stop offset="0.01" stop-color="#198bb4" /><stop offset="0.44" stop-color="#27b2d7" /><stop offset="0.79" stop-color="#2fcbed" /><stop offset="1" stop-color="#32d4f5" /></linearGradient></defs><path d="M5.59,13.13H9.91v4.32H5.59ZM1.15,17.45H4.87V13.13H.55v3.72A.6.6,0,0,0,1.15,17.45Zm-.6-5H4.87V8.09H.55Z" fill="url(#azure-log-analytics-a997e203-1d7d-4cb9-b131-5dc44e029b46)" /><path d="M11.5.55a5.89,5.89,0,0,1,5.95,6,5.89,5.89,0,0,1-5.95,5.95H5.55V6.5A5.89,5.89,0,0,1,11.5.55Z" fill-rule="evenodd" fill="url(#azure-log-analytics-e122e9d8-aee5-4f1a-a60e-b1eae355daa5)" /><rect x="7.59" y="5.65" width="1.36" height="4.08" fill="#fff" /><rect x="10.31" y="7.01" width="1.36" height="2.72" fill="#fff" /><rect x="13.03" y="4.29" width="1.36" height="5.44" fill="#fff" /></g>'
+  }
+};
+
+// ../../packages/cloud-icons/src/index.ts
+var CLOUD_ICON_SIZE = 48;
+var TABLES = {
+  aws: AWS_ICONS,
+  azure: AZURE_ICONS
+};
+function cloudIconOf(namespace2, kind2) {
+  if (!Object.hasOwn(TABLES, namespace2)) return null;
+  const table = TABLES[namespace2];
+  return Object.hasOwn(table, kind2) ? table[kind2] : null;
+}
+function cloudIconOfNode(node2) {
+  if (!node2.id.includes(":")) return null;
+  return cloudIconOf(node2.id.split(":")[0], node2.type);
+}
+
+// ../../packages/architecture-layout/src/edgeGrade.ts
+var MINOR = /* @__PURE__ */ new Set(["DEPENDS_ON", "DEPLOYED_ON", "EXPOSES"]);
+function edgeGrade(e) {
+  if (e.relation === "BINDS_TO") return "bind";
+  if (e.relation !== void 0 && MINOR.has(e.relation)) return "minor";
+  return "main";
+}
+function hiddenByDefault(e) {
+  return e.relation === "DEPENDS_ON" && e.properties?.permission !== void 0;
+}
+
+// ../../packages/architecture-layout/src/nodeBox.ts
+var ICON_SIZE = CLOUD_ICON_SIZE;
+var NAME_TOP = ICON_SIZE + 6;
+var NAME_LINE = 16;
+var BOTTOM = 4;
+var USER_H = NAME_TOP + NAME_LINE + BOTTOM;
+
+// ../../packages/architecture-layout/src/edgeLabels.ts
+var WORDED = /* @__PURE__ */ new Set(["READS_FROM", "WRITES_TO", "PUBLISHES_TO", "CONSUMES_FROM"]);
+var PERMISSION_WORDS = {
+  read: { ja: "\u8AAD\u307F\u53D6\u308A", en: "read" },
+  write: { ja: "\u66F8\u304D\u8FBC\u307F", en: "write" },
+  readwrite: { ja: "\u8AAD\u307F\u66F8\u304D", en: "read and write" },
+  delete: { ja: "\u524A\u9664", en: "delete" },
+  full: { ja: "\u3059\u3079\u3066\u306E\u64CD\u4F5C", en: "full access" },
+  send: { ja: "\u9001\u4FE1", en: "send" },
+  consume: { ja: "\u53D7\u4FE1", en: "consume" },
+  poll: { ja: "\u53D7\u4FE1", en: "poll" },
+  publish: { ja: "\u767A\u884C", en: "publish" },
+  invoke: { ja: "\u547C\u3073\u51FA\u3057", en: "invoke" }
+};
+var str = (v) => typeof v === "string" && v !== "";
+function permissionsOf(edges) {
+  const set2 = /* @__PURE__ */ new Set();
+  for (const e of edges) {
+    const p = e.properties?.permission;
+    if (!str(p)) continue;
+    for (const x of p.split(",")) if (x.trim() !== "") set2.add(x.trim());
+  }
+  if (set2.has("read") && set2.has("write")) {
+    set2.delete("read");
+    set2.delete("write");
+    set2.add("readwrite");
+  }
+  const order = Object.keys(PERMISSION_WORDS);
+  const rank = (p) => order.includes(p) ? order.indexOf(p) : order.length;
+  return [...set2].sort((a, b) => rank(a) - rank(b) || (a < b ? -1 : a > b ? 1 : 0));
+}
+function edgeLabelParts(view) {
+  const nodes = new Map(view.nodes.map((n) => [n.id, n]));
+  const pair = (e) => `${e.source}\0${e.target}`;
+  const perms = /* @__PURE__ */ new Map();
+  const binds = /* @__PURE__ */ new Set();
+  for (const e of view.edges) {
+    if (e.relation === "DEPENDS_ON" && e.properties?.permission !== void 0)
+      perms.set(pair(e), [...perms.get(pair(e)) ?? [], e]);
+    if (e.relation === "BINDS_TO") binds.add(pair(e));
+  }
+  const out = /* @__PURE__ */ new Map();
+  for (const e of view.edges) {
+    if (e.relation === "BINDS_TO") {
+      const names = [];
+      const b = e.properties?.bindings;
+      if (Array.isArray(b)) {
+        for (const x of b) if (str(x) && !names.includes(x)) names.push(x);
+      }
+      const refs = nodes.get(e.source)?.properties?.environmentReferences;
+      if (Array.isArray(refs))
+        for (const r of refs) {
+          const ref = r;
+          if (ref && ref.resource === e.target && str(ref.name) && !names.includes(ref.name))
+            names.push(ref.name);
+        }
+      const permissions = permissionsOf(perms.get(pair(e)) ?? []);
+      out.set(e.id, names.length > 0 || permissions.length > 0 ? { names, permissions } : null);
+    } else if (e.relation === "DEPENDS_ON" && e.properties?.permission !== void 0) {
+      const permissions = permissionsOf([e]);
+      out.set(e.id, binds.has(pair(e)) || permissions.length === 0 ? null : { names: [], permissions });
+    } else if (e.relation !== void 0 && WORDED.has(e.relation)) {
+      out.set(e.id, { names: [], permissions: [], relation: e.relation });
+    } else out.set(e.id, null);
+  }
+  return out;
+}
+function permissionText(perms, locale) {
+  const words = perms.map((p) => Object.hasOwn(PERMISSION_WORDS, p) ? PERMISSION_WORDS[p]?.[locale] : p);
+  return words.join(locale === "ja" ? "\u3068" : ", ");
+}
+
+// ../../packages/architecture-layout/src/frames.ts
+function toolOf(id, members2) {
+  if (id.startsWith("terraform:")) return "Terraform";
+  if (id.startsWith("bicep:")) return "Bicep";
+  const props = members2.map((n) => n.properties ?? {});
+  if (props.some((p) => p.source === "cdk-source" || typeof p.cdkPath === "string")) return "CDK";
+  if (props.some((p) => typeof p.resourceType === "string" && p.resourceType.startsWith("AWS::Serverless::")))
+    return "SAM";
+  return "CloudFormation";
+}
+function fileOf(members2) {
+  const files = new Set(members2.map((n) => n.properties?.file));
+  const [only] = files;
+  return files.size === 1 && typeof only === "string" && only !== "" ? only : void 0;
+}
+var NAMESPACES = /* @__PURE__ */ new Set(["aws", "azure", "cloudflare"]);
+var APP_TYPES = /* @__PURE__ */ new Set(["frontend", "service", "route", "route-group", "mcp-tool", "tool-group"]);
+function namespaceOf(n) {
+  const head = n.id.split(":")[0] ?? "";
+  if (NAMESPACES.has(head)) return head;
+  if (n.scope === "application" || APP_TYPES.has(n.type)) return "application";
+  return null;
+}
+var str2 = (v) => typeof v === "string" && v !== "" ? v : void 0;
+function stackOf(n) {
+  const p = n.properties ?? {};
+  const stack = str2(p.stack);
+  if (stack) return { id: `stack:${stack}`, name: stack };
+  if (Array.isArray(p.terraform)) {
+    const dirs = p.terraform.map((t) => str2(t?.module)).filter((d) => d !== void 0).sort();
+    const dir = dirs[0];
+    if (dir !== void 0) return { id: `terraform:${dir}`, name: dir === "." ? "Terraform" : dir };
+  }
+  const bicep = p.bicep;
+  const file2 = str2(bicep?.file);
+  if (file2) return { id: `bicep:${file2}`, name: file2 };
+  return null;
+}
+function regionOf(n) {
+  return str2(n.properties?.region);
+}
+var idTail = (id) => id.split(/[/:#]/).filter((s) => s !== "").at(-1) ?? id;
+var compare = (a, b) => a < b ? -1 : a > b ? 1 : 0;
+function commonPrefix(paths) {
+  let common = [...paths[0] ?? []];
+  for (const p of paths.slice(1)) {
+    let k = 0;
+    while (k < common.length && k < p.length && common[k] === p[k]) k++;
+    common = common.slice(0, k);
+  }
+  return common;
+}
+function framesOf(nodes, settings, opts) {
+  const frames = /* @__PURE__ */ new Map();
+  const path = /* @__PURE__ */ new Map();
+  const byId = new Map(nodes.map((n) => [n.id, n]));
+  const stacks = new Map(nodes.map((n) => [n.id, stackOf(n)]));
+  const useStacks = new Set([...stacks.values()].filter((s) => s !== null).map((s) => s.id)).size >= 2;
+  const spaces = new Map(
+    nodes.map((n) => {
+      const ns = opts.tiers ? null : namespaceOf(n);
+      return [n.id, ns === "application" ? null : ns];
+    })
+  );
+  const useSpaces = new Set([...spaces.values()].filter((s) => s !== null)).size >= 2;
+  const regions = new Map(nodes.map((n) => [n.id, opts.tiers ? void 0 : regionOf(n)]));
+  const regionSet = new Set([...regions.values()].filter((r) => r !== void 0));
+  const useRegions = regionSet.size >= 2;
+  const stackSpaces = /* @__PURE__ */ new Map();
+  for (const n of nodes) {
+    const s = stacks.get(n.id);
+    const ns = spaces.get(n.id);
+    if (s && ns) stackSpaces.set(s.id, (stackSpaces.get(s.id) ?? /* @__PURE__ */ new Set()).add(ns));
+  }
+  const stackIn = (n, s) => {
+    const ns = useSpaces ? spaces.get(n.id) : null;
+    return ns && (stackSpaces.get(s.id)?.size ?? 0) > 1 ? `${s.id}@${ns}` : s.id;
+  };
+  const stackRegions = /* @__PURE__ */ new Map();
+  if (useRegions)
+    for (const n of nodes) {
+      const s = stacks.get(n.id);
+      if (!s) continue;
+      const id = stackIn(n, s);
+      stackRegions.set(id, (stackRegions.get(id) ?? /* @__PURE__ */ new Set()).add(regions.get(n.id) ?? ""));
+    }
+  const stackMembers = /* @__PURE__ */ new Map();
+  for (const n of nodes) {
+    const p = [];
+    const ns = useSpaces ? spaces.get(n.id) : null;
+    const nsFrame = ns ? `ns:${ns}` : void 0;
+    if (ns && nsFrame) {
+      if (!frames.has(nsFrame)) frames.set(nsFrame, { id: nsFrame, name: ns, kind: "namespace" });
+      p.push(nsFrame);
+    }
+    const region = useRegions ? regions.get(n.id) : void 0;
+    let regionFrame;
+    if (region) {
+      const plain = `region:${region}`;
+      const taken = frames.get(plain);
+      regionFrame = taken && taken.parent !== nsFrame ? `${plain}@${ns}` : plain;
+      if (!frames.has(regionFrame))
+        frames.set(regionFrame, {
+          id: regionFrame,
+          name: region,
+          kind: "region",
+          ...nsFrame ? { parent: nsFrame } : {}
+        });
+      p.push(regionFrame);
+    }
+    const s = useStacks ? stacks.get(n.id) : null;
+    if (s) {
+      const base = stackIn(n, s);
+      const id = region && (stackRegions.get(base)?.size ?? 0) > 1 ? `${base}@${region}` : base;
+      const parent = regionFrame ?? nsFrame;
+      if (!frames.has(id)) frames.set(id, { id, name: s.name, kind: "stack", ...parent ? { parent } : {} });
+      stackMembers.set(id, [...stackMembers.get(id) ?? [], n]);
+      p.push(id);
+    }
+    path.set(n.id, p);
+  }
+  const [onlyRegion] = regionSet;
+  for (const [id, list2] of stackMembers) {
+    const f = frames.get(id);
+    const tool = toolOf(f.id, list2);
+    const file2 = tool === "Bicep" ? void 0 : fileOf(list2);
+    const region = regionSet.size === 1 && list2.every((n) => regions.get(n.id) === onlyRegion) ? onlyRegion : void 0;
+    frames.set(id, { ...f, tool, ...file2 ? { file: file2 } : {}, ...region ? { region } : {} });
+  }
+  const asFrame = /* @__PURE__ */ new Map();
+  if (!opts.tiers) {
+    const vpcMembers = /* @__PURE__ */ new Map();
+    for (const n of nodes) {
+      const vpc = str2(n.properties?.vpc);
+      if (vpc === void 0 || vpc === n.id) continue;
+      vpcMembers.set(vpc, [...vpcMembers.get(vpc) ?? [], n.id]);
+    }
+    for (const [vpc, ids] of [...vpcMembers].sort(([a], [b]) => compare(a, b))) {
+      const common = commonPrefix(ids.map((m) => path.get(m) ?? []));
+      const id = `vpc:${vpc}`;
+      const parent = common.at(-1);
+      const own2 = byId.get(vpc);
+      const label = settings[vpc]?.label;
+      const name2 = own2 ? typeof label === "string" && label !== "" ? label : own2.name : idTail(vpc);
+      frames.set(id, { id, name: name2, kind: "vpc", ...parent ? { parent } : {}, ...own2 ? { node: vpc } : {} });
+      for (const m of ids) path.set(m, [...common, id]);
+      if (own2) {
+        asFrame.set(vpc, id);
+        path.set(vpc, common);
+      }
+    }
+  }
+  const containerOf = /* @__PURE__ */ new Map();
+  const members2 = /* @__PURE__ */ new Map();
+  if (!opts.tiers)
+    for (const n of nodes) {
+      if (asFrame.has(n.id)) continue;
+      const g = settings[n.id]?.group;
+      if (typeof g === "string" && g !== "") members2.set(g, [...members2.get(g) ?? [], n.id]);
+    }
+  for (const [name2, ids] of [...members2].sort(([a], [b]) => compare(a, b))) {
+    const common = commonPrefix(ids.map((m) => path.get(m) ?? []));
+    const id = `group:${name2}`;
+    const parent = common.at(-1);
+    frames.set(id, { id, name: name2, kind: "group", ...parent ? { parent } : {} });
+    for (const m of ids) containerOf.set(m, id);
+  }
+  for (const n of nodes) {
+    if (containerOf.has(n.id)) continue;
+    const inner = path.get(n.id)?.at(-1);
+    if (inner) containerOf.set(n.id, inner);
+  }
+  const used = /* @__PURE__ */ new Set();
+  const mark = (id) => {
+    while (id !== void 0 && !used.has(id)) {
+      used.add(id);
+      id = frames.get(id)?.parent;
+    }
+  };
+  for (const [n, id] of containerOf) if (!asFrame.has(n)) mark(id);
+  for (const [n, frame] of [...asFrame]) {
+    if (used.has(frame)) continue;
+    asFrame.delete(n);
+    mark(containerOf.get(n));
+  }
+  const depth = (f) => f.parent ? 1 + depth(frames.get(f.parent)) : 0;
+  const groups = [...frames.values()].filter((f) => used.has(f.id)).sort((a, b) => depth(a) - depth(b) || compare(a.id, b.id));
+  return { groups, containerOf, asFrame };
+}
+
+// ../../packages/architecture-layout/src/users.ts
+var USER_FACING = /* @__PURE__ */ new Set([
+  // AWS
+  "cloudfront",
+  "api-gateway",
+  "elb",
+  "appsync",
+  "amplify",
+  // Azure
+  "front-door",
+  "api-management",
+  "static-web-apps",
+  // Cloudflare
+  "worker-route",
+  "custom-domain",
+  "pages-project",
+  "mcp-portal",
+  // the application
+  "frontend"
+]);
+var compare2 = (a, b) => a < b ? -1 : a > b ? 1 : 0;
+function userEntries(view) {
+  const present = new Set(view.nodes.map((n) => n.id));
+  const fed = /* @__PURE__ */ new Set();
+  for (const e of view.edges)
+    if (e.source !== e.target && present.has(e.source) && present.has(e.target)) fed.add(e.target);
+  return view.nodes.filter((n) => USER_FACING.has(n.type) && !fed.has(n.id)).map((n) => n.id).sort(compare2);
+}
+
+// ../../packages/architecture-layout/src/mermaid.ts
+function text(raw) {
+  const one = raw.replace(/[\p{Cc}\p{Cf}\u2028\u2029]+/gu, " ").replace(/\s+/g, " ").trim().slice(0, 200);
+  return escapeMermaidText(one === "" ? "?" : one);
+}
+var COLOR_RE = /^#[0-9a-fA-F]{6}$/;
+var NAMESPACE_NAMES = { aws: "AWS", azure: "Azure", cloudflare: "Cloudflare" };
+var FRAME_PREFIX = {
+  namespace: "ns",
+  region: "r",
+  stack: "s",
+  vpc: "v",
+  group: "g"
+};
+function serviceName(n) {
+  const icon = cloudIconOfNode(n);
+  if (icon) return escapeMermaidText(icon.name);
+  const names = TYPE_NAMES.en;
+  const type = n.type === "service" && n.properties?.framework === "hono" ? "hono-app" : n.type;
+  return Object.hasOwn(names, type) ? escapeMermaidText(names[type]) : text(n.type);
+}
+function frameTitle(f) {
+  switch (f.kind) {
+    case "namespace":
+      return Object.hasOwn(NAMESPACE_NAMES, f.name) ? NAMESPACE_NAMES[f.name] : text(f.name);
+    case "region":
+      return `Region: ${text(f.name)}`;
+    case "stack":
+      return [f.tool ?? "Stack", text(f.name), f.file ? text(f.file) : null, f.region ? text(f.region) : null].filter((x) => x !== null).join(" \xB7 ");
+    case "vpc":
+      return `${f.id.startsWith("vpc:azure:") ? "VNet" : "VPC"}: ${text(f.name)}`;
+    case "group":
+      return text(f.name);
+  }
+}
+function renderViewMermaid(view, settings = {}, opts = {}) {
+  const nodes = view.nodes;
+  const index = /* @__PURE__ */ new Map();
+  nodes.forEach((n, i) => {
+    index.set(n.id, i);
+  });
+  const present = new Set(index.keys());
+  const edges = view.edges.filter((e) => present.has(e.source) && present.has(e.target));
+  const clean = {};
+  for (const [id, s] of Object.entries(settings)) if (s) clean[id] = s;
+  const frames = framesOf(nodes, clean, { tiers: opts.tiers === true });
+  const frameIds = /* @__PURE__ */ new Map();
+  const counters = /* @__PURE__ */ new Map();
+  for (const f of frames.groups) {
+    const prefix = FRAME_PREFIX[f.kind];
+    const k = (counters.get(prefix) ?? 0) + 1;
+    counters.set(prefix, k);
+    frameIds.set(f.id, `${prefix}${k}`);
+  }
+  const lines = ["flowchart LR"];
+  const boxLine = (n, indent) => {
+    const label = settings[n.id]?.label;
+    const name2 = typeof label === "string" && label !== "" ? label : n.name;
+    const mark = n.verification === "inferred" ? " (inferred)" : "";
+    return `${indent}n${index.get(n.id)}["${text(name2)}${mark}<br/>${serviceName(n)}"]`;
+  };
+  const childFrames = /* @__PURE__ */ new Map();
+  for (const f of frames.groups) childFrames.set(f.parent, [...childFrames.get(f.parent) ?? [], f]);
+  const childNodes = /* @__PURE__ */ new Map();
+  for (const n of nodes) {
+    if (frames.asFrame.has(n.id)) continue;
+    const c = frames.containerOf.get(n.id);
+    childNodes.set(c, [...childNodes.get(c) ?? [], n]);
+  }
+  const emit = (container, depth) => {
+    const indent = "  ".repeat(depth);
+    for (const f of childFrames.get(container) ?? []) {
+      lines.push(`${indent}subgraph ${frameIds.get(f.id)}["${frameTitle(f)}"]`);
+      emit(f.id, depth + 1);
+      lines.push(`${indent}end`);
+    }
+    for (const n of childNodes.get(container) ?? []) lines.push(boxLine(n, indent));
+  };
+  emit(void 0, 1);
+  const entries = userEntries({ nodes, edges }).filter((id) => !frames.asFrame.has(id));
+  if (entries.length > 0) {
+    lines.push('  users(("Users"))');
+    for (const id of entries) lines.push(`  users --> n${index.get(id)}`);
+  }
+  const inFrame = (nodeId2, frame) => {
+    let at = frames.containerOf.get(nodeId2);
+    while (at !== void 0) {
+      if (at === frame) return true;
+      at = frames.groups.find((f) => f.id === at)?.parent;
+    }
+    return false;
+  };
+  const end = (nodeId2, other) => {
+    const frame = frames.asFrame.get(nodeId2);
+    if (frame === void 0) return `n${index.get(nodeId2)}`;
+    if (other === nodeId2 || inFrame(other, frame) || frames.asFrame.get(other) === frame) return null;
+    return frameIds.get(frame) ?? null;
+  };
+  const labels = edgeLabelParts({ nodes, edges });
+  const relationWord = (r) => {
+    const words = RELATION_NAMES.en;
+    return Object.hasOwn(words, r) ? words[r] : text(r);
+  };
+  for (const e of edges) {
+    if (hiddenByDefault(e)) continue;
+    const s = end(e.source, e.target);
+    const t = end(e.target, e.source);
+    if (s === null || t === null) continue;
+    const grade = edgeGrade(e);
+    const parts = grade === "minor" ? null : labels.get(e.id) ?? null;
+    let label = "";
+    if (parts) {
+      if (parts.relation !== void 0) label = relationWord(parts.relation);
+      else {
+        const names = parts.names.map(text).join(", ");
+        const perms = parts.permissions.length > 0 ? text(permissionText(parts.permissions, "en")) : "";
+        label = names && perms ? `${names} (${perms})` : names || perms;
+      }
+    }
+    const arrow = e.verification === "inferred" ? grade === "minor" ? "-.-" : "-.->" : e.verification === "manual" ? "==>" : grade === "minor" ? "---" : "-->";
+    lines.push(label ? `  ${s} ${arrow}|"${label}"| ${t}` : `  ${s} ${arrow} ${t}`);
+  }
+  nodes.forEach((n, i) => {
+    const color = settings[n.id]?.color;
+    if (color && COLOR_RE.test(color) && !frames.asFrame.has(n.id)) lines.push(`  style n${i} fill:${color}`);
+  });
+  return lines.join("\n");
+}
+
+// ../../packages/architecture-layout/src/select.ts
+var compare3 = (a, b) => a < b ? -1 : a > b ? 1 : 0;
+var sortById = (items2) => [...items2].sort((x, y) => compare3(x.id, y.id));
+var bothEnds = (edges, ids) => edges.filter((e) => ids.has(e.source) && ids.has(e.target));
+function selectView(graph, type, opts = {}) {
+  if (type === "change") return selectChange(graph, opts.diff);
+  if (type === "overview") {
+    return {
+      type,
+      nodes: sortById(graph.nodes),
+      edges: sortById(bothEnds(graph.edges, new Set(graph.nodes.map((n) => n.id))))
+    };
+  }
+  if (type === "deployment") {
+    const byId = new Map(graph.nodes.map((n) => [n.id, n]));
+    const deploy = graph.edges.filter(
+      (e) => e.relation === "DEPLOYED_ON" || e.relation === "EXPOSES" && byId.get(e.source)?.type === "worker" && byId.get(e.target)?.type === "frontend"
+    );
+    const ids = new Set(deploy.flatMap((e) => [e.source, e.target]));
+    const nodes2 = graph.nodes.filter((n) => ids.has(n.id));
+    return {
+      type,
+      nodes: sortById(nodes2),
+      edges: sortById(bothEnds(deploy, new Set(nodes2.map((n) => n.id))))
+    };
+  }
+  const nodes = graph.nodes.filter((n) => n.scope === type);
+  return {
+    type,
+    nodes: sortById(nodes),
+    edges: sortById(bothEnds(graph.edges, new Set(nodes.map((n) => n.id))))
+  };
+}
+function selectChange(graph, diff) {
+  const empty = { type: "change", nodes: [], edges: [], nodeChanges: {} };
+  if (!diff) return empty;
+  const headNodes = new Map(graph.nodes.map((n) => [n.id, n]));
+  const headEdges = new Map(graph.edges.map((e) => [e.id, e]));
+  const removedNodes = new Map(diff.nodes.removed.map((n) => [n.id, n]));
+  const kinds = /* @__PURE__ */ new Map();
+  const mark = (id, kind2) => {
+    if (kind2 === "context" && kinds.has(id)) return;
+    kinds.set(id, kind2);
+  };
+  for (const n of diff.nodes.added) mark(n.id, "added");
+  for (const n of diff.nodes.removed) mark(n.id, "removed");
+  for (const n of diff.nodes.modified) mark(n.id, "modified");
+  for (const b of diff.bindings) if (headNodes.has(b.nodeId)) mark(b.nodeId, "modified");
+  for (const v of diff.verificationChanges)
+    if (v.target === "node" && headNodes.has(v.id)) mark(v.id, "modified");
+  const changed = /* @__PURE__ */ new Map();
+  for (const e of diff.edges.added) changed.set(e.id, e);
+  for (const e of diff.edges.removed) changed.set(e.id, e);
+  for (const c of diff.edges.relationChanged) {
+    const after = headEdges.get(c.after.id);
+    if (after) changed.set(after.id, after);
+  }
+  for (const v of diff.verificationChanges) {
+    const e = v.target === "edge" ? headEdges.get(v.id) : void 0;
+    if (e) changed.set(e.id, e);
+  }
+  const resolve2 = (id) => headNodes.get(id) ?? removedNodes.get(id);
+  const edges = [];
+  for (const e of changed.values()) {
+    if (!resolve2(e.source) || !resolve2(e.target)) continue;
+    edges.push(e);
+    mark(e.source, "context");
+    mark(e.target, "context");
+  }
+  const nodes = [];
+  for (const id of kinds.keys()) {
+    const n = resolve2(id);
+    if (n) nodes.push(n);
+  }
+  const shown = new Set(nodes.map((n) => n.id));
+  const nodeChanges = {};
+  for (const n of sortById(nodes)) nodeChanges[n.id] = kinds.get(n.id);
+  return { type: "change", nodes: sortById(nodes), edges: sortById(bothEnds(edges, shown)), nodeChanges };
+}
+
+// ../../packages/parsers/core/src/nodeFileSystem.ts
+import { readdir, readFile, realpath } from "node:fs/promises";
+import { join, relative, resolve, sep } from "node:path";
+
+// ../../packages/parsers/core/src/gitignore.ts
+function tokenize(glob) {
+  const out = [];
+  for (let i = 0; i < glob.length; i++) {
+    const ch = glob[i];
+    if (ch === "*" && glob[i + 1] === "*") {
+      if (glob[i + 2] === "/") {
+        out.push({ kind: "dirs" });
+        i += 2;
+      } else {
+        out.push({ kind: "globstar" });
+        i += 1;
+      }
+    } else if (ch === "*") out.push({ kind: "star" });
+    else if (ch === "?") out.push({ kind: "any1" });
+    else out.push({ kind: "char", c: ch });
+  }
+  return out;
+}
+function globMatch(tokens, text6, anchored) {
+  const n = text6.length;
+  let reach = new Array(n + 1).fill(false);
+  if (anchored) reach[0] = true;
+  else for (let i = 0; i <= n; i++) reach[i] = i === 0 || text6[i - 1] === "/";
+  for (const t of tokens) {
+    const next = new Array(n + 1).fill(false);
+    if (t.kind === "char" || t.kind === "any1") {
+      for (let i = 0; i < n; i++) {
+        if (reach[i] && (t.kind === "char" ? text6[i] === t.c : text6[i] !== "/")) next[i + 1] = true;
+      }
+    } else if (t.kind === "star") {
+      let open2 = false;
+      for (let j = 0; j <= n; j++) {
+        if (reach[j]) open2 = true;
+        next[j] = open2;
+        if (text6[j] === "/") open2 = false;
+      }
+    } else if (t.kind === "globstar") {
+      let open2 = false;
+      for (let j = 0; j <= n; j++) {
+        if (reach[j]) open2 = true;
+        next[j] = open2;
+      }
+    } else {
+      let seen = false;
+      for (let j = 0; j <= n; j++) {
+        next[j] = reach[j] || seen && text6[j - 1] === "/";
+        if (reach[j]) seen = true;
+      }
+    }
+    reach = next;
+  }
+  return reach[n];
+}
+function parseRule(raw) {
+  let line3 = raw.replace(/\r$/, "");
+  if (line3.trim() === "" || line3.startsWith("#")) return void 0;
+  line3 = line3.replace(/(?<!\\)\s+$/, "");
+  const negated = line3.startsWith("!");
+  if (negated) line3 = line3.slice(1);
+  const dirOnly = line3.endsWith("/");
+  if (dirOnly) line3 = line3.slice(0, -1);
+  const anchored = line3.includes("/");
+  if (line3.startsWith("/")) line3 = line3.slice(1);
+  if (line3 === "") return void 0;
+  return { negated, dirOnly, tokens: tokenize(line3), anchored };
+}
+function createIgnore(gitignore) {
+  const rules = gitignore.split("\n").flatMap((l) => parseRule(l) ?? []);
+  return (path, isDir) => {
+    let ignored = false;
+    for (const rule of rules) {
+      if (rule.dirOnly && !isDir) continue;
+      if (globMatch(rule.tokens, path, rule.anchored)) ignored = !rule.negated;
+    }
+    return ignored;
+  };
+}
+
+// ../../packages/parsers/core/src/memoryFileSystem.ts
+var IGNORED_DIRS = /* @__PURE__ */ new Set(["node_modules", ".git", "dist", ".wrangler", ".turbo", ".terraform"]);
+function isIgnoredPath(path) {
+  const segments = path.split("/");
+  return segments.slice(0, -1).some((s) => IGNORED_DIRS.has(s));
+}
+function isIgnoredDir(name2) {
+  return IGNORED_DIRS.has(name2);
+}
+
+// ../../packages/parsers/core/src/nodeFileSystem.ts
+var NodeFileSystem = class {
+  #root;
+  constructor(root) {
+    this.#root = resolve(root);
+  }
+  async listFiles() {
+    const out = [];
+    const gitignore = await readFile(join(this.#root, ".gitignore"), "utf8").catch(() => "");
+    const ignored = createIgnore(gitignore);
+    const walk3 = async (dir) => {
+      for (const entry of await readdir(dir, { withFileTypes: true })) {
+        const full = join(dir, entry.name);
+        const rel = relative(this.#root, full).split(sep).join("/");
+        if (entry.isDirectory()) {
+          if (!isIgnoredDir(entry.name) && !ignored(rel, true)) await walk3(full);
+        } else if (entry.isFile() && !ignored(rel, false)) {
+          out.push(rel);
+        }
+      }
+    };
+    await walk3(this.#root);
+    return out.sort();
+  }
+  async readText(path) {
+    const full = resolve(this.#root, path);
+    if (!this.#inside(this.#root, full)) throw new Error(`path is outside the root: ${path}`);
+    const real = await realpath(full);
+    if (!this.#inside(await realpath(this.#root), real)) throw new Error(`path is outside the root: ${path}`);
+    return readFile(real, "utf8");
+  }
+  #inside(root, full) {
+    return full === root || full.startsWith(root + sep);
+  }
+};
+
+// ../../packages/parsers/core/src/cacheKey.ts
+function cacheKey(p) {
+  return [p.repository, p.commit, p.parserId, p.parserVersion, p.configurationHash].map(encodeURIComponent).join(":");
+}
+function canonicalJson(value2) {
+  if (Array.isArray(value2)) return `[${value2.map(canonicalJson).join(",")}]`;
+  if (value2 !== null && typeof value2 === "object") {
+    const entries = Object.entries(value2).filter(([, v]) => v !== void 0).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0);
+    return `{${entries.map(([k, v]) => `${JSON.stringify(k)}:${canonicalJson(v)}`).join(",")}}`;
+  }
+  return JSON.stringify(value2) ?? "null";
+}
+async function configurationHash(configuration) {
+  const bytes = new TextEncoder().encode(canonicalJson(configuration ?? {}));
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+// ../../packages/parsers/core/src/located.ts
+var ConfigSyntaxError = class extends Error {
+  constructor(message, line3) {
+    super(message);
+    this.line = line3;
+    this.name = "ConfigSyntaxError";
+  }
+  line;
+};
+function getEntry(obj, key2) {
+  if (obj?.kind !== "object") return void 0;
+  return obj.entries.find((e) => e.key === key2);
+}
+function toPlain(v) {
+  if (v.kind === "scalar") return v.value;
+  if (v.kind === "array") return v.items.map(toPlain);
+  const out = {};
+  for (const e of v.entries) out[e.key] = toPlain(e.value);
+  return out;
+}
+var union2 = (a, b) => ({
+  startLine: Math.min(a.startLine, b.startLine),
+  endLine: Math.max(a.endLine, b.endLine)
+});
+
+// ../../packages/parsers/core/src/jsonc.ts
+var NUMBER = /-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/y;
+var ESCAPES = {
+  '"': '"',
+  "\\": "\\",
+  "/": "/",
+  b: "\b",
+  f: "\f",
+  n: "\n",
+  r: "\r",
+  t: "	"
+};
+function parseJsonc(text6) {
+  const src = text6.charCodeAt(0) === 65279 ? text6.slice(1) : text6;
+  let pos = 0;
+  const lineStarts2 = [0];
+  for (let i = 0; i < src.length; i++) if (src[i] === "\n") lineStarts2.push(i + 1);
+  const lineAt2 = (offset) => {
+    let lo = 0;
+    let hi = lineStarts2.length - 1;
+    while (lo < hi) {
+      const mid = lo + hi + 1 >> 1;
+      if (lineStarts2[mid] <= offset) lo = mid;
+      else hi = mid - 1;
+    }
+    return lo + 1;
+  };
+  const fail = (message, at = pos) => {
+    throw new ConfigSyntaxError(message, lineAt2(Math.min(at, Math.max(src.length - 1, 0))));
+  };
+  function skip() {
+    for (; ; ) {
+      const c = src[pos];
+      if (c === " " || c === "	" || c === "\n" || c === "\r") pos++;
+      else if (c === "/" && src[pos + 1] === "/") {
+        while (pos < src.length && src[pos] !== "\n") pos++;
+      } else if (c === "/" && src[pos + 1] === "*") {
+        const end = src.indexOf("*/", pos + 2);
+        if (end < 0) fail("unterminated block comment");
+        pos = end + 2;
+      } else return;
+    }
+  }
+  function readString() {
+    const start = pos;
+    pos++;
+    let out = "";
+    for (; ; ) {
+      const c = src[pos];
+      if (c === void 0 || c === "\n") return fail("unterminated string", start);
+      if (c === '"') {
+        pos++;
+        return out;
+      }
+      if (c === "\\") {
+        const n = src[pos + 1];
+        if (n === "u") {
+          const hex3 = src.slice(pos + 2, pos + 6);
+          if (!/^[0-9a-fA-F]{4}$/.test(hex3)) fail("invalid \\u escape");
+          out += String.fromCharCode(Number.parseInt(hex3, 16));
+          pos += 6;
+        } else if (n !== void 0 && n in ESCAPES) {
+          out += ESCAPES[n];
+          pos += 2;
+        } else fail("invalid escape");
+      } else {
+        out += c;
+        pos++;
+      }
+    }
+  }
+  function value2() {
+    skip();
+    const start = pos;
+    const c = src[pos];
+    if (c === void 0) return fail("unexpected end of input");
+    if (c === "{") return object2();
+    if (c === "[") return array2();
+    let scalar3;
+    if (c === '"') scalar3 = readString();
+    else if (src.startsWith("true", pos)) {
+      scalar3 = true;
+      pos += 4;
+    } else if (src.startsWith("false", pos)) {
+      scalar3 = false;
+      pos += 5;
+    } else if (src.startsWith("null", pos)) {
+      scalar3 = null;
+      pos += 4;
+    } else {
+      NUMBER.lastIndex = pos;
+      const m = NUMBER.exec(src);
+      if (!m) return fail(`unexpected character "${c}"`);
+      scalar3 = Number(m[0]);
+      pos += m[0].length;
+    }
+    return { kind: "scalar", value: scalar3, span: { startLine: lineAt2(start), endLine: lineAt2(pos - 1) } };
+  }
+  function object2() {
+    const start = pos;
+    pos++;
+    const entries = [];
+    for (; ; ) {
+      skip();
+      if (src[pos] === "}") {
+        pos++;
+        break;
+      }
+      if (src[pos] !== '"') fail("expected a property name");
+      const keyLine = lineAt2(pos);
+      const key2 = readString();
+      if (entries.some((e) => e.key === key2)) fail(`duplicate key: ${key2}`, pos - 1);
+      skip();
+      if (src[pos] !== ":") fail('expected ":"');
+      pos++;
+      const v = value2();
+      entries.push({ key: key2, value: v, span: { startLine: keyLine, endLine: v.span.endLine } });
+      skip();
+      if (src[pos] === ",") pos++;
+      else if (src[pos] !== "}") fail('expected "," or "}"');
+    }
+    return { kind: "object", entries, span: { startLine: lineAt2(start), endLine: lineAt2(pos - 1) } };
+  }
+  function array2() {
+    const start = pos;
+    pos++;
+    const items2 = [];
+    for (; ; ) {
+      skip();
+      if (src[pos] === "]") {
+        pos++;
+        break;
+      }
+      items2.push(value2());
+      skip();
+      if (src[pos] === ",") pos++;
+      else if (src[pos] !== "]") fail('expected "," or "]"');
+    }
+    return { kind: "array", items: items2, span: { startLine: lineAt2(start), endLine: lineAt2(pos - 1) } };
+  }
+  const root = value2();
+  skip();
+  if (pos < src.length) fail("unexpected content after the top-level value");
+  return root;
+}
+
+// ../../packages/architecture-graph/src/issue.ts
+function compareStrings2(a, b) {
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+
+// ../../packages/architecture-graph/src/evidence.ts
+function evidenceKey(e) {
+  return [e.repository, e.file, e.startLine ?? "", e.endLine ?? "", e.commit, e.method].join("\0");
+}
+function validateEvidence(e, target2) {
+  const issues = [];
+  const add = (code2, message) => issues.push({ level: "error", code: code2, message, target: target2 });
+  if (e.repository.trim() === "") add("evidence-repository", "repository must not be empty");
+  if (e.commit.trim() === "") add("evidence-commit", "commit must not be empty");
+  if (e.file.trim() === "") add("evidence-file", "file must not be empty");
+  else if (e.file.startsWith("/") || e.file.split("/").includes("..")) {
+    add("evidence-file", `file must be a path inside the repository: ${e.file}`);
+  }
+  const { startLine, endLine } = e;
+  if (startLine !== void 0 && (!Number.isInteger(startLine) || startLine < 1) || endLine !== void 0 && (!Number.isInteger(endLine) || endLine < 1) || startLine !== void 0 && endLine !== void 0 && endLine < startLine) {
+    add("evidence-lines", `invalid line range: ${startLine ?? "?"}-${endLine ?? "?"}`);
+  }
+  if (e.confidence !== void 0 && !(e.confidence >= 0 && e.confidence <= 1)) {
+    add("evidence-confidence", `confidence must be within 0..1: ${e.confidence}`);
+  }
+  return issues;
+}
+function mergeEvidence(list2) {
+  const byKey = /* @__PURE__ */ new Map();
+  for (const e of list2) {
+    const key2 = evidenceKey(e);
+    const prev = byKey.get(key2);
+    if (!prev) {
+      byKey.set(key2, { ...e });
+    } else if (e.confidence !== void 0 && (prev.confidence === void 0 || e.confidence > prev.confidence)) {
+      prev.confidence = e.confidence;
+    }
+  }
+  return [...byKey.entries()].sort(([a], [b]) => compareStrings2(a, b)).map(([, e]) => e);
+}
+
+// ../../packages/architecture-graph/src/stableId.ts
+var WHITESPACE = /\s/;
+function part(label, value2, allowColon) {
+  if (value2.length === 0) throw new Error(`stable id: ${label} must not be empty`);
+  if (WHITESPACE.test(value2)) throw new Error(`stable id: ${label} must not contain whitespace: ${value2}`);
+  if (!allowColon && value2.includes(":"))
+    throw new Error(`stable id: ${label} must not contain ":": ${value2}`);
+  return value2;
+}
+function nodeId(namespace2, kind2, name2) {
+  return `${part("namespace", namespace2, false).toLowerCase()}:${part("kind", kind2, false).toLowerCase()}:${part("name", name2, true)}`;
+}
+function routeNodeId(method, path) {
+  if (!path.startsWith("/")) throw new Error(`stable id: route path must start with "/": ${path}`);
+  return nodeId("application", "route", `${part("method", method, false).toUpperCase()}:${path}`);
+}
+function parseNodeId(id) {
+  const first = id.indexOf(":");
+  const second = first < 0 ? -1 : id.indexOf(":", first + 1);
+  if (first <= 0 || second < 0) return void 0;
+  const namespace2 = id.slice(0, first);
+  const kind2 = id.slice(first + 1, second);
+  const name2 = id.slice(second + 1);
+  if (!kind2 || !name2) return void 0;
+  return { namespace: namespace2, kind: kind2, name: name2 };
+}
+function edgeId(source, relation, target2) {
+  return `${source}--${relation}-->${target2}`;
+}
+
+// ../../packages/architecture-graph/src/verification.ts
+var RANK = { inferred: 0, verified: 1, manual: 2 };
+function mergeVerification(levels) {
+  if (levels.length === 0) throw new Error("mergeVerification: no verification levels given");
+  return levels.reduce((best, v) => RANK[v] > RANK[best] ? v : best);
+}
+function enforceVerification(level, evidence) {
+  if (level === "manual") return "manual";
+  if (level === "verified") {
+    return evidence.some((e) => e.method === "static-analysis") ? "verified" : "inferred";
+  }
+  return "inferred";
+}
+
+// ../../packages/architecture-graph/src/normalize.ts
+var RANK2 = { inferred: 0, verified: 1, manual: 2 };
+function canonical(value2) {
+  if (Array.isArray(value2)) return value2.map(canonical);
+  if (value2 !== null && typeof value2 === "object") {
+    const out = {};
+    for (const key2 of Object.keys(value2).sort(compareStrings2)) {
+      out[key2] = canonical(value2[key2]);
+    }
+    return out;
+  }
+  return value2;
+}
+var json2 = (value2) => JSON.stringify(canonical(value2));
+function strongestFirst(items2) {
+  return [...items2].sort(
+    (a, b) => RANK2[b.verification] - RANK2[a.verification] || compareStrings2(json2(a), json2(b))
+  );
+}
+function mergeNodes(id, group, issues) {
+  const ordered = strongestFirst(group);
+  const base = ordered[0];
+  for (const other of ordered.slice(1)) {
+    if (other.type !== base.type || other.scope !== base.scope) {
+      issues.push({
+        level: "error",
+        code: "node-conflict",
+        message: `node ${id} is declared with different type/scope: ${base.scope}/${base.type} vs ${other.scope}/${other.type}`,
+        target: id
+      });
+    } else if (other.name !== base.name) {
+      issues.push({
+        level: "warning",
+        code: "node-name-conflict",
+        message: `node ${id} has different names: "${base.name}" vs "${other.name}"`,
+        target: id
+      });
+    }
+  }
+  const properties = {};
+  const conflicts = /* @__PURE__ */ new Set();
+  for (const n of [...ordered].reverse()) {
+    for (const [key2, value2] of Object.entries(n.properties)) {
+      if (key2 in properties && json2(properties[key2]) !== json2(value2)) conflicts.add(key2);
+      properties[key2] = value2;
+    }
+  }
+  for (const key2 of [...conflicts].sort(compareStrings2)) {
+    issues.push({
+      level: "warning",
+      code: "property-conflict",
+      message: `node ${id} has conflicting values for property "${key2}"; kept the strongest source's value`,
+      target: id
+    });
+  }
+  const evidence = mergeEvidence(group.flatMap((n) => n.evidence));
+  const verification = settle2(id, mergeVerification(group.map((n) => n.verification)), evidence, issues);
+  return {
+    id,
+    type: base.type,
+    name: base.name,
+    scope: base.scope,
+    properties: canonical(properties),
+    evidence,
+    verification
+  };
+}
+function settle2(target2, claimed, evidence, issues) {
+  const settled = enforceVerification(claimed, evidence);
+  if (settled !== claimed) {
+    issues.push({
+      level: "warning",
+      code: "verification-demoted",
+      message: `${target2} was marked ${claimed} without static-analysis evidence; treated as ${settled}`,
+      target: target2
+    });
+  }
+  return settled;
+}
+function mergeEdgeProperties(group) {
+  const out = {};
+  const bindings = /* @__PURE__ */ new Set();
+  for (const e of strongestFirst(group)) {
+    for (const [key2, value2] of Object.entries(e.properties ?? {})) {
+      if (key2 === "bindings" && Array.isArray(value2)) {
+        for (const b of value2) if (typeof b === "string") bindings.add(b);
+      } else if (!(key2 in out)) out[key2] = value2;
+    }
+  }
+  if (bindings.size > 0) out.bindings = [...bindings].sort(compareStrings2);
+  return Object.keys(out).length > 0 ? canonical(out) : void 0;
+}
+function normalizeGraph(input3) {
+  const issues = [];
+  const nodeGroups = /* @__PURE__ */ new Map();
+  for (const n of input3.nodes) {
+    const group = nodeGroups.get(n.id);
+    if (group) group.push(n);
+    else nodeGroups.set(n.id, [n]);
+  }
+  const nodes = [...nodeGroups.entries()].sort(([a], [b]) => compareStrings2(a, b)).map(([id, group]) => {
+    if (!parseNodeId(id) || /\s/.test(id)) {
+      issues.push({
+        level: "error",
+        code: "node-id-invalid",
+        message: `invalid node id: "${id}"`,
+        target: id
+      });
+    }
+    return mergeNodes(id, group, issues);
+  });
+  for (const n of nodes) for (const e of n.evidence) issues.push(...validateEvidence(e, n.id));
+  const nodeIds = new Set(nodes.map((n) => n.id));
+  const edgeGroups = /* @__PURE__ */ new Map();
+  for (const e of input3.edges) {
+    const id = edgeId(e.source, e.relation, e.target);
+    const group = edgeGroups.get(id);
+    if (group) group.push(e);
+    else edgeGroups.set(id, [e]);
+  }
+  const edges = [...edgeGroups.entries()].sort(([a], [b]) => compareStrings2(a, b)).map(([id, group]) => {
+    const first = group[0];
+    for (const end of [first.source, first.target]) {
+      if (!nodeIds.has(end)) {
+        issues.push({
+          level: "error",
+          code: "edge-dangling",
+          message: `edge ${id} points at a node that does not exist: ${end}`,
+          target: id
+        });
+      }
+    }
+    const evidence = mergeEvidence(group.flatMap((e) => e.evidence));
+    for (const ev of evidence) issues.push(...validateEvidence(ev, id));
+    const properties = mergeEdgeProperties(group);
+    const verification = settle2(id, mergeVerification(group.map((e) => e.verification)), evidence, issues);
+    return {
+      id,
+      source: first.source,
+      target: first.target,
+      relation: first.relation,
+      ...properties ? { properties } : {},
+      evidence,
+      verification
+    };
+  });
+  return {
+    graph: {
+      schemaVersion: input3.schemaVersion,
+      repositoryId: input3.repositoryId,
+      commitSha: input3.commitSha,
+      nodes,
+      edges
+    },
+    issues,
+    ok: !issues.some((i) => i.level === "error")
+  };
+}
+
+// ../../packages/parsers/core/src/runParsers.ts
+var GRAPH_SCHEMA_VERSION = "1";
+var messageOf = (e) => e instanceof Error ? e.message : String(e);
+async function runOne(parser, ctx) {
+  try {
+    if (!await parser.detect(ctx)) return { kind: "not-detected" };
+    return { kind: "parsed", result: await parser.parse(ctx) };
+  } catch (e) {
+    return { kind: "failed", message: messageOf(e) };
+  }
+}
+async function runParsers(parsers, ctx, options = {}) {
+  const ordered = [...parsers].sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+  const outcomes = await Promise.all(ordered.map((p) => runOne(p, ctx)));
+  const diagnostics = [];
+  const unverified = [];
+  const nodes = [];
+  const edges = [];
+  const runs = [];
+  ordered.forEach((parser, i) => {
+    const outcome = outcomes[i];
+    const base = { id: parser.id, version: parser.version };
+    if (outcome.kind === "not-detected") {
+      runs.push({ ...base, status: "not-detected" });
+    } else if (outcome.kind === "failed") {
+      runs.push({ ...base, status: "failed" });
+      diagnostics.push({
+        level: "error",
+        code: "parser-failed",
+        message: `parser ${parser.id} failed: ${outcome.message}`,
+        parserId: parser.id
+      });
+      unverified.push({ parserId: parser.id, reason: `parser failed: ${outcome.message}` });
+    } else {
+      runs.push({ ...base, status: "ok" });
+      nodes.push(...outcome.result.nodes);
+      edges.push(...outcome.result.edges);
+      diagnostics.push(...outcome.result.diagnostics);
+      unverified.push(...outcome.result.unverified);
+    }
+  });
+  const detected = runs.filter((r) => r.status !== "not-detected");
+  if (detected.length === 0) return { status: "nothing-detected", diagnostics, unverified, parsers: runs };
+  if (detected.every((r) => r.status === "failed")) {
+    return { status: "failed", diagnostics, unverified, parsers: runs };
+  }
+  if (nodes.length === 0 && edges.length === 0) {
+    const status = unverified.length > 0 ? "failed" : "empty";
+    return { status, diagnostics, unverified, parsers: runs };
+  }
+  for (const linker of options.linkers ?? []) {
+    try {
+      const linked = await linker.link({ nodes: [...nodes], edges: [...edges] }, ctx);
+      nodes.push(...linked.nodes);
+      edges.push(...linked.edges);
+      diagnostics.push(...linked.diagnostics);
+      unverified.push(...linked.unverified);
+    } catch (e) {
+      const message = messageOf(e);
+      diagnostics.push({
+        level: "error",
+        code: "linker-failed",
+        message: `linker ${linker.id} failed: ${message}`,
+        parserId: linker.id
+      });
+      unverified.push({ parserId: linker.id, reason: `linker failed: ${message}` });
+    }
+  }
+  const normalized = normalizeGraph({
+    schemaVersion: GRAPH_SCHEMA_VERSION,
+    repositoryId: ctx.repository,
+    commitSha: ctx.commit,
+    nodes,
+    edges
+  });
+  for (const issue3 of normalized.issues) {
+    diagnostics.push({
+      level: issue3.level,
+      code: issue3.code,
+      message: issue3.message,
+      ...issue3.target ? { target: issue3.target } : {}
+    });
+  }
+  if (!normalized.ok) return { status: "failed", diagnostics, unverified, parsers: runs };
+  const clean = runs.every((r) => r.status !== "failed") && unverified.length === 0;
+  return {
+    status: clean ? "ok" : "partial",
+    graph: normalized.graph,
+    diagnostics,
+    unverified,
+    parsers: runs
+  };
+}
+
+// ../../packages/parsers/core/src/types.ts
+function staticEvidence(ctx, file2, startLine, endLine) {
+  const e = { repository: ctx.repository, file: file2, commit: ctx.commit, method: "static-analysis" };
+  if (startLine !== void 0) e.startLine = startLine;
+  if (endLine !== void 0) e.endLine = endLine;
+  return e;
+}
+
 // ../../packages/parsers/registry/src/exclude.ts
 var DEFAULT_EXCLUDES = [
   "**/test/fixtures/**",
@@ -28257,11 +29374,11 @@ function intrinsic(entry, at, stack, r, out, depth) {
     case "Fn::GetAtt": {
       let name2;
       let attribute;
-      const text5 = stringOf(arg);
-      if (text5 !== void 0) {
-        const dot = text5.indexOf(".");
-        name2 = dot < 0 ? text5 : text5.slice(0, dot);
-        attribute = dot < 0 ? void 0 : text5.slice(dot + 1);
+      const text6 = stringOf(arg);
+      if (text6 !== void 0) {
+        const dot = text6.indexOf(".");
+        name2 = dot < 0 ? text6 : text6.slice(0, dot);
+        attribute = dot < 0 ? void 0 : text6.slice(dot + 1);
       } else if (arg.kind === "array") {
         name2 = stringOf(arg.items[0]);
         attribute = stringOf(arg.items[1]);
@@ -28338,7 +29455,7 @@ var scalar = (v) => {
   if (v?.kind !== "scalar" || v.value === null) return void 0;
   return v.value;
 };
-var text = (props, key2) => {
+var text2 = (props, key2) => {
   const v = scalar(getEntry(props, key2)?.value);
   return typeof v === "string" && v !== "" ? v : void 0;
 };
@@ -28401,7 +29518,7 @@ var TYPES = {
     nameKey: "Name",
     describe: (p) => {
       const out = {};
-      put(out, "scheduleExpression", text(p, "ScheduleExpression"));
+      put(out, "scheduleExpression", text2(p, "ScheduleExpression"));
       const pattern = getEntry(p, "EventPattern")?.value;
       if (pattern?.kind === "object" && isLiteral(pattern)) out.eventPattern = toPlain(pattern);
       return out;
@@ -28417,7 +29534,7 @@ var TYPES = {
     nameKey: "Name",
     describe: (p) => {
       const out = { apiVersion: "v2" };
-      put(out, "protocolType", text(p, "ProtocolType"));
+      put(out, "protocolType", text2(p, "ProtocolType"));
       return out;
     }
   },
@@ -28428,8 +29545,8 @@ var TYPES = {
     nameKey: "Name",
     describe: (p) => {
       const out = {};
-      put(out, "loadBalancerType", text(p, "Type"));
-      put(out, "scheme", text(p, "Scheme"));
+      put(out, "loadBalancerType", text2(p, "Type"));
+      put(out, "scheme", text2(p, "Scheme"));
       return out;
     }
   },
@@ -28439,7 +29556,7 @@ var TYPES = {
     nameKey: "ServiceName",
     describe: (p) => {
       const out = {};
-      put(out, "launchType", text(p, "LaunchType"));
+      put(out, "launchType", text2(p, "LaunchType"));
       return out;
     }
   },
@@ -28450,8 +29567,8 @@ var TYPES = {
     nameKey: "DBInstanceIdentifier",
     describe: (p) => {
       const out = {};
-      put(out, "engine", text(p, "Engine"));
-      put(out, "instanceClass", text(p, "DBInstanceClass"));
+      put(out, "engine", text2(p, "Engine"));
+      put(out, "instanceClass", text2(p, "DBInstanceClass"));
       return out;
     }
   },
@@ -28460,28 +29577,28 @@ var TYPES = {
     nameKey: "DBClusterIdentifier",
     describe: (p) => {
       const out = {};
-      put(out, "engine", text(p, "Engine"));
+      put(out, "engine", text2(p, "Engine"));
       return out;
     }
   }
 };
 function describeLambda(p) {
   const out = {};
-  put(out, "runtime", text(p, "Runtime"));
-  put(out, "handler", text(p, "Handler"));
+  put(out, "runtime", text2(p, "Runtime"));
+  put(out, "handler", text2(p, "Handler"));
   put(out, "memorySize", num(p, "MemorySize"));
   put(out, "timeout", num(p, "Timeout"));
   put(out, "architectures", strings(p, "Architectures"));
-  put(out, "packageType", text(p, "PackageType"));
+  put(out, "packageType", text2(p, "PackageType"));
   put(out, "role", referredId(getEntry(p, "Role")?.value));
   return out;
 }
 function describeTable(p) {
   const out = {};
-  put(out, "billingMode", text(p, "BillingMode"));
+  put(out, "billingMode", text2(p, "BillingMode"));
   const schema2 = getEntry(p, "KeySchema")?.value;
   if (schema2?.kind === "array") {
-    const keys = schema2.items.map((i) => text(i.kind === "object" ? i : void 0, "AttributeName"));
+    const keys = schema2.items.map((i) => text2(i.kind === "object" ? i : void 0, "AttributeName"));
     if (keys.length > 0 && keys.every((k) => k !== void 0)) out.keys = keys;
   }
   return out;
@@ -28539,7 +29656,7 @@ var SAM_TYPES = {
     nameKey: "TableName",
     describe(p) {
       const key2 = getEntry(p, "PrimaryKey")?.value;
-      const name2 = text(key2?.kind === "object" ? key2 : void 0, "Name");
+      const name2 = text2(key2?.kind === "object" ? key2 : void 0, "Name");
       return name2 === void 0 ? {} : { keys: [name2] };
     }
   }
@@ -29236,9 +30353,9 @@ var SHORT_TAGS = {
 var MAX_ALIASES = 100;
 var MAX_ALIAS_NODES = 2e4;
 var MAX_DEPTH2 = 200;
-function parseYamlTemplate(text5, onWarning = () => {
+function parseYamlTemplate(text6, onWarning = () => {
 }) {
-  const src = text5.charCodeAt(0) === 65279 ? text5.slice(1) : text5;
+  const src = text6.charCodeAt(0) === 65279 ? text6.slice(1) : text6;
   const lines = new import_yaml.LineCounter();
   const docs = (0, import_yaml.parseAllDocuments)(src, { lineCounter: lines, uniqueKeys: true });
   for (const doc of docs) {
@@ -29417,14 +30534,14 @@ async function loadStacks(ctx, report, sources, options) {
     }
     let root;
     try {
-      const text5 = source.text ?? await ctx.fs.readText(file2);
+      const text6 = source.text ?? await ctx.fs.readText(file2);
       root = /\.ya?ml$/i.test(file2) ? parseYamlTemplate(
-        text5,
+        text6,
         (w) => report.add("warning", w.code, file2, `${w.message} (line ${w.line})`, {
           line: w.line,
           unverified: true
         })
-      ) : parseJsonc(text5);
+      ) : parseJsonc(text6);
     } catch (e) {
       if (e instanceof ConfigSyntaxError) {
         return unverified("template-syntax", `${e.message} (line ${e.line})`, e.line);
@@ -29720,7 +30837,7 @@ function constructName(cdkPath) {
 
 // ../../packages/parsers/cloudformation/src/assembly.ts
 var REGION = /^[a-z]{2}(-[a-z]+)+-\d+$/;
-function regionOf(environment) {
+function regionOf2(environment) {
   if (typeof environment !== "string" || !environment.startsWith("aws://")) return void 0;
   const parts = environment.slice("aws://".length).split("/");
   const region = parts.length === 2 ? parts[1] : void 0;
@@ -29750,11 +30867,11 @@ function joinPath(dir, rel) {
   return parts.join("/");
 }
 var isRecord = (v) => typeof v === "object" && v !== null && !Array.isArray(v);
-function readAssemblyManifest(manifestFile, text5) {
-  if (!text5.includes('"artifacts"')) return void 0;
+function readAssemblyManifest(manifestFile, text6) {
+  if (!text6.includes('"artifacts"')) return void 0;
   let json3;
   try {
-    json3 = JSON.parse(text5);
+    json3 = JSON.parse(text6);
   } catch {
     return void 0;
   }
@@ -29767,7 +30884,7 @@ function readAssemblyManifest(manifestFile, text5) {
     if (!isRecord(artifact) || !isRecord(artifact.properties)) continue;
     if (artifact.type === "aws:cloudformation:stack" && typeof artifact.properties.templateFile === "string") {
       const rel = artifact.properties.templateFile;
-      const region = regionOf(artifact.environment);
+      const region = regionOf2(artifact.environment);
       if (staysInside(rel)) {
         stacks.push({ artifactId, templateFile: joinPath(dir, rel), ...region ? { region } : {} });
       } else rejected.push({ artifactId, templateFile: rel });
@@ -29783,13 +30900,13 @@ async function findCloudAssemblies(fs) {
   );
   const found = [];
   for (const file2 of files) {
-    let text5;
+    let text6;
     try {
-      text5 = await fs.readText(file2);
+      text6 = await fs.readText(file2);
     } catch {
       continue;
     }
-    const assembly = readAssemblyManifest(file2, text5);
+    const assembly = readAssemblyManifest(file2, text6);
     if (assembly) found.push(assembly);
   }
   return found;
@@ -29807,7 +30924,7 @@ var YAML_TOP_RESOURCES = /^["']?Resources["']?[ \t]*:/m;
 var YAML_TEMPLATE_HINT = /AWSTemplateFormatVersion|AWS::/;
 var BUILD_OUTPUT_DIR = ".aws-sam";
 var stackKeyOf = (file2) => file2.replace(/\.template\.(json|ya?ml)$/i, "").replace(/\.(json|ya?ml)$/i, "");
-var looksLikeTemplate = (text5) => /"Resources"\s*:/.test(text5);
+var looksLikeTemplate = (text6) => /"Resources"\s*:/.test(text6);
 var stringsOf = (v) => v?.kind === "scalar" && typeof v.value === "string" ? [v.value] : v?.kind === "array" ? v.items.flatMap((i) => stringsOf(i)) : [];
 function isTemplateRoot(root) {
   const resources = getEntry(root, "Resources")?.value;
@@ -29819,12 +30936,12 @@ function isTemplateRoot(root) {
     return type?.kind === "scalar" && typeof type.value === "string" && type.value.startsWith("AWS::");
   });
 }
-function yamlLooksLikeTemplate(text5) {
-  if (!YAML_TOP_RESOURCES.test(text5)) return false;
+function yamlLooksLikeTemplate(text6) {
+  if (!YAML_TOP_RESOURCES.test(text6)) return false;
   try {
-    return isTemplateRoot(parseYamlTemplate(text5));
+    return isTemplateRoot(parseYamlTemplate(text6));
   } catch {
-    return YAML_TEMPLATE_HINT.test(text5);
+    return YAML_TEMPLATE_HINT.test(text6);
   }
 }
 async function findTemplateSources(ctx) {
@@ -29834,14 +30951,14 @@ async function findTemplateSources(ctx) {
   ).sort();
   const found = [];
   for (const file2 of files) {
-    let text5;
+    let text6;
     try {
-      text5 = await ctx.fs.readText(file2);
+      text6 = await ctx.fs.readText(file2);
     } catch {
       continue;
     }
-    const ok = YAML_FILE.test(file2) ? yamlLooksLikeTemplate(text5) : looksLikeTemplate(text5);
-    if (ok) found.push({ file: file2, stackKey: stackKeyOf(file2), text: text5 });
+    const ok = YAML_FILE.test(file2) ? yamlLooksLikeTemplate(text6) : looksLikeTemplate(text6);
+    if (ok) found.push({ file: file2, stackKey: stackKeyOf(file2), text: text6 });
   }
   return found;
 }
@@ -30818,9 +31935,9 @@ var TEST_DIR = /(?:^|\/)__tests__\//;
 function isAnalyzableSource(path) {
   return SOURCE.test(path) && !path.endsWith(".d.ts") && !TEST_FILE.test(path) && !TEST_DIR.test(path);
 }
-function lineStarts(text5) {
+function lineStarts(text6) {
   const starts = [0];
-  for (let i = 0; i < text5.length; i++) if (text5.charCodeAt(i) === 10) starts.push(i + 1);
+  for (let i = 0; i < text6.length; i++) if (text6.charCodeAt(i) === 10) starts.push(i + 1);
   return starts;
 }
 function lineAt(starts, offset) {
@@ -30833,21 +31950,21 @@ function lineAt(starts, offset) {
   }
   return lo + 1;
 }
-function parseModule(file2, text5) {
+function parseModule(file2, text6) {
   let result;
   try {
-    result = parseSync2(file2, text5, { preserveParens: false });
+    result = parseSync2(file2, text6, { preserveParens: false });
   } catch (e) {
     return { ok: false, message: e instanceof Error ? e.message : String(e) };
   }
   const error62 = result.errors.find((e) => e.severity === "Error");
   if (error62) return { ok: false, message: error62.message };
-  const starts = lineStarts(text5);
+  const starts = lineStarts(text6);
   return {
     ok: true,
     module: {
       file: file2,
-      text: text5,
+      text: text6,
       program: result.program,
       lines: (node2) => ({
         startLine: lineAt(starts, node2.start),
@@ -30987,9 +32104,9 @@ function hasSecondStatement(sql) {
   return i >= 0 && bare.slice(i + 1).replace(/[\s;]+/g, "") !== "";
 }
 function sqlKind(arg) {
-  const text5 = leadingText(arg);
-  if (text5 !== void 0 && hasSecondStatement(text5)) return "unknown";
-  const word = text5?.trimStart().split(/[\s(]/, 1)[0]?.toLowerCase();
+  const text6 = leadingText(arg);
+  if (text6 !== void 0 && hasSecondStatement(text6)) return "unknown";
+  const word = text6?.trimStart().split(/[\s(]/, 1)[0]?.toLowerCase();
   if (word && SQL_READ.has(word)) return "read";
   if (word && SQL_WRITE.has(word)) return "write";
   return "unknown";
@@ -31312,7 +32429,7 @@ var IGNORED_CLASSES = {
 
 // ../../packages/parsers/aws-cdk/src/source.ts
 var AWS_CDK_IMPORT = /^[ \t]*import\b[^'";]*?["']aws-cdk-lib(?:\/[^"']*)?["']|\brequire\(\s*["']aws-cdk-lib(?:\/[^"']*)?["']/m;
-var importsAwsCdk = (text5) => AWS_CDK_IMPORT.test(text5);
+var importsAwsCdk = (text6) => AWS_CDK_IMPORT.test(text6);
 var ROOT_MODULE = "aws-cdk-lib";
 function classify(ref) {
   const construct = CONSTRUCTS[ref.module]?.[ref.name];
@@ -31422,14 +32539,14 @@ async function analyzeCdkSource(ctx, options) {
   const fileSet = new Set(all);
   const modules = /* @__PURE__ */ new Map();
   for (const file2 of all) {
-    let text5;
+    let text6;
     try {
-      text5 = await ctx.fs.readText(file2);
+      text6 = await ctx.fs.readText(file2);
     } catch {
       continue;
     }
-    if (!importsAwsCdk(text5)) continue;
-    const parsed = parseModule(file2, text5);
+    if (!importsAwsCdk(text6)) continue;
+    const parsed = parseModule(file2, text6);
     if (!parsed.ok) {
       note("error", "cdk-source-syntax", file2, `could not be parsed: ${parsed.message}`, void 0, {
         unverified: true
@@ -32195,9 +33312,9 @@ function stackNamed(file2, local, resolver, stacks, files) {
   const from = resolveRelativeImport(file2, binding.source, files);
   return from ? stacks.get(key(from, binding.imported)) : void 0;
 }
-function isCdkEntry(file2, text5) {
-  if (!importsAwsCdk(text5)) return false;
-  const parsed = parseModule(file2, text5);
+function isCdkEntry(file2, text6) {
+  if (!importsAwsCdk(text6)) return false;
+  const parsed = parseModule(file2, text6);
   if (!parsed.ok) return true;
   const resolver = makeResolver(collectImports(parsed.module));
   for (const cls of classesOf(parsed.module)) {
@@ -32332,8 +33449,9 @@ var ARM_TYPES = {
   "microsoft.servicebus/namespaces": { kind: "service-bus", props: { sku: "sku.name" } },
   "microsoft.eventhub/namespaces": { kind: "event-hubs", props: { sku: "sku.name" } },
   "microsoft.apimanagement/service": { kind: "api-management", props: { skuName: "sku.name" } },
+  // VNet は VPC と同じく枠になる（properties.vpc から指される）。サブネット（`virtualNetworks/subnets`）は AWS と同じく
+  // 付属物: 要素にせず（3 セグメントの子リソースとして黙って読み飛ばす）、VNet までたどるのに使う
   "microsoft.network/virtualnetworks": { kind: "virtual-network" },
-  "microsoft.network/virtualnetworks/subnets": { kind: "subnet" },
   "microsoft.cdn/profiles": { kind: "front-door", dispatch: "cdn-profile", props: { skuName: "sku.name" } },
   "microsoft.network/frontdoors": { kind: "front-door" },
   "microsoft.insights/components": {
@@ -32344,6 +33462,24 @@ var ARM_TYPES = {
     kind: "log-analytics",
     props: { sku: "properties.sku.name" }
   }
+};
+var VIRTUAL_NETWORK = "microsoft.network/virtualnetworks";
+var SUBNET = "microsoft.network/virtualnetworks/subnets";
+var VPC_ENTRIES = {
+  // VNet 統合（リージョン VNet 統合）
+  "microsoft.web/sites": ["properties.virtualNetworkSubnetId"],
+  "microsoft.containerservice/managedclusters": ["properties.agentPoolProfiles.vnetSubnetID"]
+};
+var VPC_LINKS = {
+  "microsoft.network/privateendpoints": {
+    owner: [
+      "properties.privateLinkServiceConnections.properties.privateLinkServiceId",
+      "properties.manualPrivateLinkServiceConnections.properties.privateLinkServiceId"
+    ],
+    subnets: ["properties.subnet.id"]
+  },
+  // App Service の VNet 統合を子リソースで書いたもの（`Microsoft.Web/sites/networkConfig`）
+  "microsoft.web/sites/networkconfig": { owner: ["parent"], subnets: ["properties.subnetResourceId"] }
 };
 var ROLE_ASSIGNMENT = "microsoft.authorization/roleassignments";
 var SITES_CONFIG = "microsoft.web/sites/config";
@@ -32443,9 +33579,9 @@ var Lexer = class {
       }
       if (c >= "0" && c <= "9") {
         const m = NUMBER2.exec(src.slice(this.pos, this.pos + 32));
-        const text5 = m?.[0] ?? c;
-        out.push({ t: "num", v: text5, line: line3, endLine: line3, col });
-        this.pos += text5.length;
+        const text6 = m?.[0] ?? c;
+        out.push({ t: "num", v: text6, line: line3, endLine: line3, col });
+        this.pos += text6.length;
         continue;
       }
       if (ID_START.test(c)) {
@@ -33142,8 +34278,8 @@ function resync(parser, startIndex) {
     parser.pos++;
   }
 }
-function parseBicep(text5) {
-  const lexer = new Lexer(text5.charCodeAt(0) === 65279 ? text5.slice(1) : text5);
+function parseBicep(text6) {
+  const lexer = new Lexer(text6.charCodeAt(0) === 65279 ? text6.slice(1) : text6);
   const toks = lexer.tokens(false);
   toks.push({ t: "eof", v: "", line: lexer.line, endLine: lexer.line, col: lexer.pos - lexer.lineStart + 1 });
   const parser = new Parser(toks);
@@ -33170,9 +34306,9 @@ function parseBicep(text5) {
 
 // ../../packages/parsers/bicep/src/bicepParser.ts
 var PARSER_ID3 = "bicep";
-var BICEP_PARSER_VERSION = "0.1.1";
+var BICEP_PARSER_VERSION = "0.2.0";
 var isBicepFile = (path) => path.endsWith(".bicep") && !isIgnoredPath(path);
-var compare = (a, b) => a < b ? -1 : a > b ? 1 : 0;
+var compare4 = (a, b) => a < b ? -1 : a > b ? 1 : 0;
 var unique = (list2) => [...new Set(list2)];
 var sameSpan = (a, b) => a.file === b.file && a.startLine === b.startLine && a.endLine === b.endLine;
 var cleanSource = (s) => s.replace(/[?#].*$/s, "").replace(/\/\/[^/@\s]*@/g, "//");
@@ -33186,6 +34322,13 @@ function dig(expr, ...keys) {
   return cur;
 }
 var itemsOf = (expr) => expr?.kind === "array" ? expr.items : [];
+function digAll(expr, path) {
+  let cur = expr ? [expr] : [];
+  for (const k of path.split(".")) {
+    cur = cur.flatMap((e) => e.kind === "array" ? e.items : [e]).flatMap((e) => e.kind === "object" ? e.entries.filter((x) => x.key === k).map((x) => x.value) : []);
+  }
+  return cur;
+}
 var Analysis = class {
   constructor(ctx) {
     this.ctx = ctx;
@@ -33408,12 +34551,12 @@ var Analysis = class {
    * （種類で分けた表示 `Microsoft.Web/sites (kind ...)` も同じ型の 1 件にまとめる）。
    */
   reportUnsupported() {
-    for (const file2 of [...this.unsupported.keys()].sort(compare)) {
+    for (const file2 of [...this.unsupported.keys()].sort(compare4)) {
       const m = this.unsupported.get(file2);
       const byType = /* @__PURE__ */ new Map();
       for (const x of m.values()) byType.set(x.type, [...byType.get(x.type) ?? [], x]);
-      for (const type of [...byType.keys()].sort(compare)) {
-        const list2 = (byType.get(type) ?? []).sort((a, b) => compare(a.label, b.label)).map((x) => `${x.label} (${x.n})`).join(", ");
+      for (const type of [...byType.keys()].sort(compare4)) {
+        const list2 = (byType.get(type) ?? []).sort((a, b) => compare4(a.label, b.label)).map((x) => `${x.label} (${x.n})`).join(", ");
         this.diag(
           "info",
           "resource-type-unsupported",
@@ -33478,6 +34621,8 @@ var Analysis = class {
         );
         if (v !== void 0 && v !== "") properties[key2] = v;
       }
+      const region = this.stringOf(d.entries.get("location"), d.info);
+      if (region !== void 0 && region !== "") properties.region = region;
       properties.bicep = { symbol: d.path, resourceType: d.typeDisplay, file: d.info.file };
       if (d.existing) properties.existing = true;
     }
@@ -33544,7 +34689,31 @@ var Analysis = class {
       verification: options.inferred ? "inferred" : "verified"
     });
   }
+  /** 要素の id → その要素をサブネットに置く付属物（private endpoint・sites/networkConfig）とその式。 */
+  vpcLinks = /* @__PURE__ */ new Map();
+  collectVpcLinks() {
+    for (const link of this.decls()) {
+      const rule = link.mode === "resource" ? VPC_LINKS[link.type] : void 0;
+      if (!rule) continue;
+      const exprs = rule.subnets.flatMap((p) => digAll(link.raw.body, p));
+      const owners = rule.owner.flatMap((p) => {
+        if (p === "parent") {
+          const owner = link.parent ? this.elementOf(link.parent) : void 0;
+          return owner ? [owner] : [];
+        }
+        return this.targets(
+          digAll(link.raw.body, p).flatMap((e) => e.refs),
+          link.info
+        );
+      });
+      for (const owner of unique(owners)) {
+        const id = owner.id;
+        this.vpcLinks.set(id, [...this.vpcLinks.get(id) ?? [], { link, exprs }]);
+      }
+    }
+  }
   buildEdges() {
+    this.collectVpcLinks();
     for (const d of this.decls()) {
       if (d.mode === "resource" && d.type === ROLE_ASSIGNMENT) this.roleAssignmentEdges(d);
       else if (d.id !== void 0 && this.nodes.has(d.id)) this.declEdges(d);
@@ -33553,12 +34722,67 @@ var Analysis = class {
   declEdges(d) {
     const consumed = /* @__PURE__ */ new Set();
     if (d.def?.role === "azure-app") this.appEdges(d, consumed);
+    if (d.mode === "resource") this.vpcPlacement(d, consumed);
     const body = d.raw.body;
     this.dependsOn(d, body?.refs ?? [], consumed);
     const owner = d.parent ? this.elementOf(d.parent) : void 0;
     if (owner && !isResourceGroup(owner)) {
       this.addEdge(d.id, "DEPENDS_ON", owner.id, d.info.file, d.raw.span, {
         inferred: d.conditional || owner.conditional
+      });
+    }
+  }
+  /**
+   * VNet への所属（Terraform の vpcPlacement と同じ規則）。サブネットを指す式から、同じファイルのサブネット（親の VNet）
+   * か VNet そのもの（インラインのサブネット `vnet.properties.subnets[0].id`）に**すべて**たどれて、着いた VNet が 1 つなら
+   * `properties.vpc` と VNet への DEPENDS_ON。param・文字列・別のファイル・一部しかたどれない・2 つ以上の VNet に着くときは
+   * `properties.inVpc` と info の診断 `vpc-unresolved`（読み残しではない）。
+   */
+  vpcPlacement(d, consumed) {
+    const own2 = (VPC_ENTRIES[d.type] ?? []).flatMap((p) => digAll(d.raw.body, p));
+    for (const r of own2.flatMap((e) => e.refs)) consumed.add(r);
+    const sources = [
+      ...own2.map((expr) => ({ by: d, expr })),
+      ...(this.vpcLinks.get(d.id) ?? []).flatMap(
+        ({ link, exprs }) => exprs.map((expr) => ({ by: link, expr }))
+      )
+    ].filter((s) => s.expr.kind !== "null");
+    const first = sources[0];
+    if (!first) return;
+    const vnets = [];
+    let lost = false;
+    for (const { by, expr } of sources) {
+      if (expr.refs.length === 0) lost = true;
+      for (const ref of expr.refs) {
+        const located = this.resolve(ref, by.info);
+        if (located.length === 0) lost = true;
+        for (const { decl } of located) {
+          const vnet2 = decl.type === SUBNET ? decl.parent : decl;
+          if (vnet2?.type === VIRTUAL_NETWORK && vnet2.id !== void 0 && this.nodes.has(vnet2.id))
+            vnets.push(vnet2);
+          else lost = true;
+        }
+      }
+    }
+    const found = unique(vnets);
+    const node2 = this.nodes.get(d.id);
+    const vnet = found.length === 1 && !lost ? found[0] : void 0;
+    if (!vnet) {
+      node2.properties.inVpc = true;
+      this.diag(
+        "info",
+        "vpc-unresolved",
+        first.by.info.file,
+        found.length > 1 ? `${d.path} is in a virtual network, but its subnets lead to more than one virtual network; which one is not decided` : found.length === 1 ? `${d.path} is in a virtual network, but only some of its subnets could be followed to a virtual network in this file; which one is not confirmed` : `${d.path} is in a virtual network, but its subnets could not be followed to a virtual network in this file`,
+        first.expr.span.startLine,
+        d.id
+      );
+      return;
+    }
+    node2.properties.vpc = vnet.id;
+    for (const { by, expr } of sources) {
+      this.addEdge(d.id, "DEPENDS_ON", vnet.id, by.info.file, expr.span, {
+        inferred: d.conditional || vnet.conditional || by.conditional
       });
     }
   }
@@ -33666,7 +34890,7 @@ function entriesOf(body) {
   return m;
 }
 var isResourceGroup = (d) => d.def?.kind === "resource-group";
-var byLocation = (a, b) => compare(a.info.file, b.info.file) || a.raw.span.startLine - b.raw.span.startLine;
+var byLocation = (a, b) => compare4(a.info.file, b.info.file) || a.raw.span.startLine - b.raw.span.startLine;
 var bicepParser = {
   id: PARSER_ID3,
   version: BICEP_PARSER_VERSION,
@@ -33674,15 +34898,15 @@ var bicepParser = {
     return (await ctx.fs.listFiles()).some(isBicepFile);
   },
   async parse(ctx) {
-    const files = (await ctx.fs.listFiles()).filter(isBicepFile).sort(compare);
+    const files = (await ctx.fs.listFiles()).filter(isBicepFile).sort(compare4);
     const a = new Analysis(ctx);
     await a.load(files);
     a.buildNodes();
     a.buildEdges();
     a.reportUnsupported();
     return {
-      nodes: [...a.nodes.values()].sort((x, y) => compare(x.id, y.id)),
-      edges: [...a.edges.values()].sort((x, y) => compare(x.id, y.id)),
+      nodes: [...a.nodes.values()].sort((x, y) => compare4(x.id, y.id)),
+      edges: [...a.edges.values()].sort((x, y) => compare4(x.id, y.id)),
       diagnostics: a.diagnostics,
       unverified: a.unverified
     };
@@ -33744,8 +34968,8 @@ function isControl2(c, multiline = false) {
   if (multiline && (c === "\n" || c === "\r")) return false;
   return code2 < 32 || code2 === 127;
 }
-function parseToml(text5) {
-  const src = text5.charCodeAt(0) === 65279 ? text5.slice(1) : text5;
+function parseToml(text6) {
+  const src = text6.charCodeAt(0) === 65279 ? text6.slice(1) : text6;
   let pos = 0;
   let line3 = 1;
   const fail = (message) => {
@@ -33931,7 +35155,7 @@ function parseToml(text5) {
     if (target2.entries.some((e) => e.key === key2)) fail(`duplicate key: ${key2}`);
     const entry = { key: key2, value: v, span: { startLine: keyLine, endLine: v.span.endLine } };
     target2.entries.push(entry);
-    target2.span = union(target2.span, entry.span);
+    target2.span = union2(target2.span, entry.span);
   }
   function child(parent, name2, atLine) {
     const found = parent.entries.find((e) => e.key === name2);
@@ -34006,13 +35230,13 @@ function parseToml(text5) {
 function finalize2(v) {
   if (v.kind === "scalar") return v.span;
   if (v.kind === "array") {
-    for (const item of v.items) v.span = union(v.span, finalize2(item));
+    for (const item of v.items) v.span = union2(v.span, finalize2(item));
     return v.span;
   }
   for (const e of v.entries) {
     const inner = finalize2(e.value);
-    e.span = union(e.span, inner);
-    v.span = union(v.span, e.span);
+    e.span = union2(e.span, inner);
+    v.span = union2(v.span, e.span);
   }
   return v.span;
 }
@@ -34022,7 +35246,7 @@ var PARSER_ID4 = "cloudflare";
 var CLOUDFLARE_PARSER_VERSION = "0.3.4";
 var CONFIG_FILE = /(^|\/)wrangler\.(toml|json|jsonc)$/;
 var isConfigFile = (path) => CONFIG_FILE.test(path) && !isIgnoredPath(path);
-var str = (obj, key2) => {
+var str3 = (obj, key2) => {
   const v = getEntry(obj, key2)?.value;
   return v?.kind === "scalar" && typeof v.value === "string" && v.value !== "" ? v.value : void 0;
 };
@@ -34031,7 +35255,7 @@ var elements = (obj, key2) => {
   return v?.kind === "array" ? v.items.filter((i) => i.kind === "object") : [];
 };
 function resourceName(item, nameKey, skip) {
-  const name2 = str(item, nameKey);
+  const name2 = str3(item, nameKey);
   if (name2) return name2;
   skip("resource-name-missing", `no ${nameKey}; skipped`, item.span);
   return void 0;
@@ -34111,29 +35335,29 @@ var BINDING_KEYS = /* @__PURE__ */ new Set([
 function declsOf(cfg, workerName, skip) {
   const out = [];
   for (const item of elements(cfg, "d1_databases")) {
-    const binding = str(item, "binding");
+    const binding = str3(item, "binding");
     const name2 = resourceName(item, "database_name", skip);
     if (name2) out.push({ binding, type: "d1", kind: "d1", name: name2, relation: "BINDS_TO", span: item.span });
   }
   for (const item of elements(cfg, "r2_buckets")) {
-    const binding = str(item, "binding");
+    const binding = str3(item, "binding");
     const name2 = resourceName(item, "bucket_name", skip);
     if (name2) out.push({ binding, type: "r2", kind: "r2", name: name2, relation: "BINDS_TO", span: item.span });
   }
   for (const item of elements(cfg, "kv_namespaces")) {
-    const binding = str(item, "binding");
+    const binding = str3(item, "binding");
     if (binding)
       out.push({ binding, type: "kv", kind: "kv", name: binding, relation: "BINDS_TO", span: item.span });
     else skip("resource-name-missing", "kv_namespaces entry without a binding; skipped", item.span);
   }
   for (const item of elements(getEntry(cfg, "durable_objects")?.value, "bindings")) {
-    const binding = str(item, "name");
-    const className = str(item, "class_name");
+    const binding = str3(item, "name");
+    const className = str3(item, "class_name");
     if (!className) {
       skip("resource-name-missing", "durable object binding without class_name; skipped", item.span);
       continue;
     }
-    const host = str(item, "script_name") ?? workerName;
+    const host = str3(item, "script_name") ?? workerName;
     out.push({
       binding,
       type: "durable-object",
@@ -34144,8 +35368,8 @@ function declsOf(cfg, workerName, skip) {
     });
   }
   for (const item of elements(cfg, "services")) {
-    const binding = str(item, "binding");
-    const service = str(item, "service");
+    const binding = str3(item, "binding");
+    const service = str3(item, "service");
     if (!service) {
       skip("resource-name-missing", "service binding without service; skipped", item.span);
       continue;
@@ -34162,13 +35386,13 @@ function declsOf(cfg, workerName, skip) {
   }
   const queues = getEntry(cfg, "queues")?.value;
   for (const item of elements(queues, "producers")) {
-    const queue = str(item, "queue");
+    const queue = str3(item, "queue");
     if (!queue) {
       skip("resource-name-missing", "queue producer without queue; skipped", item.span);
       continue;
     }
     out.push({
-      binding: str(item, "binding"),
+      binding: str3(item, "binding"),
       type: "queue-producer",
       kind: "queue",
       name: queue,
@@ -34177,7 +35401,7 @@ function declsOf(cfg, workerName, skip) {
     });
   }
   for (const item of elements(queues, "consumers")) {
-    const queue = str(item, "queue");
+    const queue = str3(item, "queue");
     if (!queue) {
       skip("resource-name-missing", "queue consumer without queue; skipped", item.span);
       continue;
@@ -34193,7 +35417,7 @@ function declsOf(cfg, workerName, skip) {
   const ai = getEntry(cfg, "ai");
   if (ai?.value.kind === "object") {
     out.push({
-      binding: str(ai.value, "binding"),
+      binding: str3(ai.value, "binding"),
       type: "ai",
       kind: "ai",
       name: "workers-ai",
@@ -34202,7 +35426,7 @@ function declsOf(cfg, workerName, skip) {
     });
   }
   for (const item of elements(cfg, "analytics_engine_datasets")) {
-    const binding = str(item, "binding");
+    const binding = str3(item, "binding");
     const name2 = resourceName(item, "dataset", skip);
     if (name2) {
       out.push({
@@ -34217,7 +35441,7 @@ function declsOf(cfg, workerName, skip) {
   }
   for (const spec of SIMPLE_BINDINGS) {
     for (const item of objectsAt(cfg, spec.key)) {
-      const binding = str(item, spec.bindingKey ?? "binding");
+      const binding = str3(item, spec.bindingKey ?? "binding");
       const name2 = spec.nameKey ? resourceName(item, spec.nameKey, skip) : binding;
       if (!name2) {
         if (!spec.nameKey)
@@ -34232,14 +35456,14 @@ function declsOf(cfg, workerName, skip) {
         relation: "BINDS_TO",
         span: item.span,
         // A Workflow defined in another Worker is only named here, so the config does not prove it exists.
-        ...spec.scriptKey && str(item, spec.scriptKey) ? { reference: true } : {}
+        ...spec.scriptKey && str3(item, spec.scriptKey) ? { reference: true } : {}
       });
     }
   }
   for (const e of cfg.entries) {
     if (NOT_BINDING_KEYS.has(e.key)) continue;
     const items2 = e.value.kind === "array" ? e.value.items : [e.value];
-    if (items2.some((i) => i.kind === "object" && str(i, "binding") !== void 0)) {
+    if (items2.some((i) => i.kind === "object" && str3(i, "binding") !== void 0)) {
       skip("binding-unsupported", `${e.key} looks like a binding but is not read yet`, e.span, e.key);
     }
   }
@@ -34277,18 +35501,18 @@ function stringsOf2(v, objectKey) {
   if (!v) return [];
   if (v.kind === "scalar") return typeof v.value === "string" ? [v.value] : [];
   if (v.kind === "array") return v.items.flatMap((i) => stringsOf2(i, objectKey));
-  const s = str(v, objectKey);
+  const s = str3(v, objectKey);
   return s ? [s] : [];
 }
 function assetsOf(root) {
   const entry = getEntry(root, "assets");
   if (!entry || entry.value.kind !== "object") return void 0;
   const properties = {};
-  const directory = str(entry.value, "directory");
+  const directory = str3(entry.value, "directory");
   if (directory) properties.directory = directory;
-  const binding = str(entry.value, "binding");
+  const binding = str3(entry.value, "binding");
   if (binding) properties.binding = binding;
-  const notFound = str(entry.value, "not_found_handling");
+  const notFound = str3(entry.value, "not_found_handling");
   if (notFound) properties.notFoundHandling = notFound;
   const first = getEntry(entry.value, "run_worker_first")?.value;
   if (first?.kind === "scalar" && typeof first.value === "boolean") properties.runWorkerFirst = first.value;
@@ -34323,7 +35547,7 @@ function analyze(ctx, file2, root) {
   };
   if (root.kind !== "object") return skipFile("config-invalid", "the top level is not an object");
   const nameEntry = getEntry(root, "name");
-  const workerName = str(root, "name");
+  const workerName = str3(root, "name");
   if (!nameEntry || !workerName) {
     return skipFile("worker-name-missing", "no Worker name; nothing from this file can be confirmed");
   }
@@ -34412,9 +35636,9 @@ function analyze(ctx, file2, root) {
   }
   if (envDeclared.size > 0) config2.envDeclaredBindings = [...envDeclared].sort();
   if (varNames.size > 0) config2.varNames = [...varNames].sort();
-  const main = str(root, "main");
+  const main = str3(root, "main");
   if (main) config2.main = main;
-  const compatibilityDate = str(root, "compatibility_date");
+  const compatibilityDate = str3(root, "compatibility_date");
   if (compatibilityDate) config2.compatibilityDate = compatibilityDate;
   if (routes.length > 0) config2.routes = routes;
   if (crons.length > 0) config2.crons = crons;
@@ -34471,8 +35695,8 @@ async function parseFile(ctx, file2) {
     unverified: [{ parserId: PARSER_ID4, file: file2, reason: message }]
   });
   try {
-    const text5 = await ctx.fs.readText(file2);
-    const tree = file2.endsWith(".toml") ? parseToml(text5) : parseJsonc(text5);
+    const text6 = await ctx.fs.readText(file2);
+    const tree = file2.endsWith(".toml") ? parseToml(text6) : parseJsonc(text6);
     return analyze(ctx, file2, tree);
   } catch (e) {
     if (e instanceof ConfigSyntaxError) return fail(`${e.message} (line ${e.line})`, e.line);
@@ -34545,7 +35769,7 @@ function joinNormalized2(dir, rel) {
   }
   return out.join("/");
 }
-var text2 = (v, key2) => {
+var text3 = (v, key2) => {
   const e = getEntry(v, key2);
   return e?.value.kind === "scalar" && typeof e.value.value === "string" && e.value.value !== "" ? { value: e.value.value, line: e.span.startLine } : void 0;
 };
@@ -34561,8 +35785,8 @@ async function readWorkerEntries(fs) {
     } catch {
       continue;
     }
-    const name2 = text2(root, "name");
-    const main = text2(root, "main");
+    const name2 = text3(root, "name");
+    const main = text3(root, "main");
     if (!name2 || !main) continue;
     let workerId;
     try {
@@ -34940,7 +36164,7 @@ var HONO_PARSER_ID = "hono";
 var HONO_PARSER_VERSION = "0.3.1";
 var MAX_ENV_DEPTH = 4;
 var HONO_IMPORT = /["']hono(?:\/[^"']*)?["']/;
-var importsHono = (text5) => HONO_IMPORT.test(text5);
+var importsHono = (text6) => HONO_IMPORT.test(text6);
 var messageOf2 = (e) => e instanceof Error ? e.message : String(e);
 var Project = class {
   constructor(files) {
@@ -35110,10 +36334,10 @@ async function analyzeHono(ctx) {
   );
   for (const item of texts) {
     if (!item) continue;
-    const [file2, text5] = item;
-    const parsed = parseModule(file2, text5);
+    const [file2, text6] = item;
+    const parsed = parseModule(file2, text6);
     if (!parsed.ok) {
-      if (!HONO_IMPORT.test(text5)) continue;
+      if (!HONO_IMPORT.test(text6)) continue;
       failFile(file2, "syntax-error", `syntax error: ${parsed.message}`);
       continue;
     }
@@ -35514,7 +36738,7 @@ var honoBindingLinker = {
 
 // ../../packages/parsers/mcp/src/project.ts
 var MCP_IMPORT = /["'](?:@modelcontextprotocol\/(?:sdk|server)(?:\/[^"']*)?|agents\/mcp(?:\/[^"']*)?)["']/;
-var importsMcp = (text5) => MCP_IMPORT.test(text5);
+var importsMcp = (text6) => MCP_IMPORT.test(text6);
 var isFunctionNode = (n) => n.type === "FunctionDeclaration" || n.type === "FunctionExpression" || n.type === "ArrowFunctionExpression";
 var identName3 = (n) => n?.type === "Identifier" ? n.name : void 0;
 var keyName = (key2) => key2?.type === "Identifier" ? key2.name : key2?.type === "Literal" ? String(key2.value) : void 0;
@@ -36057,15 +37281,15 @@ async function analyzeMcp(ctx) {
   const targets = [];
   const routeFiles = [];
   for (const file2 of sources) {
-    let text5;
+    let text6;
     try {
-      text5 = await ctx.fs.readText(file2);
+      text6 = await ctx.fs.readText(file2);
     } catch (e) {
       void e;
       continue;
     }
-    const mcp = importsMcp(text5);
-    if (!mcp && !HONO_IMPORT2.test(text5) && !OAUTH_PROVIDER_IMPORT.test(text5)) continue;
+    const mcp = importsMcp(text6);
+    if (!mcp && !HONO_IMPORT2.test(text6) && !OAUTH_PROVIDER_IMPORT.test(text6)) continue;
     const loaded = await project.load(file2);
     if ("error" in loaded) {
       if (mcp) {
@@ -36744,9 +37968,9 @@ var Lexer2 = class {
       }
       if (c >= "0" && c <= "9") {
         const m = NUMBER4.exec(src.slice(this.pos, this.pos + 64));
-        const text5 = m?.[0] ?? c;
-        out.push({ t: "num", v: text5, line: line3, endLine: line3, col });
-        this.pos += text5.length;
+        const text6 = m?.[0] ?? c;
+        out.push({ t: "num", v: text6, line: line3, endLine: line3, col });
+        this.pos += text6.length;
         continue;
       }
       if (ID_START2.test(c)) {
@@ -37269,8 +38493,8 @@ function resync2(parser, startIndex) {
     parser.pos++;
   }
 }
-function parseHcl(text5) {
-  const lexer = new Lexer2(text5);
+function parseHcl(text6) {
+  const lexer = new Lexer2(text6);
   const toks = lexer.tokens(false);
   toks.push({ t: "eof", v: "", line: lexer.line, endLine: lexer.line, col: lexer.pos - lexer.lineStart + 1 });
   const parser = new Parser2(toks);
@@ -37310,7 +38534,7 @@ function literalValue(e) {
   if (e.kind === "number" || e.kind === "bool") return e.value;
   return void 0;
 }
-var text3 = (b, name2) => {
+var text4 = (b, name2) => {
   const v = literalOf(b, name2);
   return typeof v === "string" && v !== "" ? v : void 0;
 };
@@ -37344,8 +38568,8 @@ var azure = (kind2, nameKeys = ["name"], describe3, role) => ({
   ...describe3 ? { describe: describe3 } : {},
   ...role ? { role } : {}
 });
-var describeWorker = (b) => pick2({ compatibilityDate: text3(b, "compatibility_date"), mainModule: text3(b, "main_module") });
-var describeTable2 = (b) => pick2({ billingMode: text3(b, "billing_mode"), hashKey: text3(b, "hash_key"), rangeKey: text3(b, "range_key") });
+var describeWorker = (b) => pick2({ compatibilityDate: text4(b, "compatibility_date"), mainModule: text4(b, "main_module") });
+var describeTable2 = (b) => pick2({ billingMode: text4(b, "billing_mode"), hashKey: text4(b, "hash_key"), rangeKey: text4(b, "range_key") });
 var TYPES3 = {
   // --- Cloudflare provider（v4 と v5 の両方の名前） ---
   cloudflare_workers_script: cf("worker", ["script_name", "name"], "name", {
@@ -37363,19 +38587,19 @@ var TYPES3 = {
   cloudflare_worker_version: cf("worker", [], "name", { role: "worker-version" }),
   cloudflare_workers_route: cf("worker-route", ["pattern"], "label", {
     role: "exposes-worker",
-    describe: (b) => pick2({ pattern: text3(b, "pattern") })
+    describe: (b) => pick2({ pattern: text4(b, "pattern") })
   }),
   cloudflare_worker_route: cf("worker-route", ["pattern"], "label", {
     role: "exposes-worker",
-    describe: (b) => pick2({ pattern: text3(b, "pattern") })
+    describe: (b) => pick2({ pattern: text4(b, "pattern") })
   }),
   cloudflare_workers_custom_domain: cf("custom-domain", ["hostname"], "label", {
     role: "exposes-worker",
-    describe: (b) => pick2({ hostname: text3(b, "hostname") })
+    describe: (b) => pick2({ hostname: text4(b, "hostname") })
   }),
   cloudflare_worker_domain: cf("custom-domain", ["hostname"], "label", {
     role: "exposes-worker",
-    describe: (b) => pick2({ hostname: text3(b, "hostname") })
+    describe: (b) => pick2({ hostname: text4(b, "hostname") })
   }),
   cloudflare_d1_database: cf("d1", ["name"], "name"),
   cloudflare_r2_bucket: cf("r2", ["name"], "name"),
@@ -37383,24 +38607,24 @@ var TYPES3 = {
   cloudflare_queue: cf("queue", ["queue_name", "name"], "name"),
   cloudflare_zone: cf("zone", ["name", "zone"], "name"),
   cloudflare_dns_record: cf("dns-record", ["name"], "label", {
-    describe: (b) => pick2({ recordType: text3(b, "type"), recordName: text3(b, "name") })
+    describe: (b) => pick2({ recordType: text4(b, "type"), recordName: text4(b, "name") })
   }),
   cloudflare_record: cf("dns-record", ["name"], "label", {
-    describe: (b) => pick2({ recordType: text3(b, "type"), recordName: text3(b, "name") })
+    describe: (b) => pick2({ recordType: text4(b, "type"), recordName: text4(b, "name") })
   }),
   cloudflare_zero_trust_access_application: cf("access-application", ["name"], "label", {
-    describe: (b) => pick2({ domain: text3(b, "domain"), applicationType: text3(b, "type") })
+    describe: (b) => pick2({ domain: text4(b, "domain"), applicationType: text4(b, "type") })
   }),
   cloudflare_access_application: cf("access-application", ["name"], "label", {
-    describe: (b) => pick2({ domain: text3(b, "domain"), applicationType: text3(b, "type") })
+    describe: (b) => pick2({ domain: text4(b, "domain"), applicationType: text4(b, "type") })
   }),
   cloudflare_zero_trust_access_policy: cf("access-policy", ["name"], "label"),
   cloudflare_access_policy: cf("access-policy", ["name"], "label"),
   cloudflare_zero_trust_access_ai_controls_mcp_server: cf("mcp-server", ["name"], "label", {
-    describe: (b) => pick2({ hostname: text3(b, "hostname") })
+    describe: (b) => pick2({ hostname: text4(b, "hostname") })
   }),
   cloudflare_zero_trust_access_ai_controls_mcp_portal: cf("mcp-portal", ["name"], "label", {
-    describe: (b) => pick2({ hostname: text3(b, "hostname") })
+    describe: (b) => pick2({ hostname: text4(b, "hostname") })
   }),
   cloudflare_pages_project: cf("pages-project", ["name"], "name"),
   cloudflare_zero_trust_tunnel_cloudflared: cf("tunnel", ["name"], "label"),
@@ -37412,11 +38636,11 @@ var TYPES3 = {
     "lambda",
     ["function_name"],
     (b) => pick2({
-      runtime: text3(b, "runtime"),
-      handler: text3(b, "handler"),
+      runtime: text4(b, "runtime"),
+      handler: text4(b, "handler"),
       memorySize: num2(b, "memory_size"),
       timeout: num2(b, "timeout"),
-      packageType: text3(b, "package_type")
+      packageType: text4(b, "package_type")
     }),
     "lambda"
   ),
@@ -37427,29 +38651,29 @@ var TYPES3 = {
   aws_cloudwatch_event_rule: aws(
     "eventbridge",
     ["name"],
-    (b) => pick2({ scheduleExpression: text3(b, "schedule_expression") })
+    (b) => pick2({ scheduleExpression: text4(b, "schedule_expression") })
   ),
   aws_apigatewayv2_api: aws(
     "api-gateway",
     ["name"],
-    (b) => pick2({ apiVersion: "v2", protocolType: text3(b, "protocol_type") })
+    (b) => pick2({ apiVersion: "v2", protocolType: text4(b, "protocol_type") })
   ),
   aws_api_gateway_rest_api: aws("api-gateway", ["name"], () => ({ apiVersion: "v1" })),
   aws_db_instance: aws(
     "rds",
     ["identifier"],
-    (b) => pick2({ engine: text3(b, "engine"), instanceClass: text3(b, "instance_class") })
+    (b) => pick2({ engine: text4(b, "engine"), instanceClass: text4(b, "instance_class") })
   ),
-  aws_rds_cluster: aws("aurora", ["cluster_identifier"], (b) => pick2({ engine: text3(b, "engine") })),
+  aws_rds_cluster: aws("aurora", ["cluster_identifier"], (b) => pick2({ engine: text4(b, "engine") })),
   aws_ecs_cluster: aws("ecs", ["name"]),
-  aws_ecs_service: aws("ecs", ["name"], (b) => pick2({ launchType: text3(b, "launch_type") })),
+  aws_ecs_service: aws("ecs", ["name"], (b) => pick2({ launchType: text4(b, "launch_type") })),
   aws_eks_cluster: aws("eks", ["name"]),
   aws_ecr_repository: aws("ecr", ["name"]),
-  aws_instance: aws("ec2", [], (b) => pick2({ instanceType: text3(b, "instance_type") })),
+  aws_instance: aws("ec2", [], (b) => pick2({ instanceType: text4(b, "instance_type") })),
   aws_cloudfront_distribution: aws("cloudfront", ["comment"]),
   aws_route53_zone: aws("route53", ["name"]),
-  aws_lb: aws("elb", ["name"], (b) => pick2({ loadBalancerType: text3(b, "load_balancer_type") })),
-  aws_alb: aws("elb", ["name"], (b) => pick2({ loadBalancerType: text3(b, "load_balancer_type") })),
+  aws_lb: aws("elb", ["name"], (b) => pick2({ loadBalancerType: text4(b, "load_balancer_type") })),
+  aws_alb: aws("elb", ["name"], (b) => pick2({ loadBalancerType: text4(b, "load_balancer_type") })),
   aws_sfn_state_machine: aws("step-functions", ["name"]),
   aws_kinesis_stream: aws("kinesis", ["name"]),
   aws_appsync_graphql_api: aws("appsync", ["name"]),
@@ -37481,7 +38705,7 @@ var TYPES3 = {
   aws_elastic_beanstalk_application: aws("elastic-beanstalk", ["name"]),
   aws_cloudwatch_metric_alarm: aws("cloudwatch", ["alarm_name"]),
   // --- Azure（azurerm）provider。id は AWS と同じくディレクトリとラベルで決める（`name` は表示名） ---
-  azurerm_resource_group: azure("resource-group", ["name"], (b) => pick2({ location: text3(b, "location") })),
+  azurerm_resource_group: azure("resource-group", ["name"], (b) => pick2({ location: text4(b, "location") })),
   azurerm_linux_function_app: azure("azure-functions", ["name"], void 0, "azure-app"),
   azurerm_windows_function_app: azure("azure-functions", ["name"], void 0, "azure-app"),
   azurerm_function_app_flex_consumption: azure("azure-functions", ["name"], void 0, "azure-app"),
@@ -37492,7 +38716,7 @@ var TYPES3 = {
   azurerm_service_plan: azure(
     "app-service-plan",
     ["name"],
-    (b) => pick2({ osType: text3(b, "os_type"), skuName: text3(b, "sku_name") })
+    (b) => pick2({ osType: text4(b, "os_type"), skuName: text4(b, "sku_name") })
   ),
   azurerm_app_service_plan: azure("app-service-plan", ["name"]),
   azurerm_static_web_app: azure("static-web-apps", ["name"], void 0, "azure-app"),
@@ -37502,30 +38726,30 @@ var TYPES3 = {
     "storage-account",
     ["name"],
     (b) => pick2({
-      accountTier: text3(b, "account_tier"),
-      replicationType: text3(b, "account_replication_type"),
-      accountKind: text3(b, "account_kind")
+      accountTier: text4(b, "account_tier"),
+      replicationType: text4(b, "account_replication_type"),
+      accountKind: text4(b, "account_kind")
     })
   ),
-  azurerm_cosmosdb_account: azure("cosmos-db", ["name"], (b) => pick2({ kind: text3(b, "kind") })),
+  azurerm_cosmosdb_account: azure("cosmos-db", ["name"], (b) => pick2({ kind: text4(b, "kind") })),
   azurerm_mssql_server: azure("sql-server"),
-  azurerm_mssql_database: azure("sql-database", ["name"], (b) => pick2({ skuName: text3(b, "sku_name") })),
-  azurerm_redis_cache: azure("cache-for-redis", ["name"], (b) => pick2({ skuName: text3(b, "sku_name") })),
-  azurerm_managed_redis: azure("managed-redis", ["name"], (b) => pick2({ skuName: text3(b, "sku_name") })),
-  azurerm_key_vault: azure("key-vault", ["name"], (b) => pick2({ skuName: text3(b, "sku_name") })),
-  azurerm_servicebus_namespace: azure("service-bus", ["name"], (b) => pick2({ sku: text3(b, "sku") })),
-  azurerm_eventhub_namespace: azure("event-hubs", ["name"], (b) => pick2({ sku: text3(b, "sku") })),
-  azurerm_api_management: azure("api-management", ["name"], (b) => pick2({ skuName: text3(b, "sku_name") })),
+  azurerm_mssql_database: azure("sql-database", ["name"], (b) => pick2({ skuName: text4(b, "sku_name") })),
+  azurerm_redis_cache: azure("cache-for-redis", ["name"], (b) => pick2({ skuName: text4(b, "sku_name") })),
+  azurerm_managed_redis: azure("managed-redis", ["name"], (b) => pick2({ skuName: text4(b, "sku_name") })),
+  azurerm_key_vault: azure("key-vault", ["name"], (b) => pick2({ skuName: text4(b, "sku_name") })),
+  azurerm_servicebus_namespace: azure("service-bus", ["name"], (b) => pick2({ sku: text4(b, "sku") })),
+  azurerm_eventhub_namespace: azure("event-hubs", ["name"], (b) => pick2({ sku: text4(b, "sku") })),
+  azurerm_api_management: azure("api-management", ["name"], (b) => pick2({ skuName: text4(b, "sku_name") })),
+  // VNet は VPC と同じく枠になる（properties.vpc から指される）。サブネットは AWS と同じく付属物（VIA でたどるだけ）
   azurerm_virtual_network: azure("virtual-network"),
-  azurerm_subnet: azure("subnet"),
-  azurerm_cdn_frontdoor_profile: azure("front-door", ["name"], (b) => pick2({ skuName: text3(b, "sku_name") })),
+  azurerm_cdn_frontdoor_profile: azure("front-door", ["name"], (b) => pick2({ skuName: text4(b, "sku_name") })),
   azurerm_frontdoor: azure("front-door"),
   azurerm_application_insights: azure(
     "application-insights",
     ["name"],
-    (b) => pick2({ applicationType: text3(b, "application_type") })
+    (b) => pick2({ applicationType: text4(b, "application_type") })
   ),
-  azurerm_log_analytics_workspace: azure("log-analytics", ["name"], (b) => pick2({ sku: text3(b, "sku") }))
+  azurerm_log_analytics_workspace: azure("log-analytics", ["name"], (b) => pick2({ sku: text4(b, "sku") }))
 };
 var SUPPORTING_PREFIXES2 = [
   "aws_iam_",
@@ -37566,7 +38790,7 @@ var SUPPORTING_PREFIXES2 = [
   "azurerm_monitor_",
   "azurerm_network_",
   "azurerm_private_",
-  "azurerm_subnet_",
+  "azurerm_subnet",
   "azurerm_virtual_network_",
   "azurerm_app_service_",
   "azurerm_linux_web_app_",
@@ -37641,15 +38865,30 @@ var VIA = {
   aws_db_subnet_group: ["subnet_ids"],
   aws_lb_listener: ["load_balancer_arn"],
   aws_alb_listener: ["load_balancer_arn"],
-  aws_s3_bucket_website_configuration: ["bucket"]
+  aws_s3_bucket_website_configuration: ["bucket"],
+  azurerm_subnet: ["virtual_network_name"]
 };
-var VPC_ENTRIES = {
+var VPC_ENTRIES2 = {
   aws_lambda_function: ["vpc_config.subnet_ids"],
   aws_ecs_service: ["network_configuration.subnets"],
   aws_lb: ["subnets", "subnet_mapping.subnet_id"],
   aws_alb: ["subnets", "subnet_mapping.subnet_id"],
   aws_db_instance: ["db_subnet_group_name"],
-  aws_rds_cluster: ["db_subnet_group_name"]
+  aws_rds_cluster: ["db_subnet_group_name"],
+  // Azure: VNet 統合（リージョン VNet 統合）と、AKS のノード プール
+  azurerm_linux_function_app: ["virtual_network_subnet_id"],
+  azurerm_windows_function_app: ["virtual_network_subnet_id"],
+  azurerm_function_app_flex_consumption: ["virtual_network_subnet_id"],
+  azurerm_linux_web_app: ["virtual_network_subnet_id"],
+  azurerm_windows_web_app: ["virtual_network_subnet_id"],
+  azurerm_kubernetes_cluster: ["default_node_pool.vnet_subnet_id"]
+};
+var VPC_LINKS2 = {
+  azurerm_app_service_virtual_network_swift_connection: { owner: ["app_service_id"], subnets: ["subnet_id"] },
+  azurerm_private_endpoint: {
+    owner: ["private_service_connection.private_connection_resource_id"],
+    subnets: ["subnet_id"]
+  }
 };
 var listener = (type) => ({
   type,
@@ -37728,9 +38967,9 @@ function bindingKindOf(typeOrBlock) {
 
 // ../../packages/parsers/terraform/src/terraformParser.ts
 var PARSER_ID5 = "terraform";
-var TERRAFORM_PARSER_VERSION = "0.4.0";
+var TERRAFORM_PARSER_VERSION = "0.5.0";
 var isTerraformFile = (path) => path.endsWith(".tf") && !isIgnoredPath(path) && !path.split("/").slice(0, -1).includes(".terraform");
-var compare2 = (a, b) => a < b ? -1 : a > b ? 1 : 0;
+var compare5 = (a, b) => a < b ? -1 : a > b ? 1 : 0;
 var dirOf3 = (file2) => {
   const i = file2.lastIndexOf("/");
   return i < 0 ? "." : file2.slice(0, i);
@@ -37886,14 +39125,14 @@ var Analysis2 = class {
   }
   /** 要素にできなかった型の報告。未知のプロバイダは読めなかったこと（unverified）、AWS/Cloudflare の表にない型は読み飛ばし（info）。 */
   reportUnmapped() {
-    const list2 = (m) => [...m.entries()].sort(([a], [b]) => compare2(a, b)).map(([type, n]) => `${type} (${n})`).join(", ");
-    for (const file2 of [...this.unknownProvider.keys()].sort(compare2)) {
+    const list2 = (m) => [...m.entries()].sort(([a], [b]) => compare5(a, b)).map(([type, n]) => `${type} (${n})`).join(", ");
+    for (const file2 of [...this.unknownProvider.keys()].sort(compare5)) {
       const m = this.unknownProvider.get(file2);
       this.gap("warning", "resource-provider-unsupported", file2, `resource types not supported: ${list2(m)}`);
     }
-    for (const file2 of [...this.unmapped.keys()].sort(compare2)) {
+    for (const file2 of [...this.unmapped.keys()].sort(compare5)) {
       const m = this.unmapped.get(file2);
-      for (const [type, n] of [...m.entries()].sort(([a], [b]) => compare2(a, b))) {
+      for (const [type, n] of [...m.entries()].sort(([a], [b]) => compare5(a, b))) {
         this.diag(
           "info",
           "resource-type-unsupported",
@@ -38007,9 +39246,9 @@ var Analysis2 = class {
    * Azure: `location` のリテラルか、`azurerm_resource_group.x.location`（1 段）の参照先のリテラル。
    */
   regionOf(d) {
-    const text5 = (v) => typeof v === "string" && v !== "" ? v : void 0;
+    const text6 = (v) => typeof v === "string" && v !== "" ? v : void 0;
     if (d.def?.namespace === "aws") {
-      const own2 = text5(literalOf(d.block, "region"));
+      const own2 = text6(literalOf(d.block, "region"));
       if (own2 !== void 0) return own2;
       const provider = d.block.attributes.find((a) => a.name === "provider")?.value;
       let alias = "";
@@ -38023,14 +39262,14 @@ var Analysis2 = class {
     if (d.def?.namespace === "azure") {
       const location = d.block.attributes.find((a) => a.name === "location")?.value;
       if (!location) return void 0;
-      const literal2 = text5(literalValue(location));
+      const literal2 = text6(literalValue(location));
       if (literal2 !== void 0) return literal2;
       const ref = location.kind === "ref" && location.refs.length === 1 ? location.refs[0] : void 0;
       if (ref?.parts[0] !== "azurerm_resource_group" || ref.parts.length !== 3 || ref.parts[2] !== "location") {
         return void 0;
       }
       const group = this.resolve(ref, d.dir)[0]?.decl;
-      return group ? text5(literalOf(group.block, "location")) : void 0;
+      return group ? text6(literalOf(group.block, "location")) : void 0;
     }
     return void 0;
   }
@@ -38148,14 +39387,29 @@ var Analysis2 = class {
   inferred(a, b) {
     return a.conditional || (b?.conditional ?? false);
   }
+  /** 要素の id → その要素をサブネットに置く付属物（VNet 統合・private endpoint）とその属性。 */
+  vpcLinks = /* @__PURE__ */ new Map();
+  collectVpcLinks(all) {
+    for (const link of all) {
+      const rule = link.mode === "resource" ? VPC_LINKS2[link.type] : void 0;
+      if (!rule) continue;
+      const attrs = rule.subnets.flatMap((p) => attrsAt(link.block, p));
+      const ownerRefs = rule.owner.flatMap((p) => attrsAt(link.block, p)).flatMap((a) => a.value.refs);
+      for (const owner of this.nodesOf(this.resolveAll(ownerRefs, link.dir))) {
+        const id = owner.id;
+        this.vpcLinks.set(id, [...this.vpcLinks.get(id) ?? [], { link, attrs }]);
+      }
+    }
+  }
   buildEdges() {
     const all = [...this.decls.values()].flatMap((m) => [...m.values()]).sort(byLocation2);
+    this.collectVpcLinks(all);
     for (const d of all) {
       if (d.glue) this.glueEdges(d, d.glue);
       else if (d.def?.role === "worker-version") this.workerVersionEdges(d);
       else if (d.id !== void 0 && this.nodes.has(d.id)) this.declEdges(d);
     }
-    for (const decls of [...this.decls.entries()].sort(([a], [b]) => compare2(a, b)).map(([, m]) => m)) {
+    for (const decls of [...this.decls.entries()].sort(([a], [b]) => compare5(a, b)).map(([, m]) => m)) {
       for (const rule of JUNCTIONS) this.junctionEdges([...decls.values()].sort(byLocation2), rule);
     }
   }
@@ -38203,8 +39457,8 @@ var Analysis2 = class {
     if (d.def?.kind === "mcp-portal") this.portalEdges(d);
     if (d.def?.namespace === "aws" && d.def.kind === "cloudfront") this.originEdges(d, consumed);
     if (d.mode === "resource" && d.type === "aws_ecs_service") this.ecsTaskEdges(d);
-    if (d.mode === "resource" && VPC_ENTRIES[d.type])
-      this.vpcPlacement(d, VPC_ENTRIES[d.type] ?? [], consumed);
+    if (d.mode === "resource" && (VPC_ENTRIES2[d.type] || this.vpcLinks.has(d.id)))
+      this.vpcPlacement(d, VPC_ENTRIES2[d.type] ?? [], consumed);
     for (const attr of allAttributes(d.block)) {
       for (const ref of attr.value.refs) {
         if (consumed.has(ref)) continue;
@@ -38383,7 +39637,7 @@ var Analysis2 = class {
     if (refs.length === 0) return;
     const node2 = this.nodes.get(d.id);
     node2.properties.environmentReferences = refs.sort(
-      (x, y) => compare2(x.name, y.name) || compare2(x.resource, y.resource)
+      (x, y) => compare5(x.name, y.name) || compare5(x.resource, y.resource)
     );
   }
   /** 診断を出したタスク定義（service が何個指しても 1 回）。 */
@@ -38462,17 +39716,31 @@ var Analysis2 = class {
    * VPC への所属。サブネットを指す属性から、同じディレクトリの subnet（→ `vpc_id`）を経て VPC の要素に着いたら
    * `properties.vpc` と VPC への DEPENDS_ON。着かなかったら（var・data・別モジュールのサブネット）、一部しか着かなかったら、
    * 2 つ以上の VPC に着いたら `properties.inVpc` と info の診断 `vpc-unresolved`（読み残しではない）。
+   * Azure は VNet が VPC に当たる（subnet → `virtual_network_name`）。要素の自分の属性のほか、要素をサブネットに置く
+   * 付属物（VNet 統合・private endpoint。VPC_LINKS）の属性もあわせて 1 回で決める。
    */
   vpcPlacement(d, paths, consumed) {
-    const attrs = paths.flatMap((p) => attrsAt(d.block, p)).filter((a) => a.value.kind !== "null" && !(a.value.kind === "array" && a.value.items.length === 0));
-    const first = attrs[0];
+    const present = (a) => a.value.kind !== "null" && !(a.value.kind === "array" && a.value.items.length === 0);
+    const own2 = paths.flatMap((p) => attrsAt(d.block, p)).filter(present);
+    for (const r of own2.flatMap((a) => a.value.refs)) consumed.add(r);
+    const sources = [
+      ...own2.map((attr) => ({ by: d, attr })),
+      ...(this.vpcLinks.get(d.id) ?? []).flatMap(
+        ({ link, attrs }) => attrs.filter(present).map((attr) => ({ by: link, attr }))
+      )
+    ];
+    const first = sources[0];
     if (!first) return;
-    const refs = attrs.flatMap((a) => a.value.refs);
-    for (const r of refs) consumed.add(r);
     const node2 = this.nodes.get(d.id);
-    const reached = this.reach(refs, d.dir);
-    const vpcs = reached.found.filter((x) => x.def?.namespace === "aws" && x.def.kind === "vpc");
-    const vpc = vpcs.length === 1 && !reached.lost ? vpcs[0] : void 0;
+    const found = [];
+    let lost = false;
+    for (const s of sources) {
+      const r = this.reach(s.attr.value.refs, s.by.dir);
+      found.push(...r.found);
+      lost ||= r.lost;
+    }
+    const vpcs = unique2(found).filter(isVpc);
+    const vpc = vpcs.length === 1 && !lost ? vpcs[0] : void 0;
     if (!vpc) {
       node2.properties.inVpc = true;
       this.diag(
@@ -38480,15 +39748,15 @@ var Analysis2 = class {
         "vpc-unresolved",
         d.file,
         vpcs.length > 1 ? `${d.address} is in a VPC, but its subnets lead to more than one VPC; which one is not decided` : vpcs.length === 1 ? `${d.address} is in a VPC, but only some of its subnets could be followed to a VPC in this directory; which one is not confirmed` : `${d.address} is in a VPC, but its subnets could not be followed to a VPC in this directory`,
-        first.span.startLine,
+        first.attr.span.startLine,
         d.id
       );
       return;
     }
     node2.properties.vpc = vpc.id;
-    for (const a of attrs) {
-      this.addEdge(d.id, "DEPENDS_ON", vpc.id, d.file, a.span, {
-        inferred: this.inferred(d, vpc)
+    for (const s of sources) {
+      this.addEdge(d.id, "DEPENDS_ON", vpc.id, s.by.file, s.attr.span, {
+        inferred: this.inferred(d, vpc) || s.by.conditional
       });
     }
   }
@@ -38574,6 +39842,7 @@ var Analysis2 = class {
   }
 };
 var isResourceGroup2 = (d) => d.def?.namespace === "azure" && d.def.kind === "resource-group";
+var isVpc = (d) => d.def?.namespace === "aws" && d.def.kind === "vpc" || d.def?.namespace === "azure" && d.def.kind === "virtual-network";
 var KEY_VAULT_CHILDREN = /* @__PURE__ */ new Set([
   "azurerm_key_vault_secret",
   "azurerm_key_vault_key",
@@ -38585,7 +39854,7 @@ var AZURE_STORAGE_ATTRS = /* @__PURE__ */ new Set([
   "storage_account_id",
   "storage_container_endpoint"
 ]);
-var byLocation2 = (a, b) => compare2(a.file, b.file) || a.block.span.startLine - b.block.span.startLine;
+var byLocation2 = (a, b) => compare5(a.file, b.file) || a.block.span.startLine - b.block.span.startLine;
 var terraformParser = {
   id: PARSER_ID5,
   version: TERRAFORM_PARSER_VERSION,
@@ -38593,15 +39862,15 @@ var terraformParser = {
     return (await ctx.fs.listFiles()).some(isTerraformFile);
   },
   async parse(ctx) {
-    const files = (await ctx.fs.listFiles()).filter(isTerraformFile).sort(compare2);
+    const files = (await ctx.fs.listFiles()).filter(isTerraformFile).sort(compare5);
     const a = new Analysis2(ctx);
     await a.load(files);
     a.buildNodes();
     a.buildEdges();
     a.reportUnmapped();
     return {
-      nodes: [...a.nodes.values()].sort((x, y) => compare2(x.id, y.id)),
-      edges: [...a.edges.values()].sort((x, y) => compare2(x.id, y.id)),
+      nodes: [...a.nodes.values()].sort((x, y) => compare5(x.id, y.id)),
+      edges: [...a.edges.values()].sort((x, y) => compare5(x.id, y.id)),
       diagnostics: a.diagnostics,
       unverified: a.unverified
     };
@@ -38627,19 +39896,19 @@ function urlOf(arg) {
   if (n.type !== "TemplateLiteral") return { kind: "ignore" };
   const quasis = n.quasis.map((q) => q.value.cooked ?? "");
   if (!(quasis[0] ?? "").startsWith("/") || (quasis[0] ?? "").startsWith("//")) return { kind: "ignore" };
-  let text5 = "";
+  let text6 = "";
   for (let i = 0; i < quasis.length; i++) {
     const quasi = quasis[i];
-    text5 += quasi;
+    text6 += quasi;
     if (i === quasis.length - 1) break;
-    const before = text5 === "" || text5.endsWith("/");
+    const before = text6 === "" || text6.endsWith("/");
     const next = quasis[i + 1];
     const after = next === "" ? i + 1 === quasis.length - 1 : /^[/?#]/.test(next);
-    if (text5.includes("?") || text5.includes("#")) break;
+    if (text6.includes("?") || text6.includes("#")) break;
     if (!before || !after) return { kind: "gap", reason: "the path is built inside a segment" };
-    text5 += PLACEHOLDER;
+    text6 += PLACEHOLDER;
   }
-  return fromPath(text5);
+  return fromPath(text6);
 }
 function fromPath(raw) {
   if (!raw.startsWith("/") || raw.startsWith("//")) return { kind: "ignore" };
@@ -38909,9 +40178,9 @@ function pluginUses(module) {
   });
   return out;
 }
-function lineOfKey(text5, name2) {
+function lineOfKey(text6, name2) {
   const re = new RegExp(`^\\s*"${name2.replace(/[/\\^$.*+?()[\]{}|-]/g, "\\$&")}"\\s*:`);
-  const i = text5.split("\n").findIndex((l) => re.test(l));
+  const i = text6.split("\n").findIndex((l) => re.test(l));
   return i < 0 ? void 0 : i + 1;
 }
 async function readFrontend(ctx, configFile) {
@@ -39062,15 +40331,15 @@ var viteReactParser = {
       sources.map(async (file2) => {
         const project = owner(file2);
         if (!project) return;
-        let text5;
+        let text6;
         try {
-          text5 = await ctx.fs.readText(file2);
+          text6 = await ctx.fs.readText(file2);
         } catch (e) {
           unverified.push({ parserId: VITE_REACT_PARSER_ID, file: file2, reason: `could not read: ${messageOf4(e)}` });
           return;
         }
-        if (!text5.includes("fetch")) return;
-        const parsed = parseModule(file2, text5);
+        if (!text6.includes("fetch")) return;
+        const parsed = parseModule(file2, text6);
         if (!parsed.ok) {
           const reason = `could not parse: ${parsed.message}; its fetch calls are not read`;
           diagnostics.push({
@@ -39475,11 +40744,11 @@ async function entryFiles(ctx) {
   }
   for (const file2 of [...byFile.keys()].sort()) {
     try {
-      const text5 = await ctx.fs.readText(file2);
-      if (importsHono(text5)) {
+      const text6 = await ctx.fs.readText(file2);
+      if (importsHono(text6)) {
         hono.add(file2);
         byFile.delete(file2);
-      } else texts.set(file2, text5);
+      } else texts.set(file2, text6);
     } catch (e) {
       unreadable.set(file2, messageOf5(e));
     }
@@ -39837,9 +41106,9 @@ function stripComment(raw) {
   }
   return raw;
 }
-function toLines(text5) {
+function toLines(text6) {
   const lines = [];
-  text5.split(/\r?\n/).forEach((raw, i) => {
+  text6.split(/\r?\n/).forEach((raw, i) => {
     const no = i + 1;
     const leading = /^[ \t]*/.exec(raw)?.[0] ?? "";
     if (leading.includes("	")) {
@@ -39854,21 +41123,21 @@ function toLines(text5) {
   });
   return lines;
 }
-function readQuoted(text5, no) {
-  const quote = text5[0];
+function readQuoted(text6, no) {
+  const quote = text6[0];
   let out = "";
-  for (let i = 1; i < text5.length; i++) {
-    const ch = text5[i];
+  for (let i = 1; i < text6.length; i++) {
+    const ch = text6[i];
     if (quote === '"' && ch === "\\") {
-      const next = text5[++i];
+      const next = text6[++i];
       if (next === void 0) break;
       out += next === "n" ? "\n" : next === "t" ? "	" : next;
     } else if (ch === quote) {
-      if (quote === "'" && text5[i + 1] === "'") {
+      if (quote === "'" && text6[i + 1] === "'") {
         out += "'";
         i++;
       } else {
-        return { value: out, rest: text5.slice(i + 1) };
+        return { value: out, rest: text6.slice(i + 1) };
       }
     } else {
       out += ch;
@@ -39876,33 +41145,33 @@ function readQuoted(text5, no) {
   }
   throw new YamlSyntaxError("unterminated quoted string", no);
 }
-function plainScalar(text5, no) {
-  if (/^[&*!|>@`%]/.test(text5)) {
-    throw new YamlSyntaxError(`unsupported YAML syntax (${text5[0]}); quote the value if it is plain text`, no);
+function plainScalar(text6, no) {
+  if (/^[&*!|>@`%]/.test(text6)) {
+    throw new YamlSyntaxError(`unsupported YAML syntax (${text6[0]}); quote the value if it is plain text`, no);
   }
-  if (/:(\s|$)/.test(text5)) throw new YamlSyntaxError("unexpected ':' in a value", no);
-  if (/^(true|True|TRUE)$/.test(text5)) return true;
-  if (/^(false|False|FALSE)$/.test(text5)) return false;
-  if (/^(null|Null|NULL|~)$/.test(text5)) return null;
-  if (/^-?\d+$/.test(text5)) return Number(text5);
-  if (/^-?\d+\.\d+$/.test(text5)) return Number(text5);
-  return text5;
+  if (/:(\s|$)/.test(text6)) throw new YamlSyntaxError("unexpected ':' in a value", no);
+  if (/^(true|True|TRUE)$/.test(text6)) return true;
+  if (/^(false|False|FALSE)$/.test(text6)) return false;
+  if (/^(null|Null|NULL|~)$/.test(text6)) return null;
+  if (/^-?\d+$/.test(text6)) return Number(text6);
+  if (/^-?\d+\.\d+$/.test(text6)) return Number(text6);
+  return text6;
 }
 function scalar2(raw, no) {
-  const text5 = raw.trim();
-  if (text5[0] === "'" || text5[0] === '"') {
-    const { value: value2, rest } = readQuoted(text5, no);
+  const text6 = raw.trim();
+  if (text6[0] === "'" || text6[0] === '"') {
+    const { value: value2, rest } = readQuoted(text6, no);
     if (rest.trim() !== "") throw new YamlSyntaxError("unexpected text after a quoted string", no);
     return value2;
   }
-  return plainScalar(text5, no);
+  return plainScalar(text6, no);
 }
 function flow(raw, no) {
-  const text5 = raw.trim();
-  if (text5 === "{}") return /* @__PURE__ */ Object.create(null);
-  if (text5[0] === "{") throw new YamlSyntaxError("flow mappings are not supported (only {})", no);
-  if (!text5.endsWith("]")) throw new YamlSyntaxError("a flow sequence must close with ] on the same line", no);
-  let rest = text5.slice(1, -1).trim();
+  const text6 = raw.trim();
+  if (text6 === "{}") return /* @__PURE__ */ Object.create(null);
+  if (text6[0] === "{") throw new YamlSyntaxError("flow mappings are not supported (only {})", no);
+  if (!text6.endsWith("]")) throw new YamlSyntaxError("a flow sequence must close with ] on the same line", no);
+  let rest = text6.slice(1, -1).trim();
   const items2 = [];
   while (rest !== "") {
     if (rest[0] === ",") throw new YamlSyntaxError("empty item in a flow sequence", no);
@@ -39928,25 +41197,25 @@ function flow(raw, no) {
   return items2;
 }
 function value(raw, no) {
-  const text5 = raw.trim();
-  return text5[0] === "[" || text5[0] === "{" ? flow(text5, no) : scalar2(text5, no);
+  const text6 = raw.trim();
+  return text6[0] === "[" || text6[0] === "{" ? flow(text6, no) : scalar2(text6, no);
 }
-function splitKey(text5, no) {
+function splitKey(text6, no) {
   let key2;
   let after;
-  if (text5[0] === "'" || text5[0] === '"') {
-    const q = readQuoted(text5, no);
+  if (text6[0] === "'" || text6[0] === '"') {
+    const q = readQuoted(text6, no);
     key2 = q.value;
     after = q.rest.trimStart();
     if (after[0] !== ":") throw new YamlSyntaxError("expected 'key: value'", no);
     after = after.slice(1);
   } else {
-    const m = /^([^:\s][^:]*?)\s*:(\s+|$)/.exec(text5);
+    const m = /^([^:\s][^:]*?)\s*:(\s+|$)/.exec(text6);
     if (!m) throw new YamlSyntaxError("expected 'key: value'", no);
     key2 = m[1];
-    after = text5.slice(m[0].length);
+    after = text6.slice(m[0].length);
   }
-  if (after !== "" && !/^\s/.test(after) && text5[0] !== "'" && text5[0] !== '"') after = ` ${after}`;
+  if (after !== "" && !/^\s/.test(after) && text6[0] !== "'" && text6[0] !== '"') after = ` ${after}`;
   return { key: key2, rest: after.trim() };
 }
 var MAX_DEPTH7 = 32;
@@ -40031,16 +41300,16 @@ var Reader = class {
     return out;
   }
 };
-function parseYamlSubset(text5) {
+function parseYamlSubset(text6) {
   try {
-    return parse4(text5);
+    return parse4(text6);
   } catch (e) {
     if (e instanceof YamlSyntaxError) throw e;
     throw new YamlSyntaxError(`cannot be read (${e instanceof Error ? e.message : String(e)})`, 1);
   }
 }
-function parse4(text5) {
-  const lines = toLines(text5);
+function parse4(text6) {
+  const lines = toLines(text6);
   if (lines.length === 0) return /* @__PURE__ */ Object.create(null);
   const reader = new Reader(lines);
   const first = lines[0];
@@ -40055,10 +41324,10 @@ function parse4(text5) {
 
 // ../../packages/parsers/registry/src/config.ts
 var CONFIG_FILE2 = ".sketio.yml";
-function parseSketioYaml(text5) {
+function parseSketioYaml(text6) {
   let raw;
   try {
-    raw = parseYamlSubset(text5);
+    raw = parseYamlSubset(text6);
   } catch (e) {
     return { ok: false, errors: [`${CONFIG_FILE2}: ${e instanceof Error ? e.message : String(e)}`] };
   }
@@ -40143,7 +41412,7 @@ function packageOf(specifier) {
   return NPM_NAME.test(name2) ? name2 : void 0;
 }
 var NPM_NAME = /^(?:@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*$/i;
-var compare3 = (a, b) => a < b ? -1 : a > b ? 1 : 0;
+var compare6 = (a, b) => a < b ? -1 : a > b ? 1 : 0;
 async function technologyHints(path, read, ignorePackages = /* @__PURE__ */ new Set()) {
   if (NO_HINT_FILE.test(path)) return [];
   const base = path.slice(path.lastIndexOf("/") + 1);
@@ -40154,20 +41423,20 @@ async function technologyHints(path, read, ignorePackages = /* @__PURE__ */ new 
   if (named.length > 0 && !SOURCE2.test(path)) return named;
   if (SOURCE2.test(path)) {
     if (path.endsWith(".d.ts") || TEST_FILE2.test(path) || TEST_DIR2.test(path)) return named;
-    let text5;
+    let text6;
     try {
-      text5 = await read();
+      text6 = await read();
     } catch {
       return named;
     }
     const packages = /* @__PURE__ */ new Set();
-    for (const m of text5.matchAll(IMPORT)) {
+    for (const m of text6.matchAll(IMPORT)) {
       const name2 = packageOf(m[1]);
       if (name2 && !ignorePackages.has(name2)) packages.add(name2);
     }
     return [
       ...named,
-      ...[...packages].sort(compare3).slice(0, MAX_PACKAGE_HINTS).map((value2) => ({ kind: "package", value: value2 }))
+      ...[...packages].sort(compare6).slice(0, MAX_PACKAGE_HINTS).map((value2) => ({ kind: "package", value: value2 }))
     ];
   }
   const dot = base.lastIndexOf(".");
@@ -40211,7 +41480,7 @@ async function computeCoverage(input3) {
   const unsupported = [];
   const failed = [];
   let other = 0;
-  for (const file2 of [...input3.files].sort(compare3)) {
+  for (const file2 of [...input3.files].sort(compare6)) {
     const claimants = input3.entries.filter((e) => e.targets.includes(file2));
     const active = claimants.find(
       (e) => e.enabled && runOf.get(e.id) !== void 0 && runOf.get(e.id)?.status !== "not-detected"
@@ -40404,11 +41673,22 @@ function readPullRequest(payloadText) {
   }
 }
 
+// src/githubOutput.ts
+import { randomBytes } from "node:crypto";
+var newDelimiter = () => `ghadelimiter_${randomBytes(18).toString("hex")}`;
+function multilineOutput(name2, value2, delimiter = newDelimiter()) {
+  if (value2.split(/\r?\n/).includes(delimiter)) throw new Error(`the value of ${name2} contains its delimiter`);
+  return `${name2}<<${delimiter}
+${value2}
+${delimiter}
+`;
+}
+
 // src/inference.ts
 import { appendFileSync } from "node:fs";
 
 // ../../packages/arch-inference/src/output.ts
-var NAMESPACES = ["cloudflare", "aws", "application"];
+var NAMESPACES2 = ["cloudflare", "aws", "application"];
 var KIND_RE = /^[a-z][a-z0-9-]{0,39}$/;
 var NAME_RE = /^[A-Za-z0-9_.\-/@$]{3,100}$/;
 var MAX_ITEMS = 100;
@@ -40417,9 +41697,9 @@ var name = external_exports.string().regex(NAME_RE);
 var line = external_exports.number().int().min(1).max(1e6);
 var identifiers = (min) => external_exports.array(external_exports.string().min(2).max(100)).min(min).max(8);
 var confidence = external_exports.number().finite().optional();
-var endpoint = external_exports.object({ namespace: external_exports.enum(NAMESPACES), kind, name });
+var endpoint = external_exports.object({ namespace: external_exports.enum(NAMESPACES2), kind, name });
 var nodeSchema = external_exports.object({
-  namespace: external_exports.enum(NAMESPACES),
+  namespace: external_exports.enum(NAMESPACES2),
   kind,
   name,
   file: external_exports.string().min(1).max(300),
@@ -40448,7 +41728,7 @@ var where = {
 };
 var nodeSchema2 = external_exports.object({
   id: external_exports.string(),
-  namespace: external_exports.enum(NAMESPACES),
+  namespace: external_exports.enum(NAMESPACES2),
   kind: external_exports.string().regex(KIND_RE),
   name: external_exports.string().regex(NAME_RE),
   scope: external_exports.enum(["infrastructure", "application"]),
@@ -40778,31 +42058,31 @@ function maskBlocks(input3) {
 }
 function maskSecrets(input3) {
   let count = 0;
-  const hide2 = (re, text6) => text6.replace(re, () => {
+  const hide2 = (re, text7) => text7.replace(re, () => {
     count++;
     return MASK;
   });
-  let text5 = input3.replace(PEM, (m) => {
+  let text6 = input3.replace(PEM, (m) => {
     count++;
     return MASK + newlines(m);
   });
-  const blocks = maskBlocks(text5);
-  text5 = blocks.text;
+  const blocks = maskBlocks(text6);
+  text6 = blocks.text;
   count += blocks.count;
-  for (const re of TOKEN_PATTERNS) text5 = hide2(re, text5);
-  text5 = text5.replace(AUTH_HEADER, (m, head) => {
+  for (const re of TOKEN_PATTERNS) text6 = hide2(re, text6);
+  text6 = text6.replace(AUTH_HEADER, (m, head) => {
     count++;
     return `${head}${MASK}${newlines(m)}`;
   });
-  text5 = text5.replace(BEARER, (m) => {
+  text6 = text6.replace(BEARER, (m) => {
     count++;
     return `Bearer ${MASK}${newlines(m)}`;
   });
-  text5 = text5.replace(CONNECTION, (_m, scheme) => {
+  text6 = text6.replace(CONNECTION, (_m, scheme) => {
     count++;
     return `${scheme}${MASK}@`;
   });
-  text5 = text5.replace(
+  text6 = text6.replace(
     ASSIGNMENT,
     (m, head, esc2, dq, sq, arr, bare) => {
       const value2 = esc2 ?? dq ?? sq ?? arr ?? bare ?? "";
@@ -40816,27 +42096,27 @@ function maskSecrets(input3) {
       return `${head}${quote}${MASK}${quote}`;
     }
   );
-  text5 = text5.replace(XML_ELEMENT, (m, open2, _tag, value2) => {
+  text6 = text6.replace(XML_ELEMENT, (m, open2, _tag, value2) => {
     if (value2.includes(MASK) || value2.trim() === "" || /^\s*[$<]/.test(value2)) return m;
     count++;
     return `${open2}${MASK}${newlines(value2)}`;
   });
-  text5 = text5.replace(SPACE_ASSIGN, (m, head, value2) => {
+  text6 = text6.replace(SPACE_ASSIGN, (m, head, value2) => {
     if (value2.includes(MASK) || SPACE_KEYWORD.test(value2) || /^["']?\$/.test(value2)) return m;
     count++;
     return `${head}${MASK}`;
   });
-  text5 = text5.replace(OPTION_VALUE, (m, head, value2) => {
+  text6 = text6.replace(OPTION_VALUE, (m, head, value2) => {
     if (value2.includes(MASK)) return m;
     count++;
     return `${head}${MASK}`;
   });
-  text5 = text5.replace(USER_PASS, (m, head) => {
+  text6 = text6.replace(USER_PASS, (m, head) => {
     if (m.includes(MASK)) return m;
     count++;
     return `${head}${MASK}`;
   });
-  text5 = text5.split("\n").map(
+  text6 = text6.split("\n").map(
     (line3) => DB_CLIENT.test(line3) ? line3.replace(GLUED_PASSWORD, () => {
       count++;
       return `-p${MASK}`;
@@ -40846,28 +42126,28 @@ function maskSecrets(input3) {
       return `${head}${MASK}`;
     }) : line3
   ).join("\n");
-  text5 = hide2(BASE64_PADDED, text5);
-  text5 = text5.replace(LONG_RUN, (m) => {
+  text6 = hide2(BASE64_PADDED, text6);
+  text6 = text6.replace(LONG_RUN, (m) => {
     if (!/[0-9]/.test(m) || !/[A-Za-z]/.test(m) || entropy(m) < 4) return m;
     count++;
     return MASK;
   });
-  text5 = text5.replace(QUOTED_RANDOM, (m, quote, content) => {
+  text6 = text6.replace(QUOTED_RANDOM, (m, quote, content) => {
     if (!looksRandom(content)) return m;
     count++;
     return `${quote}${MASK}${quote}`;
   });
-  return { text: text5, count };
+  return { text: text6, count };
 }
 
 // ../../packages/arch-inference/src/outputSchema.ts
-var namespace = { type: "string", enum: [...NAMESPACES] };
-var text4 = { type: "string" };
+var namespace = { type: "string", enum: [...NAMESPACES2] };
+var text5 = { type: "string" };
 var line2 = { type: "integer", minimum: 1 };
-var identifiers2 = (min) => ({ type: "array", items: text4, minItems: min, maxItems: 8 });
+var identifiers2 = (min) => ({ type: "array", items: text5, minItems: min, maxItems: 8 });
 var endpoint2 = {
   type: "object",
-  properties: { namespace, kind: text4, name: text4 },
+  properties: { namespace, kind: text5, name: text5 },
   required: ["namespace", "kind", "name"],
   additionalProperties: false
 };
@@ -40881,9 +42161,9 @@ var OUTPUT_JSON_SCHEMA = {
         type: "object",
         properties: {
           namespace,
-          kind: text4,
-          name: text4,
-          file: text4,
+          kind: text5,
+          name: text5,
+          file: text5,
           startLine: line2,
           endLine: line2,
           identifiers: identifiers2(1),
@@ -40902,7 +42182,7 @@ var OUTPUT_JSON_SCHEMA = {
           source: endpoint2,
           target: endpoint2,
           relation: { type: "string", enum: [...edgeRelations] },
-          file: text4,
+          file: text5,
           startLine: line2,
           endLine: line2,
           identifiers: identifiers2(2),
@@ -40927,11 +42207,11 @@ function isCandidate(u) {
   return u.hints.some((h) => h.kind === "parser" || h.kind === "package" && IAC_PACKAGE.test(h.value));
 }
 var tier = (path) => path.endsWith(".tf") ? 0 : SCRIPT.test(path) ? 1 : 2;
-var compare4 = (a, b) => a < b ? -1 : a > b ? 1 : 0;
+var compare7 = (a, b) => a < b ? -1 : a > b ? 1 : 0;
 async function selectInferenceFiles(coverage, read, graph) {
   const covered = filesWithVerifiedNodes(graph);
   const all = [...new Set(coverage.unsupported.filter(isCandidate).map((u) => u.file))];
-  const candidates = all.filter((f) => !covered.has(f)).sort((a, b) => tier(a) - tier(b) || compare4(a, b));
+  const candidates = all.filter((f) => !covered.has(f)).sort((a, b) => tier(a) - tier(b) || compare7(a, b));
   const staticCovered = all.length - candidates.length;
   const groups = [];
   let group = [];
@@ -40944,19 +42224,19 @@ async function selectInferenceFiles(coverage, read, graph) {
       overLimit++;
       continue;
     }
-    let text5;
+    let text6;
     try {
-      text5 = await read(path);
+      text6 = await read(path);
     } catch {
       skipped++;
       continue;
     }
-    const size = Buffer.byteLength(text5);
-    if (text5 === "" || text5.includes("\0") || size > MAX_FILE_BYTES) {
+    const size = Buffer.byteLength(text6);
+    if (text6 === "" || text6.includes("\0") || size > MAX_FILE_BYTES) {
       skipped++;
       continue;
     }
-    const m = maskSecrets(text5);
+    const m = maskSecrets(text6);
     const bytes = Buffer.byteLength(m.text);
     if (group.length >= MAX_FILES || groupBytes + bytes > MAX_TOTAL_BYTES) {
       if (groups.length + 1 >= MAX_CHAIN_REQUESTS) {
@@ -41232,6 +42512,8 @@ async function runInference(io, step) {
 // src/inputs.ts
 var MODES = ["analyze", "sync", "diff"];
 var DEFAULT_CONFIG = ".sketio.yml";
+var DIAGRAM_VIEWS = ["infrastructure", "application", "deployment", "overview"];
+var DEFAULT_DIAGRAM_VIEW = "infrastructure";
 var input2 = (env, name2) => (env[`INPUT_${name2.toUpperCase()}`] ?? "").trim();
 function isInsideRepository(path) {
   if (path.startsWith("/") || path.includes("\\") || path.includes("\0")) return false;
@@ -41258,8 +42540,15 @@ function readInputs(env) {
   const apiUrl = input2(env, "api-url");
   if (apiUrl && !isAllowedApiUrl(apiUrl))
     errors.push("api-url must be an https URL (http only for localhost)");
+  const viewText = input2(env, "diagram-view").toLowerCase();
+  const diagramView = DIAGRAM_VIEWS.find((v) => v === viewText);
+  if (viewText && !diagramView)
+    errors.push(`diagram-view must be one of ${DIAGRAM_VIEWS.join(", ")} (got "${viewText}")`);
   if (errors.length > 0 || !mode) return { ok: false, errors };
-  return { ok: true, inputs: { mode, config: config2, ...apiUrl ? { apiUrl } : {} } };
+  return {
+    ok: true,
+    inputs: { mode, config: config2, ...apiUrl ? { apiUrl } : {}, ...diagramView ? { diagramView } : {} }
+  };
 }
 
 // src/summary.ts
@@ -41531,15 +42820,15 @@ var readOptional = (path) => {
   }
 };
 async function loadConfig(fs, path) {
-  let text5;
+  let text6;
   try {
-    text5 = await fs.readText(path);
+    text6 = await fs.readText(path);
   } catch (e) {
     if (e.code === "ENOENT" && path === DEFAULT_CONFIG)
       return { ok: true, config: {} };
     return { ok: false, errors: [`${path}: cannot be read: ${e instanceof Error ? e.message : String(e)}`] };
   }
-  const parsed = parseSketioYaml(text5);
+  const parsed = parseSketioYaml(text6);
   return parsed.ok ? parsed : { ok: false, errors: parsed.errors.map((m) => m.includes(path) ? m : `${path}: ${m}`) };
 }
 async function runAction(io) {
@@ -41573,10 +42862,16 @@ async function runAction(io) {
   await mkdir(outDir, { recursive: true });
   await writeFile(artifactFile, `${JSON.stringify(artifact, null, 2)}
 `);
+  const view = inputs.inputs.diagramView ?? DEFAULT_DIAGRAM_VIEW;
+  const shown = artifact.graph ? selectView(artifact.graph, view) : null;
+  const mermaid = shown ? multilineOutput("mermaid", renderViewMermaid(shown, {}, { tiers: view === "overview" })) : "";
   if (io.env.GITHUB_OUTPUT)
-    appendFileSync3(io.env.GITHUB_OUTPUT, `artifact-path=${artifactFile}
+    appendFileSync3(
+      io.env.GITHUB_OUTPUT,
+      `artifact-path=${artifactFile}
 status=${artifact.status}
-`);
+${mermaid}`
+    );
   const summary = renderSummary(artifact, { mode, isFork: context.isFork, artifactFile });
   if (io.env.GITHUB_STEP_SUMMARY) appendFileSync3(io.env.GITHUB_STEP_SUMMARY, summary);
   const c = artifact.coverage;
@@ -41624,7 +42919,7 @@ status=${artifact.status}
 
 // src/index.ts
 try {
-  process.exitCode = await runAction({ env: process.env, stdout: (text5) => process.stdout.write(text5) });
+  process.exitCode = await runAction({ env: process.env, stdout: (text6) => process.stdout.write(text6) });
 } catch (e) {
   process.stdout.write(`${issue("error", e instanceof Error ? e.message : String(e))}
 `);

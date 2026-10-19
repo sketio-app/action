@@ -21,7 +21,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 2   # mode: diff reads the pull request's head commit (a parent of the merge commit)
-      - uses: sketio-app/action@f298c1284b02657ef112473e333a5ddc43a19454 # v1.7.0
+      - uses: sketio-app/action@fe5cf00bb30c6f4ff97eb56fb83b4b307d1777ce # v1.8.0
         with:
           mode: ${{ github.event_name == 'pull_request' && 'diff' || 'sync' }}
           api-url: https://arch.sketio.app
@@ -33,7 +33,7 @@ Pin the Action to a commit, as above. A tag can be moved, so pinning to the comm
 
 ```yaml
       - uses: actions/checkout@v4
-      - uses: sketio-app/action@f298c1284b02657ef112473e333a5ddc43a19454 # v1.7.0
+      - uses: sketio-app/action@fe5cf00bb30c6f4ff97eb56fb83b4b307d1777ce # v1.8.0
 ```
 
 ## Modes
@@ -59,10 +59,56 @@ Pin the Action to a commit, as above. A tag can be moved, so pinning to the comm
 | `mode` | `analyze` | `analyze`, `sync`, `diff` |
 | `config` | `.sketio.yml` | path inside the repository |
 | `api-url` | | Arch base URL. Required by `sync` and `diff` |
+| `diagram-view` | `infrastructure` | the view the `mermaid` output draws: `infrastructure`, `application`, `deployment`, `overview` |
 
-Outputs: `artifact-path`, `status`; for `sync` / `diff` also `outcome` (`created`, `duplicate`, `recorded`),
+Outputs: `artifact-path`, `status`, `mermaid`; for `sync` / `diff` also `outcome` (`created`, `duplicate`, `recorded`),
 `snapshot-id`, `inference-snapshot-id` and (diff) `diff-id`. The step exits 1 when the analysis failed or Arch
 rejected the request; `partial` exits 0 with a warning.
+
+### The diagram as Mermaid
+
+The `mermaid` output is the diagram of one view as Mermaid text (several lines, without the code fence),
+made on the runner from the Artifact in every mode, so `analyze` and fork pull requests get it too. `diagram-view`
+picks the view (`infrastructure` by default, or `application`, `deployment`, `overview`). It is the same text
+as Sketio Arch's "Copy Mermaid" and the MCP tool `get_diagram`, without the labels and groups set in Arch, and
+it is drawn as the Arch screen draws it: each box its name and the official service name, the stacks, regions
+and VPCs as nested subgraphs, a round mark for the users, flows and bindings as arrows (a binding says its names
+and permissions), dependencies as plain lines, inferred relations dotted (`-.->`) and inferred components marked
+`(inferred)`. In English.
+Names from the repository are written so that they cannot end a label or close a code block. It is empty when
+the analysis has no graph.
+
+The Action only gives the text. Writing it to a file, committing it or opening a pull request is up to the later
+steps of your workflow, and what they write is yours to check. An example that keeps a part of README.md up to
+date (the commit is left out):
+
+```yaml
+      - uses: actions/checkout@v4
+      - id: arch
+        uses: sketio-app/action@fe5cf00bb30c6f4ff97eb56fb83b4b307d1777ce # v1.8.0
+        with:
+          diagram-view: infrastructure   # or application, deployment, overview
+      # Your own step. This one replaces what is between two markers in README.md:
+      #   <!-- architecture:start -->
+      #   <!-- architecture:end -->
+      - name: Put the diagram in README.md
+        env:
+          MERMAID: ${{ steps.arch.outputs.mermaid }}   # through env: never put the expression inside the script
+        run: |
+          node --input-type=module -e '
+            import { readFileSync, writeFileSync } from "node:fs"
+            const start = "<!-- architecture:start -->"
+            const end = "<!-- architecture:end -->"
+            const text = readFileSync("README.md", "utf8")
+            const from = text.indexOf(start)
+            const to = text.indexOf(end)
+            if (from < 0 || to < from) throw new Error("the markers are not in README.md")
+            const block = "\n```mermaid\n" + process.env.MERMAID + "\n```\n"
+            writeFileSync("README.md", text.slice(0, from + start.length) + block + text.slice(to))
+          '
+```
+
+`mermaid` and `diagram-view` are added in the release after v1.8.0 (the pin above is v1.8.0 until then).
 
 ## Notes
 
@@ -106,7 +152,7 @@ do not send pull requests here.
 Architecture Artifact（JSON）として書き出す Action です。`mode: sync` / `mode: diff` では Artifact を
 [Sketio Arch](https://arch.sketio.app) に送ります。
 
-使い方は上の例のとおりです（`uses: sketio-app/action@f298c1284b02657ef112473e333a5ddc43a19454 # v1.7.0`）。タグは動かせるので、コミットハッシュで固定すると、同じコードしか動きません。Dependabot（`package-ecosystem: github-actions`）でハッシュとコメントの版を自動で上げられます。手軽に試すだけなら `sketio-app/action@v1`（動くメジャータグ）でも動きます。
+使い方は上の例のとおりです（`uses: sketio-app/action@fe5cf00bb30c6f4ff97eb56fb83b4b307d1777ce # v1.8.0`）。タグは動かせるので、コミットハッシュで固定すると、同じコードしか動きません。Dependabot（`package-ecosystem: github-actions`）でハッシュとコメントの版を自動で上げられます。手軽に試すだけなら `sketio-app/action@v1`（動くメジャータグ）でも動きます。
 
 | mode | 動く場面 | すること |
 | --- | --- | --- |
@@ -141,6 +187,48 @@ Architecture Artifact（JSON）として書き出す Action です。`mode: sync
 - 実行環境は Node 24（GitHub が用意）。`dist/` だけで動き、`node_modules` は要りません。対応は `linux-x64-gnu`、`linux-arm64-gnu`、
   `darwin-arm64`、`darwin-x64`。Windows ランナーと Alpine（musl）のコンテナは非対応です
 - `@v1`（移動タグ）のほか、`@v1.0.0` やコミット SHA での固定もできます
+
+### Mermaid の構成図
+
+出力 `mermaid` は、1 つの表示の構成図を Mermaid のテキスト（複数行、コードブロックの柵なし）にしたものです。
+ランナーの上で Artifact から作るので、`analyze` でも fork の PR でも出ます。表示は `diagram-view` で選びます
+（既定は `infrastructure`。ほかに `application`、`deployment`、`overview`）。Sketio Arch の「Mermaid をコピー」や
+MCP の `get_diagram` と同じテキストで、Arch で付けたラベルとグループは入りません。描き方は Arch の画面と同じです。
+箱は名前と正式なサービス名で、スタック・リージョン・VPC は入れ子の枠になり、利用者は丸い印で出ます。流れと binding は
+矢印（binding には名前と権限）、付属の関係は矢印のない線、推測は点線（`-.->`）で、推測の要素には `(inferred)` が付きます。
+文字は英語です。リポジトリから来た名前はラベルやコードブロックを
+閉じられない形で書きます。解析にグラフが無いときは空です。
+
+Action はテキストを出すだけです。ファイルに書く、コミットする、PR を作るのは、ワークフローの後のステップで
+行ってください（書いた中身の確認も利用者の責任です）。README.md の決めた区間を書き換える例（コミットは省いています）:
+
+```yaml
+      - uses: actions/checkout@v4
+      - id: arch
+        uses: sketio-app/action@fe5cf00bb30c6f4ff97eb56fb83b4b307d1777ce # v1.8.0
+        with:
+          diagram-view: infrastructure   # or application, deployment, overview
+      # Your own step. This one replaces what is between two markers in README.md:
+      #   <!-- architecture:start -->
+      #   <!-- architecture:end -->
+      - name: Put the diagram in README.md
+        env:
+          MERMAID: ${{ steps.arch.outputs.mermaid }}   # through env: never put the expression inside the script
+        run: |
+          node --input-type=module -e '
+            import { readFileSync, writeFileSync } from "node:fs"
+            const start = "<!-- architecture:start -->"
+            const end = "<!-- architecture:end -->"
+            const text = readFileSync("README.md", "utf8")
+            const from = text.indexOf(start)
+            const to = text.indexOf(end)
+            if (from < 0 || to < from) throw new Error("the markers are not in README.md")
+            const block = "\n```mermaid\n" + process.env.MERMAID + "\n```\n"
+            writeFileSync("README.md", text.slice(0, from + start.length) + block + text.slice(to))
+          '
+```
+
+`mermaid` と `diagram-view` は v1.8.0 の次の版で入ります（それまで上の固定は v1.8.0 のままです）。
 
 このリポジトリは Sketio のモノレポから作った配布用のコピーです。リリースのたびに `dist/` ごと置き換わるので、ここへの
 プルリクエストは受け付けていません。
