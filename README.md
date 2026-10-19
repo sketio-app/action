@@ -21,7 +21,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 2   # mode: diff reads the pull request's head commit (a parent of the merge commit)
-      - uses: sketio-app/action@fe5cf00bb30c6f4ff97eb56fb83b4b307d1777ce # v1.8.0
+      - uses: sketio-app/action@0abcd451c3f8b6e70854da40827bca353e6525a3 # v1.9.0
         with:
           mode: ${{ github.event_name == 'pull_request' && 'diff' || 'sync' }}
           api-url: https://arch.sketio.app
@@ -33,7 +33,7 @@ Pin the Action to a commit, as above. A tag can be moved, so pinning to the comm
 
 ```yaml
       - uses: actions/checkout@v4
-      - uses: sketio-app/action@fe5cf00bb30c6f4ff97eb56fb83b4b307d1777ce # v1.8.0
+      - uses: sketio-app/action@0abcd451c3f8b6e70854da40827bca353e6525a3 # v1.9.0
 ```
 
 ## Modes
@@ -85,7 +85,7 @@ date (the commit is left out):
 ```yaml
       - uses: actions/checkout@v4
       - id: arch
-        uses: sketio-app/action@fe5cf00bb30c6f4ff97eb56fb83b4b307d1777ce # v1.8.0
+        uses: sketio-app/action@0abcd451c3f8b6e70854da40827bca353e6525a3 # v1.9.0
         with:
           diagram-view: infrastructure   # or application, deployment, overview
       # Your own step. This one replaces what is between two markers in README.md:
@@ -108,7 +108,7 @@ date (the commit is left out):
           '
 ```
 
-`mermaid` and `diagram-view` are added in the release after v1.8.0 (the pin above is v1.8.0 until then).
+`mermaid` and `diagram-view` are available from v1.9.0 (the pin above).
 
 ## Notes
 
@@ -152,7 +152,7 @@ do not send pull requests here.
 Architecture Artifact（JSON）として書き出す Action です。`mode: sync` / `mode: diff` では Artifact を
 [Sketio Arch](https://arch.sketio.app) に送ります。
 
-使い方は上の例のとおりです（`uses: sketio-app/action@fe5cf00bb30c6f4ff97eb56fb83b4b307d1777ce # v1.8.0`）。タグは動かせるので、コミットハッシュで固定すると、同じコードしか動きません。Dependabot（`package-ecosystem: github-actions`）でハッシュとコメントの版を自動で上げられます。手軽に試すだけなら `sketio-app/action@v1`（動くメジャータグ）でも動きます。
+使い方は上の例のとおりです（`uses: sketio-app/action@0abcd451c3f8b6e70854da40827bca353e6525a3 # v1.9.0`）。タグは動かせるので、コミットハッシュで固定すると、同じコードしか動きません。Dependabot（`package-ecosystem: github-actions`）でハッシュとコメントの版を自動で上げられます。手軽に試すだけなら `sketio-app/action@v1`（動くメジャータグ）でも動きます。
 
 | mode | 動く場面 | すること |
 | --- | --- | --- |
@@ -205,7 +205,7 @@ Action はテキストを出すだけです。ファイルに書く、コミッ�
 ```yaml
       - uses: actions/checkout@v4
       - id: arch
-        uses: sketio-app/action@fe5cf00bb30c6f4ff97eb56fb83b4b307d1777ce # v1.8.0
+        uses: sketio-app/action@0abcd451c3f8b6e70854da40827bca353e6525a3 # v1.9.0
         with:
           diagram-view: infrastructure   # or application, deployment, overview
       # Your own step. This one replaces what is between two markers in README.md:
@@ -228,7 +228,7 @@ Action はテキストを出すだけです。ファイルに書く、コミッ�
           '
 ```
 
-`mermaid` と `diagram-view` は v1.8.0 の次の版で入ります（それまで上の固定は v1.8.0 のままです）。
+`mermaid` と `diagram-view` は v1.9.0（上の固定）から使えます。
 
 このリポジトリは Sketio のモノレポから作った配布用のコピーです。リリースのたびに `dist/` ごと置き換わるので、ここへの
 プルリクエストは受け付けていません。
