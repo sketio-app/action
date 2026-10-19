@@ -28420,6 +28420,49 @@ var TYPES = {
       put(out, "protocolType", text(p, "ProtocolType"));
       return out;
     }
+  },
+  // A distribution has no physical name of its own (the comment is inside DistributionConfig): the logical ID.
+  "AWS::CloudFront::Distribution": { kind: "cloudfront", nameKey: "" },
+  "AWS::ElasticLoadBalancingV2::LoadBalancer": {
+    kind: "elb",
+    nameKey: "Name",
+    describe: (p) => {
+      const out = {};
+      put(out, "loadBalancerType", text(p, "Type"));
+      put(out, "scheme", text(p, "Scheme"));
+      return out;
+    }
+  },
+  "AWS::ECS::Cluster": { kind: "ecs", nameKey: "ClusterName" },
+  "AWS::ECS::Service": {
+    kind: "ecs",
+    nameKey: "ServiceName",
+    describe: (p) => {
+      const out = {};
+      put(out, "launchType", text(p, "LaunchType"));
+      return out;
+    }
+  },
+  "AWS::EC2::VPC": { kind: "vpc", nameKey: "" },
+  // The same kinds and property names as the Terraform parser's aws_db_instance and aws_rds_cluster.
+  "AWS::RDS::DBInstance": {
+    kind: "rds",
+    nameKey: "DBInstanceIdentifier",
+    describe: (p) => {
+      const out = {};
+      put(out, "engine", text(p, "Engine"));
+      put(out, "instanceClass", text(p, "DBInstanceClass"));
+      return out;
+    }
+  },
+  "AWS::RDS::DBCluster": {
+    kind: "aurora",
+    nameKey: "DBClusterIdentifier",
+    describe: (p) => {
+      const out = {};
+      put(out, "engine", text(p, "Engine"));
+      return out;
+    }
   }
 };
 function describeLambda(p) {
@@ -28450,7 +28493,9 @@ var SUPPORTING_PREFIXES = [
   "AWS::CloudFormation::",
   "AWS::ApiGateway::",
   "AWS::ApiGatewayV2::",
-  "Custom::"
+  "Custom::",
+  // Everything of CloudFront but the distribution (TYPES is looked up first): OAC, cache policies, functions.
+  "AWS::CloudFront::"
 ];
 var SUPPORTING = /* @__PURE__ */ new Set([
   "AWS::Lambda::Permission",
@@ -28462,7 +28507,21 @@ var SUPPORTING = /* @__PURE__ */ new Set([
   "AWS::SQS::QueuePolicy",
   "AWS::SNS::Subscription",
   "AWS::SNS::TopicPolicy",
-  "AWS::S3::BucketPolicy"
+  "AWS::S3::BucketPolicy",
+  // The network a VPC is made of: what is in a VPC is read through its subnets (edges.ts).
+  "AWS::EC2::Subnet",
+  "AWS::EC2::SecurityGroup",
+  "AWS::EC2::RouteTable",
+  "AWS::EC2::InternetGateway",
+  "AWS::EC2::NatGateway",
+  "AWS::EC2::EIP",
+  // How a load balancer reaches its targets, and what an ECS service runs (read for edges).
+  "AWS::ElasticLoadBalancingV2::TargetGroup",
+  "AWS::ElasticLoadBalancingV2::Listener",
+  "AWS::ElasticLoadBalancingV2::ListenerRule",
+  "AWS::ECS::TaskDefinition",
+  // The subnets a database is placed in (read for VPC membership).
+  "AWS::RDS::DBSubnetGroup"
 ]);
 var isSupporting = (type) => SUPPORTING.has(type) || SUPPORTING_PREFIXES.some((p) => type.startsWith(p));
 
@@ -28718,6 +28777,28 @@ var EdgeBuilder = class {
     }
     return [...seen.values()];
   }
+  /**
+   * Every resource an expression refers to, nodes or not (a subnet, a target group, a task definition), once
+   * each. Quiet: what cannot be followed is already reported where the expression is read as a node's property.
+   */
+  resources(expr, stack) {
+    if (!expr) return [];
+    const quiet = { exports: this.resolver.exports, problem: () => {
+    } };
+    const seen = /* @__PURE__ */ new Map();
+    for (const t of resolveRefs(expr, stack, quiet)) {
+      const prev = seen.get(t.resource);
+      seen.set(t.resource, {
+        resource: t.resource,
+        conditional: (prev?.conditional ?? true) && (t.conditional ?? false)
+      });
+    }
+    return [...seen.values()];
+  }
+  /** A note about what a rule read only in part (not an unsupported part, and not unverified). */
+  info(stack, code2, message, span) {
+    this.report?.add("info", code2, stack.source.file, message, { line: span.startLine });
+  }
   /** Same, with where each reference is written (for edge Evidence). */
   located(expr, stack) {
     const out = [];
@@ -28782,14 +28863,22 @@ var items = (props, key2) => {
   return v?.kind === "array" ? v.items.filter((i) => i.kind === "object") : [];
 };
 function bindEnvironment(b, res) {
-  const { stack, props } = res;
-  const vars = getEntry(getEntry(props, "Environment")?.value, "Variables")?.value;
+  const vars = getEntry(getEntry(res.props, "Environment")?.value, "Variables")?.value;
   if (vars?.kind !== "object") return;
+  bindVariables(
+    b,
+    res,
+    vars.entries.map((v) => ({ name: v.key, value: v.value, span: v.span, stack: res.stack }))
+  );
+}
+function bindVariables(b, res, vars) {
   const refs = [];
-  for (const v of vars.entries) {
-    for (const t of b.refs(v.value, stack)) {
-      b.add(res, "BINDS_TO", t, stack, v.span);
-      refs.push({ name: v.key, resource: t.resource.id });
+  for (const v of vars) {
+    for (const t of b.refs(v.value, v.stack)) {
+      b.add(res, "BINDS_TO", t, v.stack, v.span);
+      if (!refs.some((r) => r.name === v.name && r.resource === t.resource.id)) {
+        refs.push({ name: v.name, resource: t.resource.id });
+      }
     }
   }
   const node2 = b.node(res);
@@ -28799,9 +28888,185 @@ function bindEnvironment(b, res) {
     );
   }
 }
+function bindTaskDefinition(b, res) {
+  const vars = [];
+  for (const td of b.resources(getEntry(res.props, "TaskDefinition")?.value, res.stack)) {
+    if (td.resource.type !== "AWS::ECS::TaskDefinition") continue;
+    for (const container of items(td.resource.props, "ContainerDefinitions")) {
+      for (const [list2, field] of [
+        ["Environment", "Value"],
+        ["Secrets", "ValueFrom"]
+      ]) {
+        for (const item of items(container, list2)) {
+          const name2 = getEntry(item, "Name")?.value;
+          if (name2?.kind !== "scalar" || typeof name2.value !== "string") continue;
+          vars.push({
+            name: name2.value,
+            value: getEntry(item, field)?.value,
+            span: item.span,
+            stack: td.resource.stack
+          });
+        }
+      }
+    }
+  }
+  bindVariables(b, res, vars);
+}
+function forwardedGroups(b, actions, stack) {
+  const out = /* @__PURE__ */ new Set();
+  for (const action of actions) {
+    const exprs = [
+      getEntry(action, "TargetGroupArn")?.value,
+      ...items(getEntry(action, "ForwardConfig")?.value, "TargetGroups").map(
+        (g) => getEntry(g, "TargetGroupArn")?.value
+      )
+    ];
+    for (const e of exprs) {
+      for (const t of b.resources(e, stack)) {
+        if (t.resource.type === "AWS::ElasticLoadBalancingV2::TargetGroup") out.add(t.resource);
+      }
+    }
+  }
+  return [...out];
+}
+function loadBalancerEdges(b, stacks) {
+  const LISTENER = "AWS::ElasticLoadBalancingV2::Listener";
+  const fronts = /* @__PURE__ */ new Map();
+  const join4 = (groups, lbs, via) => {
+    for (const g of groups) {
+      const list2 = fronts.get(g) ?? [];
+      for (const lb of lbs) list2.push({ lb, via });
+      fronts.set(g, list2);
+    }
+  };
+  const lbsOf = (listener2) => b.refs(getEntry(listener2.props, "LoadBalancerArn")?.value, listener2.stack, ["elb"]);
+  for (const stack of stacks) {
+    for (const res of stack.resources.values()) {
+      if (res.type === LISTENER) {
+        join4(forwardedGroups(b, items(res.props, "DefaultActions"), stack), lbsOf(res), res);
+      } else if (res.type === "AWS::ElasticLoadBalancingV2::ListenerRule") {
+        const groups = forwardedGroups(b, items(res.props, "Actions"), stack);
+        for (const l of b.resources(getEntry(res.props, "ListenerArn")?.value, stack)) {
+          if (l.resource.type === LISTENER) join4(groups, lbsOf(l.resource), res);
+        }
+      }
+    }
+  }
+  const call = (group, target2, declaredIn, span) => {
+    for (const { lb, via } of fronts.get(group) ?? []) {
+      b.glue = via;
+      b.add(lb, "CALLS", target2, declaredIn, span);
+    }
+    b.glue = void 0;
+  };
+  for (const stack of stacks) {
+    for (const res of stack.resources.values()) {
+      if (res.type === "AWS::ECS::Service" && res.id) {
+        for (const item of items(res.props, "LoadBalancers")) {
+          for (const g of b.resources(getEntry(item, "TargetGroupArn")?.value, stack)) {
+            call(g.resource, { resource: res, conditional: g.conditional }, stack, item.span);
+          }
+        }
+      } else if (res.type === "AWS::ElasticLoadBalancingV2::TargetGroup") {
+        for (const item of items(res.props, "Targets")) {
+          for (const fn of b.refs(getEntry(item, "Id")?.value, stack, ["lambda"]))
+            call(res, fn, stack, item.span);
+        }
+      }
+    }
+  }
+}
+function distributionEdges(b, res) {
+  const cfg = getEntry(res.props, "DistributionConfig")?.value;
+  for (const origin of items(cfg, "Origins")) {
+    for (const t of b.refs(getEntry(origin, "DomainName")?.value, res.stack)) {
+      if (t.resource.kind === "s3") b.add(res, "READS_FROM", t, res.stack, origin.span);
+      else if (t.resource.kind === "elb" || t.resource.kind === "api-gateway") {
+        b.add(res, "CALLS", t, res.stack, origin.span);
+      }
+    }
+  }
+}
+function placeInVpc(b, res, where2, subnets, span) {
+  if (subnets.length === 0) return;
+  const { stack } = res;
+  const vpcs = /* @__PURE__ */ new Map();
+  let lost = false;
+  for (const expr of subnets) {
+    let reached = false;
+    for (const s of b.resources(expr, stack)) {
+      if (s.resource.type !== "AWS::EC2::Subnet" || s.resource.stack !== stack) continue;
+      for (const v of b.resources(getEntry(s.resource.props, "VpcId")?.value, stack)) {
+        if (v.resource.type !== "AWS::EC2::VPC" || v.resource.stack !== stack || !v.resource.id) continue;
+        reached = true;
+        const conditional = s.conditional || v.conditional;
+        vpcs.set(v.resource, {
+          resource: v.resource,
+          conditional: (vpcs.get(v.resource)?.conditional ?? true) && conditional
+        });
+      }
+    }
+    if (!reached) lost = true;
+  }
+  const node2 = b.node(res);
+  if (!node2) return;
+  const [only] = vpcs.values();
+  if (vpcs.size === 1 && only && !lost) {
+    node2.properties.vpc = only.resource.id;
+    b.add(res, "DEPENDS_ON", only, stack, span);
+    return;
+  }
+  node2.properties.inVpc = true;
+  b.info(
+    stack,
+    "vpc-unresolved",
+    vpcs.size > 1 ? `${res.logicalId}: the subnets in ${where2} lead to more than one VPC; which one is not decided` : vpcs.size === 1 ? `${res.logicalId}: only some of the subnets in ${where2} are traced to a VPC of this template; which VPC is not confirmed` : `${res.logicalId}: the subnets in ${where2} are not traced to a VPC of this template (a parameter, an import or another stack's); it is in a VPC, but which one is not known`,
+    span
+  );
+}
+var listOf = (v) => v === void 0 ? [] : v.kind === "array" ? v.items : [v];
+function vpcRule(b, res) {
+  const { props } = res;
+  switch (res.type) {
+    case "AWS::Lambda::Function":
+    case "AWS::Serverless::Function": {
+      const cfg = getEntry(props, "VpcConfig");
+      const ids = getEntry(cfg?.value, "SubnetIds")?.value;
+      if (cfg) placeInVpc(b, res, "VpcConfig.SubnetIds", listOf(ids), cfg.span);
+      return;
+    }
+    case "AWS::ECS::Service": {
+      const cfg = getEntry(props, "NetworkConfiguration");
+      const subnets = getEntry(getEntry(cfg?.value, "AwsvpcConfiguration")?.value, "Subnets")?.value;
+      if (cfg)
+        placeInVpc(b, res, "NetworkConfiguration.AwsvpcConfiguration.Subnets", listOf(subnets), cfg.span);
+      return;
+    }
+    case "AWS::ElasticLoadBalancingV2::LoadBalancer": {
+      const subnets = getEntry(props, "Subnets");
+      if (subnets) placeInVpc(b, res, "Subnets", listOf(subnets.value), subnets.span);
+      const mappings = getEntry(props, "SubnetMappings");
+      if (mappings) {
+        const ids = items(props, "SubnetMappings").flatMap((m) => listOf(getEntry(m, "SubnetId")?.value));
+        placeInVpc(b, res, "SubnetMappings", ids, mappings.span);
+      }
+      return;
+    }
+    case "AWS::RDS::DBInstance":
+    case "AWS::RDS::DBCluster": {
+      const group = getEntry(props, "DBSubnetGroupName");
+      if (!group) return;
+      const groups = b.resources(group.value, res.stack).filter((g) => g.resource.type === "AWS::RDS::DBSubnetGroup" && g.resource.stack === res.stack);
+      const ids = groups.flatMap((g) => listOf(getEntry(g.resource.props, "SubnetIds")?.value));
+      placeInVpc(b, res, "DBSubnetGroupName", groups.length > 0 ? ids : [group.value], group.span);
+      return;
+    }
+  }
+}
 function specific(b, res) {
   const { stack, props } = res;
   const at = res.entry.span;
+  vpcRule(b, res);
   switch (res.type) {
     case "AWS::Serverless::Function":
       samFunctionEdges(b, res);
@@ -28809,6 +29074,12 @@ function specific(b, res) {
       return;
     case "AWS::Lambda::Function":
       bindEnvironment(b, res);
+      return;
+    case "AWS::ECS::Service":
+      bindTaskDefinition(b, res);
+      return;
+    case "AWS::CloudFront::Distribution":
+      distributionEdges(b, res);
       return;
     case "AWS::Lambda::EventSourceMapping": {
       const fns = b.refs(getEntry(props, "FunctionName")?.value, stack, ["lambda"]);
@@ -28934,6 +29205,7 @@ function collectEdges(b, stacks) {
     }
   }
   b.glue = void 0;
+  loadBalancerEdges(b, stacks);
   for (const stack of stacks) for (const res of stack.resources.values()) if (res.id) generic(b, res);
 }
 
@@ -29413,6 +29685,7 @@ function addNodes(ctx, report, stack, nodes) {
       resourceType: res.type
     };
     if (cdkPath !== void 0) properties.cdkPath = cdkPath;
+    if (stack.source.region !== void 0) properties.region = stack.source.region;
     if (res.condition !== void 0) properties.condition = res.condition;
     if (res.implicit) properties.implicit = true;
     Object.assign(properties, def.describe?.(res.props));
@@ -29446,6 +29719,13 @@ function constructName(cdkPath) {
 }
 
 // ../../packages/parsers/cloudformation/src/assembly.ts
+var REGION = /^[a-z]{2}(-[a-z]+)+-\d+$/;
+function regionOf(environment) {
+  if (typeof environment !== "string" || !environment.startsWith("aws://")) return void 0;
+  const parts = environment.slice("aws://".length).split("/");
+  const region = parts.length === 2 ? parts[1] : void 0;
+  return region !== void 0 && REGION.test(region) ? region : void 0;
+}
 var dirname = (path) => {
   const i = path.lastIndexOf("/");
   return i < 0 ? "" : path.slice(0, i);
@@ -29487,8 +29767,10 @@ function readAssemblyManifest(manifestFile, text5) {
     if (!isRecord(artifact) || !isRecord(artifact.properties)) continue;
     if (artifact.type === "aws:cloudformation:stack" && typeof artifact.properties.templateFile === "string") {
       const rel = artifact.properties.templateFile;
-      if (staysInside(rel)) stacks.push({ artifactId, templateFile: joinPath(dir, rel) });
-      else rejected.push({ artifactId, templateFile: rel });
+      const region = regionOf(artifact.environment);
+      if (staysInside(rel)) {
+        stacks.push({ artifactId, templateFile: joinPath(dir, rel), ...region ? { region } : {} });
+      } else rejected.push({ artifactId, templateFile: rel });
     } else if (artifact.type === "cdk:cloud-assembly" && typeof artifact.properties.directoryName === "string") {
       childDirs.push(joinPath(dir, artifact.properties.directoryName));
     }
@@ -29518,7 +29800,7 @@ function assemblyOwnedDirs(assemblies) {
 
 // ../../packages/parsers/cloudformation/src/parser.ts
 var PARSER_ID = "cloudformation";
-var CLOUDFORMATION_PARSER_VERSION = "0.2.1";
+var CLOUDFORMATION_PARSER_VERSION = "0.4.0";
 var TEMPLATE_FILE = /(^|\/)(template|[^/]+\.template)\.json$/;
 var YAML_FILE = /\.ya?ml$/i;
 var YAML_TOP_RESOURCES = /^["']?Resources["']?[ \t]*:/m;
@@ -30926,7 +31208,54 @@ var CONSTRUCTS = {
   "aws-cdk-lib/aws-apigatewayv2": {
     HttpApi: { kind: "api-gateway", nameProp: "apiName" },
     WebSocketApi: { kind: "api-gateway", nameProp: "apiName" }
+  },
+  "aws-cdk-lib/aws-cloudfront": { Distribution: { kind: "cloudfront", nameProp: "comment" } },
+  "aws-cdk-lib/aws-elasticloadbalancingv2": {
+    // The same property names as the CloudFormation and Terraform parsers' load balancers.
+    ApplicationLoadBalancer: {
+      kind: "elb",
+      nameProp: "loadBalancerName",
+      properties: { loadBalancerType: "application" }
+    },
+    NetworkLoadBalancer: {
+      kind: "elb",
+      nameProp: "loadBalancerName",
+      properties: { loadBalancerType: "network" }
+    }
+  },
+  "aws-cdk-lib/aws-ecs": {
+    Cluster: { kind: "ecs", nameProp: "clusterName" },
+    FargateService: { kind: "ecs", nameProp: "serviceName", properties: { launchType: "FARGATE" } },
+    Ec2Service: { kind: "ecs", nameProp: "serviceName", properties: { launchType: "EC2" } }
+  },
+  "aws-cdk-lib/aws-ec2": { Vpc: { kind: "vpc", nameProp: "vpcName" } },
+  // The same kinds as the CloudFormation parser's AWS::RDS::DBInstance (rds) / DBCluster (aurora).
+  "aws-cdk-lib/aws-rds": {
+    DatabaseInstance: { kind: "rds", nameProp: "instanceIdentifier" },
+    DatabaseCluster: { kind: "aurora", nameProp: "clusterIdentifier" }
   }
+};
+var TASK_DEFINITIONS = {
+  "aws-cdk-lib/aws-ecs": /* @__PURE__ */ new Set(["FargateTaskDefinition", "Ec2TaskDefinition", "TaskDefinition"])
+};
+var ORIGINS_MODULE = "aws-cdk-lib/aws-cloudfront-origins";
+var ORIGINS = {
+  LoadBalancerV2Origin: { arg: 0, kinds: ["elb"] },
+  S3Origin: { arg: 0, kinds: ["s3"] },
+  S3StaticWebsiteOrigin: { arg: 0, kinds: ["s3"] },
+  RestApiOrigin: { arg: 0, kinds: ["api-gateway"] },
+  HttpOrigin: { arg: 0, kinds: ["api-gateway", "elb", "s3"], walk: true }
+};
+var ORIGIN_FACTORIES = {
+  S3BucketOrigin: { arg: 0, kinds: ["s3"] }
+};
+var ORIGIN_RELATIONS = {
+  s3: "READS_FROM",
+  elb: "CALLS",
+  "api-gateway": "CALLS"
+};
+var LB_TARGETS = {
+  "aws-cdk-lib/aws-elasticloadbalancingv2-targets": { LambdaTarget: { constructArg: 0 } }
 };
 var HANDLER_PROPS = {
   "aws-cdk-lib/aws-apigateway#LambdaRestApi": ["handler"]
@@ -30968,7 +31297,17 @@ var SUPPORTING_MODULES = /* @__PURE__ */ new Set([
 ]);
 var IGNORED_CLASSES = {
   "aws-cdk-lib": /* @__PURE__ */ new Set(["CfnOutput", "CfnParameter", "CfnMapping", "CfnCondition", "Tags", "App", "Stack"]),
-  constructs: /* @__PURE__ */ new Set(["Construct"])
+  constructs: /* @__PURE__ */ new Set(["Construct"]),
+  // How a service, a load balancer or a VPC is wired (the supporting types of the CloudFormation parser).
+  "aws-cdk-lib/aws-ecs": /* @__PURE__ */ new Set(["FargateTaskDefinition", "Ec2TaskDefinition", "TaskDefinition"]),
+  "aws-cdk-lib/aws-ec2": /* @__PURE__ */ new Set(["SecurityGroup"]),
+  "aws-cdk-lib/aws-rds": /* @__PURE__ */ new Set(["SubnetGroup", "ParameterGroup", "OptionGroup"]),
+  "aws-cdk-lib/aws-elasticloadbalancingv2": /* @__PURE__ */ new Set([
+    "ApplicationTargetGroup",
+    "NetworkTargetGroup",
+    "ApplicationListener",
+    "NetworkListener"
+  ])
 };
 
 // ../../packages/parsers/aws-cdk/src/source.ts
@@ -30977,7 +31316,16 @@ var importsAwsCdk = (text5) => AWS_CDK_IMPORT.test(text5);
 var ROOT_MODULE = "aws-cdk-lib";
 function classify(ref) {
   const construct = CONSTRUCTS[ref.module]?.[ref.name];
-  if (construct) return { kind: "construct", kindName: construct.kind, nameProp: construct.nameProp };
+  if (construct) {
+    return {
+      kind: "construct",
+      kindName: construct.kind,
+      nameProp: construct.nameProp,
+      ...construct.properties ? { properties: construct.properties } : {}
+    };
+  }
+  const lbTarget = LB_TARGETS[ref.module]?.[ref.name];
+  if (lbTarget) return { kind: "lbTarget", constructArg: lbTarget.constructArg };
   const integration = INTEGRATIONS[ref.module]?.[ref.name];
   if (integration) return { kind: "integration", handlerArg: integration.handlerArg };
   const source = EVENT_SOURCES[ref.module]?.[ref.name];
@@ -31035,6 +31383,19 @@ var prop = (obj, name2) => {
   }
   return void 0;
 };
+var REGION2 = /^[a-z]{2}(-[a-z]+)+-\d+$/;
+function stackEnv(props) {
+  const obj = props ? unwrapExpression(props) : void 0;
+  if (obj?.type !== "ObjectExpression") return props ? { envUntracked: true } : {};
+  const env = prop(obj, "env");
+  if (!env) return {};
+  const envObj = unwrapExpression(env);
+  if (envObj.type !== "ObjectExpression") return { envUntracked: true };
+  const region = prop(envObj, "region");
+  if (!region) return {};
+  const literal2 = stringValue(region);
+  return literal2 !== void 0 && REGION2.test(literal2) ? { region: literal2 } : { envUntracked: true };
+}
 async function analyzeCdkSource(ctx, options) {
   const nodes = /* @__PURE__ */ new Map();
   const edges = /* @__PURE__ */ new Map();
@@ -31126,7 +31487,9 @@ async function analyzeCdkSource(ctx, options) {
       list2.push({
         file: file2,
         id: stringValue(args[1]),
-        appScoped: scope?.type === "Identifier" && appNames.has(scope.name)
+        appScoped: scope?.type === "Identifier" && appNames.has(scope.name),
+        line: m.lines(n).startLine,
+        ...stackEnv(args[2])
       });
       instances.set(key(stack.file, stack.name), list2);
       return void 0;
@@ -31226,6 +31589,25 @@ async function analyzeCdkSource(ctx, options) {
     const consts = /* @__PURE__ */ new Map();
     const fields = /* @__PURE__ */ new Map();
     const lineOf = (n) => m.lines(n).startLine;
+    const listeners = /* @__PURE__ */ new Map();
+    const clusterVpc = /* @__PURE__ */ new Map();
+    const taskDefs = /* @__PURE__ */ new Map();
+    const serviceTasks = [];
+    const originVars = /* @__PURE__ */ new Map();
+    const places = instances.get(key(stack.file, stack.name)) ?? [];
+    for (const inst of places) {
+      if (!inst.envUntracked) continue;
+      note(
+        "info",
+        "cdk-stack-env-untracked",
+        inst.file,
+        `${stack.name} is made with props or an env the reader cannot read a literal region from (process.env, a variable); its region is not known`,
+        inst.line
+      );
+    }
+    const regions = new Set(places.map((i) => i.region));
+    const [only] = regions;
+    const region = places.length > 0 && regions.size === 1 ? only : void 0;
     const constructOf = (expr) => {
       if (!expr) return void 0;
       const e = unwrapExpression(expr);
@@ -31248,6 +31630,174 @@ async function analyzeCdkSource(ctx, options) {
       return void 0;
     };
     const isThis = (n) => n !== void 0 && unwrapExpression(n).type === "ThisExpression";
+    const attributeOwners = (expr) => {
+      const out = [];
+      walk2(expr, (n) => {
+        if (n.type === "MemberExpression" && !n.computed) {
+          const c = constructOf(n.object);
+          if (c && !out.includes(c)) out.push(c);
+        }
+        return void 0;
+      });
+      return out;
+    };
+    const readEnv = (owner, key2, env) => {
+      if (!env) return [];
+      const obj = unwrapExpression(env);
+      if (obj.type !== "ObjectExpression") {
+        note(
+          "warning",
+          "cdk-environment-untracked",
+          file2,
+          `${owner}: ${key2} is not an object literal; its references are not read`,
+          lineOf(env),
+          { unverified: true }
+        );
+        return [];
+      }
+      const out = [];
+      for (const p of obj.properties) {
+        if (p.type !== "Property") {
+          note(
+            "warning",
+            "cdk-environment-untracked",
+            file2,
+            `${owner}: ${key2} has a spread; the references in it are not read`,
+            lineOf(p),
+            { unverified: true }
+          );
+          continue;
+        }
+        const k = p.key;
+        const name2 = !p.computed && k.type === "Identifier" ? k.name : k.type === "Literal" ? String(k.value) : "";
+        for (const target2 of attributeOwners(p.value)) out.push({ name: name2, target: target2, node: p });
+      }
+      return out;
+    };
+    const addContainer = (expr) => {
+      const callee = unwrapExpression(expr.callee);
+      if (callee.type !== "MemberExpression" || callee.computed) return false;
+      if (callee.property.name !== "addContainer") return false;
+      const object2 = unwrapExpression(callee.object);
+      const vars = object2.type === "Identifier" ? taskDefs.get(object2.name) : void 0;
+      if (!vars) {
+        note(
+          "warning",
+          "cdk-construct-untracked",
+          file2,
+          "addContainer: the task definition is not one made in this stack that the reader follows; what its containers bind is not in the graph",
+          lineOf(expr),
+          { target: "aws-cdk-lib/aws-ecs#addContainer", unverified: true }
+        );
+        return true;
+      }
+      const args = expr.arguments;
+      const props = args[1] ? unwrapExpression(args[1]) : void 0;
+      const owner = `container ${stringValue(args[0]) ?? "(computed id)"}`;
+      for (const key2 of ["environment", "secrets"]) vars.push(...readEnv(owner, key2, prop(props, key2)));
+      return true;
+    };
+    const origin = (cdn, expr, depth = 0) => {
+      if (!expr || depth > 4) return;
+      const e = unwrapExpression(expr);
+      if (e.type === "Identifier" && e.name === "undefined") return;
+      const unfollowed = (what) => note(
+        "warning",
+        "cdk-construct-untracked",
+        file2,
+        `origin: ${what}; what the distribution sends requests to is not in the graph`,
+        lineOf(expr),
+        { target: "aws-cdk-lib/aws-cloudfront#origin", unverified: true }
+      );
+      if (e.type === "Identifier") {
+        const init = originVars.get(e.name);
+        if (init) origin(cdn, init, depth + 1);
+        else unfollowed("a variable that is not an origin made in this stack");
+        return;
+      }
+      let ref;
+      let def;
+      if (e.type === "NewExpression") {
+        ref = resolver.classOf(e.callee);
+        def = ref?.module === ORIGINS_MODULE ? ORIGINS[ref.name] : void 0;
+        if (ref?.module === ORIGINS_MODULE && ref.name === "OriginGroup") {
+          const props = e.arguments[0];
+          const group = props ? unwrapExpression(props) : void 0;
+          for (const k of ["primaryOrigin", "fallbackOrigin"]) origin(cdn, prop(group, k), depth + 1);
+          return;
+        }
+      } else if (e.type === "CallExpression") {
+        const callee = unwrapExpression(e.callee);
+        if (callee.type === "MemberExpression" && !callee.computed) {
+          ref = resolver.classOf(callee.object);
+          def = ref?.module === ORIGINS_MODULE ? ORIGIN_FACTORIES[ref.name] : void 0;
+        }
+      }
+      if (!ref) {
+        unfollowed("not an origin class the reader knows");
+        return;
+      }
+      if (!def) {
+        if (ref.module === ORIGINS_MODULE) {
+          note(
+            "info",
+            "cdk-construct-unsupported",
+            file2,
+            `origin ${ref.name} (${ref.module}) is not read`,
+            lineOf(e),
+            {
+              target: target(ref),
+              unverified: true
+            }
+          );
+        } else unfollowed(`${ref.name} (${ref.module}) is not an origin`);
+        return;
+      }
+      const arg = e.arguments[def.arg];
+      if (def.walk) {
+        for (const c2 of arg ? attributeOwners(arg) : []) {
+          if (def.kinds.includes(c2.kind)) addEdge(cdn, ORIGIN_RELATIONS[c2.kind], c2, m, expr);
+        }
+        return;
+      }
+      const c = constructOf(arg);
+      if (c && def.kinds.includes(c.kind)) addEdge(cdn, ORIGIN_RELATIONS[c.kind], c, m, expr);
+      else unfollowed(`the ${def.kinds.join(" or ")} of ${ref.name} is not one made in this stack`);
+    };
+    const distributionOrigins = (cdn, props) => {
+      const behavior = prop(props, "defaultBehavior");
+      if (behavior) origin(cdn, prop(unwrapExpression(behavior), "origin"));
+      const more = prop(props, "additionalBehaviors");
+      if (!more) return;
+      const obj = unwrapExpression(more);
+      if (obj.type !== "ObjectExpression") {
+        note(
+          "warning",
+          "cdk-construct-untracked",
+          file2,
+          "additionalBehaviors is not an object literal; its origins are not in the graph",
+          lineOf(more),
+          { target: "aws-cdk-lib/aws-cloudfront#origin", unverified: true }
+        );
+        return;
+      }
+      for (const p of obj.properties) {
+        if (p.type === "Property") origin(cdn, prop(unwrapExpression(p.value), "origin"));
+      }
+    };
+    const isOriginExpr = (init) => {
+      const e = unwrapExpression(init);
+      const callee = e.type === "NewExpression" ? e.callee : e.type === "CallExpression" ? unwrapExpression(e.callee) : void 0;
+      if (!callee) return false;
+      const cls = e.type === "NewExpression" ? resolver.classOf(callee) : callee.type === "MemberExpression" && !callee.computed ? resolver.classOf(callee.object) : void 0;
+      return cls?.module === ORIGINS_MODULE;
+    };
+    const isTaskDefinition = (init) => {
+      const e = unwrapExpression(init);
+      if (e.type !== "NewExpression" || !isThis(e.arguments[0])) return false;
+      const cls = resolver.classOf(e.callee);
+      return cls !== void 0 && (TASK_DEFINITIONS[cls.module]?.has(cls.name) ?? false);
+    };
     const untracked = (root) => {
       walk2(root, (n) => {
         if (n.type !== "NewExpression") return void 0;
@@ -31288,6 +31838,80 @@ async function analyzeCdkSource(ctx, options) {
         return void 0;
       });
     };
+    const placeInVpc2 = (made, props, stmt) => {
+      const n = nodes.get(made.id);
+      if (!n) return;
+      const isCluster = made.ref.module === "aws-cdk-lib/aws-ecs" && made.ref.name === "Cluster";
+      const cluster = isCluster ? void 0 : constructOf(prop(props, "cluster"));
+      if (made.kind === "ecs" && cluster?.kind === "ecs") addEdge(made, "DEPENDS_ON", cluster, m, stmt);
+      const vpcProp = prop(props, "vpc");
+      let placed = {};
+      if (vpcProp) {
+        const vpc = constructOf(vpcProp);
+        if (vpc?.kind === "vpc") placed = { vpc };
+        else {
+          placed = { inVpc: true };
+          note(
+            "info",
+            "vpc-unresolved",
+            file2,
+            `${n.properties.constructId}: vpc is not a VPC made in this stack (a prop, a lookup, another stack's); it is in a VPC, but which one is not known`,
+            lineOf(vpcProp)
+          );
+        }
+      } else if (cluster) placed = clusterVpc.get(cluster.id) ?? {};
+      if (isCluster) clusterVpc.set(made.id, placed);
+      if (placed.vpc) {
+        n.properties.vpc = placed.vpc.id;
+        addEdge(made, "DEPENDS_ON", placed.vpc, m, stmt);
+      } else if (placed.inVpc) n.properties.inVpc = true;
+    };
+    const listenerOf = (expr) => {
+      if (!expr) return void 0;
+      const e = unwrapExpression(expr);
+      if (e.type === "Identifier") return listeners.get(e.name);
+      if (e.type !== "CallExpression") return void 0;
+      const callee = unwrapExpression(e.callee);
+      if (callee.type !== "MemberExpression" || callee.computed) return void 0;
+      if (callee.property.name !== "addListener") return void 0;
+      const lb = constructOf(callee.object);
+      return lb?.kind === "elb" ? lb : void 0;
+    };
+    const addTargets = (listenerExpr, args, expr, stmt) => {
+      const lb = listenerOf(listenerExpr);
+      const list2 = prop(args[1] ? unwrapExpression(args[1]) : void 0, "targets");
+      const elements2 = list2 && unwrapExpression(list2).type === "ArrayExpression" ? unwrapExpression(list2).elements : void 0;
+      const unfollowed = (what) => note(
+        "warning",
+        "cdk-construct-untracked",
+        file2,
+        `addTargets: ${what}; what the load balancer sends requests to is not in the graph`,
+        lineOf(expr),
+        { target: "aws-cdk-lib/aws-elasticloadbalancingv2#addTargets", unverified: true }
+      );
+      if (!lb) {
+        unfollowed("the listener is not one this reader follows");
+        return;
+      }
+      if (!elements2) {
+        unfollowed("targets is not an array literal");
+        return;
+      }
+      for (const el of elements2) {
+        if (!el) continue;
+        const u = unwrapExpression(el);
+        let to;
+        if (u.type === "NewExpression") {
+          const ref = resolver.classOf(u.callee);
+          const def = ref ? classify(ref) : void 0;
+          if (def?.kind === "lbTarget") to = constructOf(u.arguments[def.constructArg]);
+        } else {
+          to = constructOf(u) ?? (u.type === "CallExpression" ? rootConstruct(u) : void 0);
+        }
+        if (to && (to.kind === "ecs" || to.kind === "lambda")) addEdge(lb, "CALLS", to, m, stmt);
+        else unfollowed("a target is not a service or a function made in this stack");
+      }
+    };
     const make = (init, stmt) => {
       const call2 = unwrapExpression(init);
       if (call2.type !== "NewExpression") {
@@ -31298,7 +31922,9 @@ async function analyzeCdkSource(ctx, options) {
       if (!ref) return void 0;
       const def = classify(ref);
       const args = call2.arguments;
-      if (def.kind === "ignored" || def.kind === "integration" || def.kind === "eventSource") return void 0;
+      if (def.kind === "ignored" || def.kind === "integration" || def.kind === "eventSource" || def.kind === "lbTarget") {
+        return void 0;
+      }
       if (!isThis(args[0])) {
         if (def.kind === "construct") {
           note(
@@ -31356,8 +31982,17 @@ async function analyzeCdkSource(ctx, options) {
         constructId,
         cdkPath: `${stack.name}/${constructId}`,
         source: "cdk-source",
-        file: file2
+        file: file2,
+        ...def.properties
       };
+      if (region !== void 0) properties.region = region;
+      if (def.kindName === "elb") {
+        const facing = prop(props, "internetFacing");
+        const v = facing ? unwrapExpression(facing) : void 0;
+        if (v?.type === "Literal" && typeof v.value === "boolean") {
+          properties.scheme = v.value ? "internet-facing" : "internal";
+        }
+      }
       if (def.kindName === "lambda") {
         const handler = stringValue(prop(props, "handler"));
         if (handler !== void 0) properties.handler = handler;
@@ -31377,41 +32012,29 @@ async function analyzeCdkSource(ctx, options) {
         verification: "verified"
       });
       const made = { id, kind: def.kindName, ref };
+      if (["lambda", "ecs", "elb", "rds", "aurora"].includes(def.kindName)) placeInVpc2(made, props, stmt);
       if (def.kindName === "lambda") {
-        const env = prop(props, "environment");
-        const envObject = env ? unwrapExpression(env) : void 0;
-        if (env && envObject?.type !== "ObjectExpression") {
-          note(
-            "warning",
-            "cdk-environment-untracked",
-            file2,
-            `${constructId}: environment is not an object literal; its references are not read`,
-            lineOf(env),
-            { unverified: true }
-          );
-        } else if (envObject) {
-          for (const p of envObject.properties) {
-            if (p.type !== "Property") {
-              note(
-                "warning",
-                "cdk-environment-untracked",
-                file2,
-                `${constructId}: environment has a spread; the references in it are not read`,
-                lineOf(p),
-                { unverified: true }
-              );
-              continue;
-            }
-            walk2(p.value, (n) => {
-              if (n.type === "MemberExpression" && !n.computed) {
-                const c = constructOf(n.object);
-                if (c) addEdge(made, "BINDS_TO", c, m, p);
-              }
-              return void 0;
-            });
-          }
+        for (const v of readEnv(constructId, "environment", prop(props, "environment"))) {
+          addEdge(made, "BINDS_TO", v.target, m, v.node);
         }
       }
+      if (def.kindName === "ecs" && made.ref.name !== "Cluster") {
+        const task = prop(props, "taskDefinition");
+        const t = task ? unwrapExpression(task) : void 0;
+        if (t?.type === "Identifier" && taskDefs.has(t.name)) {
+          serviceTasks.push({ service: made, task: t.name });
+        } else if (task && t?.type !== "NewExpression") {
+          note(
+            "warning",
+            "cdk-construct-untracked",
+            file2,
+            `${constructId}: taskDefinition is not a task definition made in this stack; what its containers bind is not in the graph`,
+            lineOf(task),
+            { target: "aws-cdk-lib/aws-ecs#taskDefinition", unverified: true }
+          );
+        }
+      }
+      if (def.kindName === "cloudfront") distributionOrigins(made, props);
       if (def.kindName === "api-gateway") {
         if (props) {
           apiCalls(made, props, stmt);
@@ -31433,6 +32056,15 @@ async function analyzeCdkSource(ctx, options) {
       const method = callee.property.name;
       const args = expr.arguments;
       const subject = constructOf(callee.object);
+      if (method === "addTargets") {
+        addTargets(callee.object, args, expr, stmt);
+        return;
+      }
+      if (addContainer(expr)) return;
+      if (subject?.kind === "cloudfront" && method === "addBehavior") {
+        origin(subject, args[1]);
+        return;
+      }
       if (subject && method.startsWith("grant")) {
         const permission = GRANTS[method];
         if (permission === void 0) {
@@ -31485,8 +32117,23 @@ async function analyzeCdkSource(ctx, options) {
         if (stmt.type === "VariableDeclaration") {
           for (const d of stmt.declarations) {
             if (!d.init) continue;
-            const made = make(d.init, stmt);
             const id = d.id;
+            const lb = listenerOf(d.init);
+            if (lb && id.type === "Identifier" && unwrapExpression(d.init).type === "CallExpression") {
+              listeners.set(id.name, lb);
+              continue;
+            }
+            const init = unwrapExpression(d.init);
+            if (id.type === "Identifier" && isTaskDefinition(init)) {
+              taskDefs.set(id.name, []);
+              continue;
+            }
+            if (id.type === "Identifier" && isOriginExpr(init)) {
+              originVars.set(id.name, init);
+              continue;
+            }
+            if (init.type === "CallExpression" && addContainer(init)) continue;
+            const made = make(d.init, stmt);
             if (made && id.type === "Identifier") consts.set(id.name, made);
           }
         } else if (stmt.type === "ExpressionStatement") {
@@ -31501,6 +32148,21 @@ async function analyzeCdkSource(ctx, options) {
             }
           } else untracked(stmt);
         } else untracked(stmt);
+      }
+    }
+    for (const { service, task } of serviceTasks) {
+      const refs = [];
+      for (const v of taskDefs.get(task) ?? []) {
+        addEdge(service, "BINDS_TO", v.target, m, v.node);
+        if (v.name !== "" && !refs.some((r) => r.name === v.name && r.resource === v.target.id)) {
+          refs.push({ name: v.name, resource: v.target.id });
+        }
+      }
+      const n = nodes.get(service.id);
+      if (n && refs.length > 0) {
+        n.properties.environmentReferences = refs.sort(
+          (x, y) => x.name < y.name ? -1 : x.name > y.name ? 1 : x.resource < y.resource ? -1 : 1
+        );
       }
     }
   }
@@ -31556,7 +32218,7 @@ function isCdkEntry(file2, text5) {
 
 // ../../packages/parsers/aws-cdk/src/awsCdkParser.ts
 var PARSER_ID2 = "aws-cdk";
-var AWS_CDK_PARSER_VERSION = "0.2.0";
+var AWS_CDK_PARSER_VERSION = "0.4.0";
 function rootOf(assembly, all) {
   let current = assembly;
   for (let guard = 0; guard < all.length; guard++) {
@@ -31573,7 +32235,11 @@ async function sourcesOf(ctx) {
     const parent = dirname(rootOf(assembly, assemblies).dir);
     const prefix = parent === "" ? "" : `${parent}/`;
     for (const stack of assembly.stacks) {
-      sources.push({ file: stack.templateFile, stackKey: `${prefix}${stack.artifactId}` });
+      sources.push({
+        file: stack.templateFile,
+        stackKey: `${prefix}${stack.artifactId}`,
+        ...stack.region ? { region: stack.region } : {}
+      });
     }
   }
   return { sources, files: new Set(await ctx.fs.listFiles()), assemblies };
@@ -31598,7 +32264,11 @@ var awsCdkParser = {
         const file2 = joinPath(dir, path.value);
         const inside = dir === "" || file2.startsWith(`${dir}/`);
         if (!inside || !files.has(file2)) return void 0;
-        return { file: file2, stackKey: `${parent.stackKey}/${logicalId}` };
+        return {
+          file: file2,
+          stackKey: `${parent.stackKey}/${logicalId}`,
+          ...parent.region ? { region: parent.region } : {}
+        };
       }
     });
     for (const a of assemblies) {
@@ -36438,7 +37108,41 @@ var Parser2 = class {
       }
       this.pos = start;
     }
+    if (first.t === "id" && isP2(next, "(")) {
+      try {
+        const e = this.nest(() => this.parseCall());
+        if (isTerminator2(this.cur)) return e;
+      } catch (e) {
+        if (!(e instanceof HclParseError)) throw e;
+      }
+      this.pos = start;
+    }
     return this.parseGeneric();
+  }
+  /** `name(arg, arg, ...)`。引数はそれぞれ式として読む（`...` の展開は読めない: 呼び出し元で式に戻す）。 */
+  parseCall() {
+    const name2 = this.cur;
+    this.pos += 2;
+    const args = [];
+    for (; ; ) {
+      while (this.cur.t === "nl" || isP2(this.cur, ",")) this.pos++;
+      const t = this.cur;
+      if (t.t === "eof") throw new HclParseError("\u9589\u3058\u3066\u3044\u306A\u3044 ( \u304C\u3042\u308A\u307E\u3059", name2.line, true);
+      if (isP2(t, ")")) {
+        this.pos++;
+        break;
+      }
+      args.push(this.parseExpr());
+      const n = this.cur;
+      if (!(n.t === "nl" || isP2(n, ",") || isP2(n, ")")))
+        this.fail(`\u5F15\u6570\u306E\u5F8C\u308D\u306B ${describeTok2(n)} \u306F\u66F8\u3051\u307E\u305B\u3093`);
+    }
+    return {
+      kind: "expr",
+      call: { name: name2.v, args },
+      span: { startLine: name2.line, endLine: this.toks[this.pos - 1]?.endLine ?? name2.line },
+      refs: args.flatMap((a) => a.refs)
+    };
   }
   parseArray() {
     const open2 = this.cur;
@@ -36836,6 +37540,7 @@ var SUPPORTING_PREFIXES2 = [
   "aws_security_group",
   "aws_vpc_",
   "aws_subnet",
+  "aws_db_subnet_group",
   "aws_route_table",
   "aws_route53_record",
   "aws_internet_gateway",
@@ -36931,6 +37636,60 @@ var GLUE = {
     relation: "CONSUMES_FROM"
   }
 };
+var VIA = {
+  aws_subnet: ["vpc_id"],
+  aws_db_subnet_group: ["subnet_ids"],
+  aws_lb_listener: ["load_balancer_arn"],
+  aws_alb_listener: ["load_balancer_arn"],
+  aws_s3_bucket_website_configuration: ["bucket"]
+};
+var VPC_ENTRIES = {
+  aws_lambda_function: ["vpc_config.subnet_ids"],
+  aws_ecs_service: ["network_configuration.subnets"],
+  aws_lb: ["subnets", "subnet_mapping.subnet_id"],
+  aws_alb: ["subnets", "subnet_mapping.subnet_id"],
+  aws_db_instance: ["db_subnet_group_name"],
+  aws_rds_cluster: ["db_subnet_group_name"]
+};
+var listener = (type) => ({
+  type,
+  side: "source",
+  via: ["default_action.target_group_arn", "default_action.forward.target_group.arn"],
+  endpoint: ["load_balancer_arn"]
+});
+var listenerRule = (type) => ({
+  type,
+  side: "source",
+  via: ["action.target_group_arn", "action.forward.target_group.arn"],
+  endpoint: ["listener_arn"]
+});
+var attachment = (type) => ({
+  type,
+  side: "target",
+  via: ["target_group_arn"],
+  endpoint: ["target_id"]
+});
+var JUNCTIONS = [
+  // ALB / NLB → ECS service・Lambda・EC2（target group で結ぶ）
+  {
+    junction: ["aws_lb_target_group", "aws_alb_target_group"],
+    relation: "CALLS",
+    members: [
+      listener("aws_lb_listener"),
+      listener("aws_alb_listener"),
+      listenerRule("aws_lb_listener_rule"),
+      listenerRule("aws_alb_listener_rule"),
+      { type: "aws_ecs_service", side: "target", via: ["load_balancer.target_group_arn"] },
+      attachment("aws_lb_target_group_attachment"),
+      attachment("aws_alb_target_group_attachment")
+    ]
+  }
+];
+var CLOUDFRONT_ORIGIN_RELATIONS = {
+  s3: "READS_FROM",
+  elb: "CALLS",
+  "api-gateway": "CALLS"
+};
 var UTILITY_PROVIDERS = /* @__PURE__ */ new Set([
   "random",
   "null",
@@ -36969,7 +37728,7 @@ function bindingKindOf(typeOrBlock) {
 
 // ../../packages/parsers/terraform/src/terraformParser.ts
 var PARSER_ID5 = "terraform";
-var TERRAFORM_PARSER_VERSION = "0.2.1";
+var TERRAFORM_PARSER_VERSION = "0.4.0";
 var isTerraformFile = (path) => path.endsWith(".tf") && !isIgnoredPath(path) && !path.split("/").slice(0, -1).includes(".terraform");
 var compare2 = (a, b) => a < b ? -1 : a > b ? 1 : 0;
 var dirOf3 = (file2) => {
@@ -36980,6 +37739,14 @@ var NON_RESOURCE_ROOTS = /* @__PURE__ */ new Set(["var", "each", "count", "path"
 var unique2 = (list2) => [...new Set(list2)];
 function allAttributes(block) {
   return [...block.attributes, ...block.blocks.flatMap(allAttributes)];
+}
+function attrsAt(block, path) {
+  const parts = path.split(".");
+  let blocks = [block];
+  for (const name2 of parts.slice(0, -1))
+    blocks = blocks.flatMap((b) => b.blocks.filter((x) => x.type === name2));
+  const last = parts[parts.length - 1];
+  return blocks.flatMap((b) => b.attributes.filter((a) => a.name === last));
 }
 var sameSpan2 = (a, b) => a.file === b.file && a.startLine === b.startLine && a.endLine === b.endLine;
 var cleanSource2 = (s) => s.replace(/[?#].*$/s, "").replace(/\/\/[^/@\s]*@/g, "//");
@@ -36996,6 +37763,8 @@ var Analysis2 = class {
   decls = /* @__PURE__ */ new Map();
   /** ディレクトリ → local の名前 → 式。 */
   locals = /* @__PURE__ */ new Map();
+  /** ディレクトリ → AWS provider の alias（既定の provider は ""）→ region（リテラルで読めたときだけ）。 */
+  awsProviders = /* @__PURE__ */ new Map();
   /** 型の対応がなかったリソース（ファイル → 型 → 数）。 */
   unmapped = /* @__PURE__ */ new Map();
   unknownProvider = /* @__PURE__ */ new Map();
@@ -37046,6 +37815,16 @@ var Analysis2 = class {
       const map2 = this.locals.get(dir) ?? /* @__PURE__ */ new Map();
       this.locals.set(dir, map2);
       for (const a of block.attributes) map2.set(a.name, a.value);
+      return;
+    }
+    if (block.type === "provider") {
+      if (block.labels[0] !== "aws") return;
+      const alias = literalOf(block, "alias");
+      const region = literalOf(block, "region");
+      const map2 = this.awsProviders.get(dir) ?? /* @__PURE__ */ new Map();
+      this.awsProviders.set(dir, map2);
+      const key2 = typeof alias === "string" ? alias : "";
+      if (!map2.has(key2)) map2.set(key2, typeof region === "string" && region !== "" ? region : void 0);
       return;
     }
     let mode;
@@ -37207,6 +37986,8 @@ var Analysis2 = class {
       if (typeof version2 === "string") properties.version = version2;
     } else {
       Object.assign(properties, d.def?.describe?.(d.block));
+      const region = this.regionOf(d);
+      if (region !== void 0) properties.region = region;
     }
     properties.terraform = [entry];
     if (d.mode === "data") properties.dataSource = true;
@@ -37219,6 +38000,39 @@ var Analysis2 = class {
       evidence: [evidence],
       verification: d.conditional ? "inferred" : "verified"
     });
+  }
+  /**
+   * リージョン（リテラルで読めたときだけ。`var.region` などは読まない）。
+   * AWS: リソースに直接書いた `region`（provider v6）、無ければ `provider = aws.<alias>` の alias、無ければ既定の provider の region。
+   * Azure: `location` のリテラルか、`azurerm_resource_group.x.location`（1 段）の参照先のリテラル。
+   */
+  regionOf(d) {
+    const text5 = (v) => typeof v === "string" && v !== "" ? v : void 0;
+    if (d.def?.namespace === "aws") {
+      const own2 = text5(literalOf(d.block, "region"));
+      if (own2 !== void 0) return own2;
+      const provider = d.block.attributes.find((a) => a.name === "provider")?.value;
+      let alias = "";
+      if (provider) {
+        const parts = provider.kind === "ref" ? provider.refs[0]?.parts : void 0;
+        if (parts?.[0] !== "aws" || parts[1] === void 0) return void 0;
+        alias = parts[1];
+      }
+      return this.awsProviders.get(d.dir)?.get(alias);
+    }
+    if (d.def?.namespace === "azure") {
+      const location = d.block.attributes.find((a) => a.name === "location")?.value;
+      if (!location) return void 0;
+      const literal2 = text5(literalValue(location));
+      if (literal2 !== void 0) return literal2;
+      const ref = location.kind === "ref" && location.refs.length === 1 ? location.refs[0] : void 0;
+      if (ref?.parts[0] !== "azurerm_resource_group" || ref.parts.length !== 3 || ref.parts[2] !== "location") {
+        return void 0;
+      }
+      const group = this.resolve(ref, d.dir)[0]?.decl;
+      return group ? text5(literalOf(group.block, "location")) : void 0;
+    }
+    return void 0;
   }
   /** 名前だけで指されたもの（別の場所で定義されているかもしれない）。宣言された要素があればそれを使う。 */
   reference(namespace2, kind2, name2, file2, span) {
@@ -37272,6 +38086,34 @@ var Analysis2 = class {
   resolveAll(refs, dir) {
     return refs.flatMap((r) => this.resolve(r, dir));
   }
+  /**
+   * 参照から要素まで、経由する付属物（VIA）をたどる。`lost` はたどれなかった参照があったこと
+   * （var・data・別モジュール・VIA にない付属物・先の読めない付属物）。
+   */
+  reach(refs, dir, seen = /* @__PURE__ */ new Set()) {
+    const found = [];
+    let lost = false;
+    for (const ref of refs) {
+      const located = this.resolve(ref, dir);
+      if (located.length === 0) lost = true;
+      for (const { decl } of located) {
+        if (decl.id !== void 0 && this.nodes.has(decl.id)) {
+          found.push(decl);
+          continue;
+        }
+        const paths = decl.mode === "resource" ? VIA[decl.type] : void 0;
+        const next = paths && !seen.has(decl) ? paths.flatMap((p) => attrsAt(decl.block, p)).flatMap((a) => a.value.refs) : [];
+        if (next.length === 0) {
+          lost = true;
+          continue;
+        }
+        const r = this.reach(next, dir, /* @__PURE__ */ new Set([...seen, decl]));
+        found.push(...r.found);
+        lost ||= r.lost;
+      }
+    }
+    return { found: unique2(found), lost };
+  }
   /** ノードになった宣言だけ。 */
   nodesOf(located) {
     return unique2(located.map((l) => l.decl).filter((d) => d.id !== void 0 && this.nodes.has(d.id)));
@@ -37313,6 +38155,43 @@ var Analysis2 = class {
       else if (d.def?.role === "worker-version") this.workerVersionEdges(d);
       else if (d.id !== void 0 && this.nodes.has(d.id)) this.declEdges(d);
     }
+    for (const decls of [...this.decls.entries()].sort(([a], [b]) => compare2(a, b)).map(([, m]) => m)) {
+      for (const rule of JUNCTIONS) this.junctionEdges([...decls.values()].sort(byLocation2), rule);
+    }
+  }
+  /** 結び目（target group）を介した関係。送る側 × 受ける側を、同じ結び目を指すものどうしで結ぶ。 */
+  junctionEdges(decls, rule) {
+    const sides = /* @__PURE__ */ new Map();
+    for (const d of decls) {
+      if (d.mode !== "resource") continue;
+      for (const m of rule.members.filter((x) => x.type === d.type)) {
+        const ends = m.endpoint ? this.reach(
+          m.endpoint.flatMap((p) => attrsAt(d.block, p)).flatMap((a) => a.value.refs),
+          d.dir
+        ).found : d.id !== void 0 && this.nodes.has(d.id) ? [d] : [];
+        for (const attr of m.via.flatMap((p) => attrsAt(d.block, p))) {
+          for (const { decl: junction } of this.resolveAll(attr.value.refs, d.dir)) {
+            if (junction.mode !== "resource" || !rule.junction.includes(junction.type)) continue;
+            const entry = sides.get(junction) ?? { source: [], target: [] };
+            sides.set(junction, entry);
+            for (const node2 of ends) entry[m.side].push({ node: node2, member: d, junction, span: attr.span });
+          }
+        }
+      }
+    }
+    for (const { source, target: target2 } of sides.values()) {
+      for (const s of source) {
+        for (const t of target2) {
+          const inferred = [s.node, s.member, t.node, t.member, s.junction].some((x) => x.conditional);
+          this.addEdge(s.node.id, rule.relation, t.node.id, s.member.file, s.span, {
+            inferred
+          });
+          this.addEdge(s.node.id, rule.relation, t.node.id, t.member.file, t.span, {
+            inferred
+          });
+        }
+      }
+    }
   }
   declEdges(d) {
     const consumed = /* @__PURE__ */ new Set();
@@ -37322,6 +38201,10 @@ var Analysis2 = class {
     else if (role === "lambda") this.environmentEdges(d, consumed);
     else if (role === "azure-app") this.azureAppEdges(d, consumed);
     if (d.def?.kind === "mcp-portal") this.portalEdges(d);
+    if (d.def?.namespace === "aws" && d.def.kind === "cloudfront") this.originEdges(d, consumed);
+    if (d.mode === "resource" && d.type === "aws_ecs_service") this.ecsTaskEdges(d);
+    if (d.mode === "resource" && VPC_ENTRIES[d.type])
+      this.vpcPlacement(d, VPC_ENTRIES[d.type] ?? [], consumed);
     for (const attr of allAttributes(d.block)) {
       for (const ref of attr.value.refs) {
         if (consumed.has(ref)) continue;
@@ -37472,6 +38355,141 @@ var Analysis2 = class {
           });
         }
       }
+    }
+  }
+  /**
+   * ECS service が `task_definition` で指すタスク定義の、コンテナの環境変数と secrets が指すものは BINDS_TO
+   * （CloudFormation の ECS と同じ）。線の `bindings` に変数名（Lambda と同じ）、service の `environmentReferences`
+   * に `{ name, resource }`（CloudFormation の ECS・Lambda と同じ形、名前順）。
+   */
+  ecsTaskEdges(d) {
+    const refs = [];
+    for (const attr of attrsAt(d.block, "task_definition")) {
+      for (const { decl: td } of this.resolveAll(attr.value.refs, d.dir)) {
+        if (td.mode !== "resource" || td.type !== "aws_ecs_task_definition") continue;
+        for (const v of this.containerVariables(td)) {
+          for (const t of this.nodesOf(this.resolveAll(v.refs, td.dir))) {
+            this.addEdge(d.id, "BINDS_TO", t.id, td.file, v.span, {
+              inferred: this.inferred(d, t) || td.conditional,
+              ...v.name !== void 0 ? { binding: v.name } : {}
+            });
+            if (v.name !== void 0 && !refs.some((r) => r.name === v.name && r.resource === t.id)) {
+              refs.push({ name: v.name, resource: t.id });
+            }
+          }
+        }
+      }
+    }
+    if (refs.length === 0) return;
+    const node2 = this.nodes.get(d.id);
+    node2.properties.environmentReferences = refs.sort(
+      (x, y) => compare2(x.name, y.name) || compare2(x.resource, y.resource)
+    );
+  }
+  /** 診断を出したタスク定義（service が何個指しても 1 回）。 */
+  unreadTasks = /* @__PURE__ */ new Set();
+  /**
+   * `container_definitions = jsonencode([{ environment = [{ name, value }], secrets = [{ name, valueFrom }] }])`。
+   * 文字列の JSON（heredoc・`file()`・`templatefile()`）やそれ以外の式は読まず、info の診断
+   * `ecs-container-definitions-unread`（読み残しではない: タスク定義は付属物で、service は要素として読めている）。
+   */
+  containerVariables(td) {
+    const attr = td.block.attributes.find((a) => a.name === "container_definitions");
+    if (!attr) return [];
+    const list2 = attr.value.call?.name === "jsonencode" ? attr.value.call.args[0] : void 0;
+    const containers = list2?.kind === "array" ? list2.items : void 0;
+    if (!containers || containers.some((c) => c.kind !== "object")) {
+      if (!this.unreadTasks.has(td)) {
+        this.unreadTasks.add(td);
+        this.diag(
+          "info",
+          "ecs-container-definitions-unread",
+          td.file,
+          `${td.address}: container_definitions is not jsonencode([ { ... } ]) (a JSON string, file() or another expression); the references in its environment and secrets are not read`,
+          attr.span.startLine,
+          td.address
+        );
+      }
+      return [];
+    }
+    const out = [];
+    for (const c of containers) {
+      if (c.kind !== "object") continue;
+      for (const [list3, field] of [
+        ["environment", "value"],
+        ["secrets", "valueFrom"]
+      ]) {
+        const items2 = c.entries.find((e) => e.key === list3)?.value;
+        if (items2?.kind !== "array") continue;
+        for (const item of items2.items) {
+          if (item.kind !== "object") continue;
+          const nameExpr = item.entries.find((e) => e.key === "name")?.value;
+          const value2 = item.entries.find((e) => e.key === field)?.value;
+          if (!value2) continue;
+          const raw = nameExpr ? literalValue(nameExpr) : void 0;
+          out.push({
+            name: typeof raw === "string" && raw !== "" ? raw : void 0,
+            refs: value2.refs,
+            span: item.span
+          });
+        }
+      }
+    }
+    return out;
+  }
+  /**
+   * CloudFront の `origin { domain_name }` が指すもの（VIA の付属物を経由してもよい）: S3 は READS_FROM、ALB と API Gateway は CALLS。
+   * 表にない種類だけを指す参照は、ほかの参照と同じく DEPENDS_ON に残す。
+   */
+  originEdges(d, consumed) {
+    for (const attr of attrsAt(d.block, "origin.domain_name")) {
+      for (const ref of attr.value.refs) {
+        const mapped = this.reach([ref], d.dir).found.filter(
+          (t) => t.def?.namespace === "aws" && Object.hasOwn(CLOUDFRONT_ORIGIN_RELATIONS, t.def.kind)
+        );
+        if (mapped.length === 0) continue;
+        consumed.add(ref);
+        for (const t of mapped) {
+          const relation = CLOUDFRONT_ORIGIN_RELATIONS[t.def?.kind];
+          this.addEdge(d.id, relation, t.id, d.file, attr.span, {
+            inferred: this.inferred(d, t)
+          });
+        }
+      }
+    }
+  }
+  /**
+   * VPC への所属。サブネットを指す属性から、同じディレクトリの subnet（→ `vpc_id`）を経て VPC の要素に着いたら
+   * `properties.vpc` と VPC への DEPENDS_ON。着かなかったら（var・data・別モジュールのサブネット）、一部しか着かなかったら、
+   * 2 つ以上の VPC に着いたら `properties.inVpc` と info の診断 `vpc-unresolved`（読み残しではない）。
+   */
+  vpcPlacement(d, paths, consumed) {
+    const attrs = paths.flatMap((p) => attrsAt(d.block, p)).filter((a) => a.value.kind !== "null" && !(a.value.kind === "array" && a.value.items.length === 0));
+    const first = attrs[0];
+    if (!first) return;
+    const refs = attrs.flatMap((a) => a.value.refs);
+    for (const r of refs) consumed.add(r);
+    const node2 = this.nodes.get(d.id);
+    const reached = this.reach(refs, d.dir);
+    const vpcs = reached.found.filter((x) => x.def?.namespace === "aws" && x.def.kind === "vpc");
+    const vpc = vpcs.length === 1 && !reached.lost ? vpcs[0] : void 0;
+    if (!vpc) {
+      node2.properties.inVpc = true;
+      this.diag(
+        "info",
+        "vpc-unresolved",
+        d.file,
+        vpcs.length > 1 ? `${d.address} is in a VPC, but its subnets lead to more than one VPC; which one is not decided` : vpcs.length === 1 ? `${d.address} is in a VPC, but only some of its subnets could be followed to a VPC in this directory; which one is not confirmed` : `${d.address} is in a VPC, but its subnets could not be followed to a VPC in this directory`,
+        first.span.startLine,
+        d.id
+      );
+      return;
+    }
+    node2.properties.vpc = vpc.id;
+    for (const a of attrs) {
+      this.addEdge(d.id, "DEPENDS_ON", vpc.id, d.file, a.span, {
+        inferred: this.inferred(d, vpc)
+      });
     }
   }
   // --- Azure ---
