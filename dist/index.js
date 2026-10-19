@@ -306,13 +306,13 @@ var require_directives = __commonJS({
        * @param onError - May be called even if the action was successful
        * @returns `true` on success
        */
-      add(line2, onError) {
+      add(line3, onError) {
         if (this.atNextDocument) {
           this.yaml = { explicit: _Directives.defaultYaml.explicit, version: "1.1" };
           this.tags = Object.assign({}, _Directives.defaultTags);
           this.atNextDocument = false;
         }
-        const parts = line2.trim().split(/[ \t]+/);
+        const parts = line3.trim().split(/[ \t]+/);
         const name2 = parts.shift();
         switch (name2) {
           case "%TAG": {
@@ -1006,14 +1006,14 @@ var require_foldFlowLines = __commonJS({
     var FOLD_FLOW = "flow";
     var FOLD_BLOCK = "block";
     var FOLD_QUOTED = "quoted";
-    function foldFlowLines(text4, indent, mode = "flow", { indentAtStart, lineWidth = 80, minContentWidth = 20, onFold, onOverflow } = {}) {
+    function foldFlowLines(text5, indent, mode = "flow", { indentAtStart, lineWidth = 80, minContentWidth = 20, onFold, onOverflow } = {}) {
       if (!lineWidth || lineWidth < 0)
-        return text4;
+        return text5;
       if (lineWidth < minContentWidth)
         minContentWidth = 0;
       const endStep = Math.max(1 + minContentWidth, 1 + lineWidth - indent.length);
-      if (text4.length <= endStep)
-        return text4;
+      if (text5.length <= endStep)
+        return text5;
       const folds = [];
       const escapedFolds = {};
       let end = lineWidth - indent.length;
@@ -1030,14 +1030,14 @@ var require_foldFlowLines = __commonJS({
       let escStart = -1;
       let escEnd = -1;
       if (mode === FOLD_BLOCK) {
-        i = consumeMoreIndentedLines(text4, i, indent.length);
+        i = consumeMoreIndentedLines(text5, i, indent.length);
         if (i !== -1)
           end = i + endStep;
       }
-      for (let ch; ch = text4[i += 1]; ) {
+      for (let ch; ch = text5[i += 1]; ) {
         if (mode === FOLD_QUOTED && ch === "\\") {
           escStart = i;
-          switch (text4[i + 1]) {
+          switch (text5[i + 1]) {
             case "x":
               i += 3;
               break;
@@ -1054,12 +1054,12 @@ var require_foldFlowLines = __commonJS({
         }
         if (ch === "\n") {
           if (mode === FOLD_BLOCK)
-            i = consumeMoreIndentedLines(text4, i, indent.length);
+            i = consumeMoreIndentedLines(text5, i, indent.length);
           end = i + indent.length + endStep;
           split = void 0;
         } else {
           if (ch === " " && prev && prev !== " " && prev !== "\n" && prev !== "	") {
-            const next = text4[i + 1];
+            const next = text5[i + 1];
             if (next && next !== " " && next !== "\n" && next !== "	")
               split = i;
           }
@@ -1071,12 +1071,12 @@ var require_foldFlowLines = __commonJS({
             } else if (mode === FOLD_QUOTED) {
               while (prev === " " || prev === "	") {
                 prev = ch;
-                ch = text4[i += 1];
+                ch = text5[i += 1];
                 overflow = true;
               }
               const j = i > escEnd + 1 ? i - 2 : escStart - 1;
               if (escapedFolds[j])
-                return text4;
+                return text5;
               folds.push(j);
               escapedFolds[j] = true;
               end = j + endStep;
@@ -1091,39 +1091,39 @@ var require_foldFlowLines = __commonJS({
       if (overflow && onOverflow)
         onOverflow();
       if (folds.length === 0)
-        return text4;
+        return text5;
       if (onFold)
         onFold();
-      let res = text4.slice(0, folds[0]);
+      let res = text5.slice(0, folds[0]);
       for (let i2 = 0; i2 < folds.length; ++i2) {
         const fold = folds[i2];
-        const end2 = folds[i2 + 1] || text4.length;
+        const end2 = folds[i2 + 1] || text5.length;
         if (fold === 0)
           res = `
-${indent}${text4.slice(0, end2)}`;
+${indent}${text5.slice(0, end2)}`;
         else {
           if (mode === FOLD_QUOTED && escapedFolds[fold])
-            res += `${text4[fold]}\\`;
+            res += `${text5[fold]}\\`;
           res += `
-${indent}${text4.slice(fold + 1, end2)}`;
+${indent}${text5.slice(fold + 1, end2)}`;
         }
       }
       return res;
     }
-    function consumeMoreIndentedLines(text4, i, indent) {
+    function consumeMoreIndentedLines(text5, i, indent) {
       let end = i;
       let start = i + 1;
-      let ch = text4[start];
+      let ch = text5[start];
       while (ch === " " || ch === "	") {
         if (i < start + indent) {
-          ch = text4[++i];
+          ch = text5[++i];
         } else {
           do {
-            ch = text4[++i];
+            ch = text5[++i];
           } while (ch && ch !== "\n");
           end = i;
           start = i + 1;
-          ch = text4[start];
+          ch = text5[start];
         }
       }
       return end;
@@ -1909,9 +1909,9 @@ var require_stringifyCollection = __commonJS({
       } else {
         str2 = lines[0];
         for (let i = 1; i < lines.length; ++i) {
-          const line2 = lines[i];
-          str2 += line2 ? `
-${indent}${line2}` : "\n";
+          const line3 = lines[i];
+          str2 += line3 ? `
+${indent}${line3}` : "\n";
         }
       }
       if (comment) {
@@ -1969,7 +1969,7 @@ ${indent}${line2}` : "\n";
           str2 += ",";
         } else if (ctx.options.trailingComma) {
           if (ctx.options.lineWidth > 0) {
-            reqNewline || (reqNewline = lines.reduce((sum, line2) => sum + line2.length + 2, 2) + (str2.length + 2) > ctx.options.lineWidth);
+            reqNewline || (reqNewline = lines.reduce((sum, line3) => sum + line3.length + 2, 2) + (str2.length + 2) > ctx.options.lineWidth);
           }
           if (reqNewline) {
             str2 += ",";
@@ -1985,14 +1985,14 @@ ${indent}${line2}` : "\n";
         return start + end;
       } else {
         if (!reqNewline) {
-          const len = lines.reduce((sum, line2) => sum + line2.length + 2, 2);
+          const len = lines.reduce((sum, line3) => sum + line3.length + 2, 2);
           reqNewline = ctx.options.lineWidth > 0 && len > ctx.options.lineWidth;
         }
         if (reqNewline) {
           let str2 = start;
-          for (const line2 of lines)
-            str2 += line2 ? `
-${indentStep}${indent}${line2}` : "\n";
+          for (const line3 of lines)
+            str2 += line3 ? `
+${indentStep}${indent}${line3}` : "\n";
           return `${str2}
 ${indent}${end}`;
         } else {
@@ -3735,10 +3735,10 @@ var require_errors = __commonJS({
       if (error62.pos[0] === -1)
         return;
       error62.linePos = error62.pos.map((pos) => lc.linePos(pos));
-      const { line: line2, col } = error62.linePos[0];
-      error62.message += ` at line ${line2}, column ${col}`;
+      const { line: line3, col } = error62.linePos[0];
+      error62.message += ` at line ${line3}, column ${col}`;
       let ci = col - 1;
-      let lineStr = src.substring(lc.lineStarts[line2 - 1], lc.lineStarts[line2]).replace(/[\n\r]+$/, "");
+      let lineStr = src.substring(lc.lineStarts[line3 - 1], lc.lineStarts[line3]).replace(/[\n\r]+$/, "");
       if (ci >= 60 && lineStr.length > 80) {
         const trimStart = Math.min(ci - 39, lineStr.length - 79);
         lineStr = "\u2026" + lineStr.substring(trimStart);
@@ -3746,8 +3746,8 @@ var require_errors = __commonJS({
       }
       if (lineStr.length > 80)
         lineStr = lineStr.substring(0, 79) + "\u2026";
-      if (line2 > 1 && /^ *$/.test(lineStr.substring(0, ci))) {
-        let prev = src.substring(lc.lineStarts[line2 - 2], lc.lineStarts[line2 - 1]);
+      if (line3 > 1 && /^ *$/.test(lineStr.substring(0, ci))) {
+        let prev = src.substring(lc.lineStarts[line3 - 2], lc.lineStarts[line3 - 1]);
         if (prev.length > 80)
           prev = prev.substring(0, 79) + "\u2026\n";
         lineStr = prev + lineStr;
@@ -3755,7 +3755,7 @@ var require_errors = __commonJS({
       if (/[^ ]/.test(lineStr)) {
         let count = 1;
         const end = error62.linePos[1];
-        if (end?.line === line2 && end.col > col) {
+        if (end?.line === line3 && end.col > col) {
           count = Math.max(1, Math.min(end.col - col, 80 - ci));
         }
         const pointer = " ".repeat(ci) + "^".repeat(count);
@@ -4704,8 +4704,8 @@ var require_resolve_flow_scalar = __commonJS({
       return unfoldLines(source.slice(1, -1)).replace(/''/g, "'");
     }
     function unfoldLines(source) {
-      const line2 = /(.*?)\r?\n/sy;
-      let match = line2.exec(source);
+      const line3 = /(.*?)\r?\n/sy;
+      let match = line3.exec(source);
       if (!match)
         return source;
       let trimEnd, trimBoth;
@@ -4718,8 +4718,8 @@ var require_resolve_flow_scalar = __commonJS({
       }
       let res = match[1].replace(trimEnd, "");
       let sep2 = " ";
-      let pos = line2.lastIndex;
-      while (match = line2.exec(source)) {
+      let pos = line3.lastIndex;
+      while (match = line3.exec(source)) {
         const lm = match[1].replace(trimBoth, "");
         if (lm === "") {
           if (sep2 === "\n")
@@ -4730,7 +4730,7 @@ var require_resolve_flow_scalar = __commonJS({
           res += sep2 + lm;
           sep2 = " ";
         }
-        pos = line2.lastIndex;
+        pos = line3.lastIndex;
       }
       const last = /[ \t]*(.*)/sy;
       last.lastIndex = pos;
@@ -5860,40 +5860,40 @@ var require_lexer = __commonJS({
         }
       }
       *parseStream() {
-        let line2 = this.getLine();
-        if (line2 === null)
+        let line3 = this.getLine();
+        if (line3 === null)
           return this.setNext("stream");
-        if (line2[0] === cst.BOM) {
+        if (line3[0] === cst.BOM) {
           yield* this.pushCount(1);
-          line2 = line2.substring(1);
+          line3 = line3.substring(1);
         }
-        if (line2[0] === "%") {
-          let dirEnd = line2.length;
-          let cs = line2.indexOf("#");
+        if (line3[0] === "%") {
+          let dirEnd = line3.length;
+          let cs = line3.indexOf("#");
           while (cs !== -1) {
-            const ch = line2[cs - 1];
+            const ch = line3[cs - 1];
             if (ch === " " || ch === "	") {
               dirEnd = cs - 1;
               break;
             } else {
-              cs = line2.indexOf("#", cs + 1);
+              cs = line3.indexOf("#", cs + 1);
             }
           }
           while (true) {
-            const ch = line2[dirEnd - 1];
+            const ch = line3[dirEnd - 1];
             if (ch === " " || ch === "	")
               dirEnd -= 1;
             else
               break;
           }
           const n = (yield* this.pushCount(dirEnd)) + (yield* this.pushSpaces(true));
-          yield* this.pushCount(line2.length - n);
+          yield* this.pushCount(line3.length - n);
           this.pushNewline();
           return "stream";
         }
         if (this.atLineEnd()) {
           const sp = yield* this.pushSpaces(true);
-          yield* this.pushCount(line2.length - sp);
+          yield* this.pushCount(line3.length - sp);
           yield* this.pushNewline();
           return "stream";
         }
@@ -5934,13 +5934,13 @@ var require_lexer = __commonJS({
       }
       *parseDocument() {
         yield* this.pushSpaces(true);
-        const line2 = this.getLine();
-        if (line2 === null)
+        const line3 = this.getLine();
+        if (line3 === null)
           return this.setNext("doc");
         let n = yield* this.pushIndicators();
-        switch (line2[n]) {
+        switch (line3[n]) {
           case "#":
-            yield* this.pushCount(line2.length - n);
+            yield* this.pushCount(line3.length - n);
           // fallthrough
           case void 0:
             yield* this.pushNewline();
@@ -5965,7 +5965,7 @@ var require_lexer = __commonJS({
           case ">":
             n += yield* this.parseBlockScalarHeader();
             n += yield* this.pushSpaces(true);
-            yield* this.pushCount(line2.length - n);
+            yield* this.pushCount(line3.length - n);
             yield* this.pushNewline();
             return yield* this.parseBlockScalar();
           default:
@@ -5985,11 +5985,11 @@ var require_lexer = __commonJS({
           }
           sp += yield* this.pushSpaces(true);
         } while (nl + sp > 0);
-        const line2 = this.getLine();
-        if (line2 === null)
+        const line3 = this.getLine();
+        if (line3 === null)
           return this.setNext("flow");
-        if (indent !== -1 && indent < this.indentNext && line2[0] !== "#" || indent === 0 && (line2.startsWith("---") || line2.startsWith("...")) && isEmpty(line2[3])) {
-          const atFlowEndMarker = indent === this.indentNext - 1 && this.flowLevel === 1 && (line2[0] === "]" || line2[0] === "}");
+        if (indent !== -1 && indent < this.indentNext && line3[0] !== "#" || indent === 0 && (line3.startsWith("---") || line3.startsWith("...")) && isEmpty(line3[3])) {
+          const atFlowEndMarker = indent === this.indentNext - 1 && this.flowLevel === 1 && (line3[0] === "]" || line3[0] === "}");
           if (!atFlowEndMarker) {
             this.flowLevel = 0;
             yield cst.FLOW_END;
@@ -5997,17 +5997,17 @@ var require_lexer = __commonJS({
           }
         }
         let n = 0;
-        while (line2[n] === ",") {
+        while (line3[n] === ",") {
           n += yield* this.pushCount(1);
           n += yield* this.pushSpaces(true);
           this.flowKey = false;
         }
         n += yield* this.pushIndicators();
-        switch (line2[n]) {
+        switch (line3[n]) {
           case void 0:
             return "flow";
           case "#":
-            yield* this.pushCount(line2.length - n);
+            yield* this.pushCount(line3.length - n);
             return "flow";
           case "{":
           case "[":
@@ -7377,14 +7377,14 @@ function issue(level, message, properties = {}) {
   return `::${level}${props ? ` ${props}` : ""}::${escapeData(message)}`;
 }
 var isControl = (code2) => code2 <= 31 || code2 === 127 || code2 === 133 || code2 === 8232 || code2 === 8233;
-var oneLine = (text4) => {
+var oneLine = (text5) => {
   let out = "";
-  for (const ch of text4) out += isControl(ch.codePointAt(0)) ? " " : ch;
+  for (const ch of text5) out += isControl(ch.codePointAt(0)) ? " " : ch;
   return out.replace(/ {2,}/g, " ").trim();
 };
-function plainLine(text4) {
-  const line2 = oneLine(text4);
-  return line2.startsWith("::") ? ` ${line2}` : line2;
+function plainLine(text5) {
+  const line3 = oneLine(text5);
+  return line3.startsWith("::") ? ` ${line3}` : line3;
 }
 
 // src/run.ts
@@ -7416,23 +7416,23 @@ function tokenize(glob) {
   }
   return out;
 }
-function globMatch(tokens, text4, anchored) {
-  const n = text4.length;
+function globMatch(tokens, text5, anchored) {
+  const n = text5.length;
   let reach = new Array(n + 1).fill(false);
   if (anchored) reach[0] = true;
-  else for (let i = 0; i <= n; i++) reach[i] = i === 0 || text4[i - 1] === "/";
+  else for (let i = 0; i <= n; i++) reach[i] = i === 0 || text5[i - 1] === "/";
   for (const t of tokens) {
     const next = new Array(n + 1).fill(false);
     if (t.kind === "char" || t.kind === "any1") {
       for (let i = 0; i < n; i++) {
-        if (reach[i] && (t.kind === "char" ? text4[i] === t.c : text4[i] !== "/")) next[i + 1] = true;
+        if (reach[i] && (t.kind === "char" ? text5[i] === t.c : text5[i] !== "/")) next[i + 1] = true;
       }
     } else if (t.kind === "star") {
       let open2 = false;
       for (let j = 0; j <= n; j++) {
         if (reach[j]) open2 = true;
         next[j] = open2;
-        if (text4[j] === "/") open2 = false;
+        if (text5[j] === "/") open2 = false;
       }
     } else if (t.kind === "globstar") {
       let open2 = false;
@@ -7443,7 +7443,7 @@ function globMatch(tokens, text4, anchored) {
     } else {
       let seen = false;
       for (let j = 0; j <= n; j++) {
-        next[j] = reach[j] || seen && text4[j - 1] === "/";
+        next[j] = reach[j] || seen && text5[j - 1] === "/";
         if (reach[j]) seen = true;
       }
     }
@@ -7452,17 +7452,17 @@ function globMatch(tokens, text4, anchored) {
   return reach[n];
 }
 function parseRule(raw) {
-  let line2 = raw.replace(/\r$/, "");
-  if (line2.trim() === "" || line2.startsWith("#")) return void 0;
-  line2 = line2.replace(/(?<!\\)\s+$/, "");
-  const negated = line2.startsWith("!");
-  if (negated) line2 = line2.slice(1);
-  const dirOnly = line2.endsWith("/");
-  if (dirOnly) line2 = line2.slice(0, -1);
-  const anchored = line2.includes("/");
-  if (line2.startsWith("/")) line2 = line2.slice(1);
-  if (line2 === "") return void 0;
-  return { negated, dirOnly, tokens: tokenize(line2), anchored };
+  let line3 = raw.replace(/\r$/, "");
+  if (line3.trim() === "" || line3.startsWith("#")) return void 0;
+  line3 = line3.replace(/(?<!\\)\s+$/, "");
+  const negated = line3.startsWith("!");
+  if (negated) line3 = line3.slice(1);
+  const dirOnly = line3.endsWith("/");
+  if (dirOnly) line3 = line3.slice(0, -1);
+  const anchored = line3.includes("/");
+  if (line3.startsWith("/")) line3 = line3.slice(1);
+  if (line3 === "") return void 0;
+  return { negated, dirOnly, tokens: tokenize(line3), anchored };
 }
 function createIgnore(gitignore) {
   const rules = gitignore.split("\n").flatMap((l) => parseRule(l) ?? []);
@@ -7542,9 +7542,9 @@ async function configurationHash(configuration) {
 
 // ../../packages/parsers/core/src/located.ts
 var ConfigSyntaxError = class extends Error {
-  constructor(message, line2) {
+  constructor(message, line3) {
     super(message);
-    this.line = line2;
+    this.line = line3;
     this.name = "ConfigSyntaxError";
   }
   line;
@@ -7577,8 +7577,8 @@ var ESCAPES = {
   r: "\r",
   t: "	"
 };
-function parseJsonc(text4) {
-  const src = text4.charCodeAt(0) === 65279 ? text4.slice(1) : text4;
+function parseJsonc(text5) {
+  const src = text5.charCodeAt(0) === 65279 ? text5.slice(1) : text5;
   let pos = 0;
   const lineStarts2 = [0];
   for (let i = 0; i < src.length; i++) if (src[i] === "\n") lineStarts2.push(i + 1);
@@ -7761,8 +7761,8 @@ function part(label, value2, allowColon) {
     throw new Error(`stable id: ${label} must not contain ":": ${value2}`);
   return value2;
 }
-function nodeId(namespace, kind2, name2) {
-  return `${part("namespace", namespace, false).toLowerCase()}:${part("kind", kind2, false).toLowerCase()}:${part("name", name2, true)}`;
+function nodeId(namespace2, kind2, name2) {
+  return `${part("namespace", namespace2, false).toLowerCase()}:${part("kind", kind2, false).toLowerCase()}:${part("name", name2, true)}`;
 }
 function routeNodeId(method, path) {
   if (!path.startsWith("/")) throw new Error(`stable id: route path must start with "/": ${path}`);
@@ -7772,11 +7772,11 @@ function parseNodeId(id) {
   const first = id.indexOf(":");
   const second = first < 0 ? -1 : id.indexOf(":", first + 1);
   if (first <= 0 || second < 0) return void 0;
-  const namespace = id.slice(0, first);
+  const namespace2 = id.slice(0, first);
   const kind2 = id.slice(first + 1, second);
   const name2 = id.slice(second + 1);
   if (!kind2 || !name2) return void 0;
-  return { namespace, kind: kind2, name: name2 };
+  return { namespace: namespace2, kind: kind2, name: name2 };
 }
 function edgeId(source, relation, target2) {
   return `${source}--${relation}-->${target2}`;
@@ -10629,8 +10629,8 @@ var Doc = class {
     const lines = content.split("\n").filter((x) => x);
     const minIndent = Math.min(...lines.map((x) => x.length - x.trimStart().length));
     const dedented = lines.map((x) => x.slice(minIndent)).map((x) => " ".repeat(this.indent * 2) + x);
-    for (const line2 of dedented) {
-      this.content.push(line2);
+    for (const line3 of dedented) {
+      this.content.push(line3);
     }
   }
   compile() {
@@ -17366,8 +17366,8 @@ function ko_default() {
 }
 
 // ../../node_modules/.pnpm/zod@4.6.5/node_modules/zod/v4/locales/lt.js
-var capitalizeFirstCharacter = (text4) => {
-  return text4.charAt(0).toUpperCase() + text4.slice(1);
+var capitalizeFirstCharacter = (text5) => {
+  return text5.charAt(0).toUpperCase() + text5.slice(1);
 };
 function getUnitTypeFromNumber(number4) {
   const abs = Math.abs(number4);
@@ -28055,7 +28055,22 @@ var inferenceRequestSchema = external_exports.object({
    */
   committedAt: external_exports.string().max(64).optional(),
   /** `comment:` of .sketio.yml, as in the sync request: the completed Snapshot writes the PR comment again. */
-  comment: commentSettingsSchema
+  comment: commentSettingsSchema,
+  /**
+   * The chain this request is part of (docs/credits.md 9): the Action sends its candidates 20 files at a time. Arch adds
+   * `unread` to what it keeps as this run's unread files, and, when this request ends the chain (chainStop of
+   * @sketio/arch-inference), `pending` too, under the reason that ended it. Absent from an older Action (one request).
+   */
+  chain: external_exports.object({
+    /** What the earlier requests of this run left unread, summed from their answers. */
+    unread: external_exports.object({
+      rateLimited: external_exports.number().int().min(0).max(1e5),
+      noCredits: external_exports.number().int().min(0).max(1e5).optional(),
+      deferred: external_exports.number().int().min(0).max(1e5)
+    }),
+    /** Files of this run's later requests, which the Action sends only if this one does not end the chain. */
+    pending: external_exports.number().int().min(0).max(1e5)
+  }).optional()
 });
 var inferenceOutcomes = ["created", "duplicate", "unchanged"];
 var inferenceResponseSchema = external_exports.object({
@@ -28085,7 +28100,13 @@ var inferenceResponseSchema = external_exports.object({
      * Left out before the model: a static parser already drew verified nodes from them (the AI would name the same
      * things with IDs that do not merge). Not counted in `accepted`. Absent in an answer from an older Arch.
      */
-    staticCovered: external_exports.number().int().min(0).optional()
+    staticCovered: external_exports.number().int().min(0).optional(),
+    /**
+     * Not read in this request: past the per-request limit of model calls (MAX_FILES; cache hits are not counted).
+     * Sending the same files again on the Snapshot this request answered with reads them (the ones read now are cache
+     * hits there). Present only when > 0, and absent in an answer from an older Arch.
+     */
+    deferred: external_exports.number().int().min(0).optional()
   }),
   dropped: external_exports.object({
     /** Model output that did not fit the schema. */
@@ -28236,11 +28257,11 @@ function intrinsic(entry, at, stack, r, out, depth) {
     case "Fn::GetAtt": {
       let name2;
       let attribute;
-      const text4 = stringOf(arg);
-      if (text4 !== void 0) {
-        const dot = text4.indexOf(".");
-        name2 = dot < 0 ? text4 : text4.slice(0, dot);
-        attribute = dot < 0 ? void 0 : text4.slice(dot + 1);
+      const text5 = stringOf(arg);
+      if (text5 !== void 0) {
+        const dot = text5.indexOf(".");
+        name2 = dot < 0 ? text5 : text5.slice(0, dot);
+        attribute = dot < 0 ? void 0 : text5.slice(dot + 1);
       } else if (arg.kind === "array") {
         name2 = stringOf(arg.items[0]);
         attribute = stringOf(arg.items[1]);
@@ -28943,9 +28964,9 @@ var SHORT_TAGS = {
 var MAX_ALIASES = 100;
 var MAX_ALIAS_NODES = 2e4;
 var MAX_DEPTH2 = 200;
-function parseYamlTemplate(text4, onWarning = () => {
+function parseYamlTemplate(text5, onWarning = () => {
 }) {
-  const src = text4.charCodeAt(0) === 65279 ? text4.slice(1) : text4;
+  const src = text5.charCodeAt(0) === 65279 ? text5.slice(1) : text5;
   const lines = new import_yaml.LineCounter();
   const docs = (0, import_yaml.parseAllDocuments)(src, { lineCounter: lines, uniqueKeys: true });
   for (const doc of docs) {
@@ -29025,19 +29046,19 @@ var Converter = class {
     return result;
   }
   #alias(node2) {
-    const line2 = this.#span(node2, 1).startLine;
+    const line3 = this.#span(node2, 1).startLine;
     if (++this.#aliases > MAX_ALIASES) {
-      throw new ConfigSyntaxError(`more than ${MAX_ALIASES} aliases`, line2);
+      throw new ConfigSyntaxError(`more than ${MAX_ALIASES} aliases`, line3);
     }
     const target2 = node2.resolve(this.doc);
-    if (!target2) throw new ConfigSyntaxError(`alias *${node2.source} has no anchor`, line2);
+    if (!target2) throw new ConfigSyntaxError(`alias *${node2.source} has no anchor`, line3);
     const converted = this.#done.get(target2);
     if (!converted) {
-      throw new ConfigSyntaxError(`alias *${node2.source} refers to itself`, line2);
+      throw new ConfigSyntaxError(`alias *${node2.source} refers to itself`, line3);
     }
     this.#expanded += converted.size;
     if (this.#expanded > MAX_ALIAS_NODES) {
-      throw new ConfigSyntaxError("alias expansion is too large", line2);
+      throw new ConfigSyntaxError("alias expansion is too large", line3);
     }
     return converted;
   }
@@ -29112,8 +29133,8 @@ async function loadStacks(ctx, report, sources, options) {
   const keys = /* @__PURE__ */ new Set();
   async function load(source, parent, bindings) {
     const { file: file2 } = source;
-    const unverified = (code2, message, line2) => {
-      report.add("error", code2, file2, message, { ...line2 !== void 0 ? { line: line2 } : {}, unverified: true });
+    const unverified = (code2, message, line3) => {
+      report.add("error", code2, file2, message, { ...line3 !== void 0 ? { line: line3 } : {}, unverified: true });
       return void 0;
     };
     if (keys.has(source.stackKey)) {
@@ -29124,14 +29145,14 @@ async function loadStacks(ctx, report, sources, options) {
     }
     let root;
     try {
-      const text4 = source.text ?? await ctx.fs.readText(file2);
+      const text5 = source.text ?? await ctx.fs.readText(file2);
       root = /\.ya?ml$/i.test(file2) ? parseYamlTemplate(
-        text4,
+        text5,
         (w) => report.add("warning", w.code, file2, `${w.message} (line ${w.line})`, {
           line: w.line,
           unverified: true
         })
-      ) : parseJsonc(text4);
+      ) : parseJsonc(text5);
     } catch (e) {
       if (e instanceof ConfigSyntaxError) {
         return unverified("template-syntax", `${e.message} (line ${e.line})`, e.line);
@@ -29407,13 +29428,13 @@ function addNodes(ctx, report, stack, nodes) {
       verification: res.condition === void 0 ? "verified" : "inferred"
     });
   }
-  if (unsupported.size > 0) {
-    const list2 = [...unsupported.entries()].sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0).map(([type, n]) => `${type} (${n})`).join(", ");
+  for (const [type, n] of [...unsupported.entries()].sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0)) {
     report.add(
       "info",
       "resource-type-unsupported",
       file2,
-      `resource types not interpreted, left out of the graph: ${list2}`
+      `resource type not interpreted, left out of the graph: ${type} (${n})`,
+      { target: type }
     );
   }
 }
@@ -29449,11 +29470,11 @@ function joinPath(dir, rel) {
   return parts.join("/");
 }
 var isRecord = (v) => typeof v === "object" && v !== null && !Array.isArray(v);
-function readAssemblyManifest(manifestFile, text4) {
-  if (!text4.includes('"artifacts"')) return void 0;
+function readAssemblyManifest(manifestFile, text5) {
+  if (!text5.includes('"artifacts"')) return void 0;
   let json3;
   try {
-    json3 = JSON.parse(text4);
+    json3 = JSON.parse(text5);
   } catch {
     return void 0;
   }
@@ -29480,13 +29501,13 @@ async function findCloudAssemblies(fs) {
   );
   const found = [];
   for (const file2 of files) {
-    let text4;
+    let text5;
     try {
-      text4 = await fs.readText(file2);
+      text5 = await fs.readText(file2);
     } catch {
       continue;
     }
-    const assembly = readAssemblyManifest(file2, text4);
+    const assembly = readAssemblyManifest(file2, text5);
     if (assembly) found.push(assembly);
   }
   return found;
@@ -29497,14 +29518,14 @@ function assemblyOwnedDirs(assemblies) {
 
 // ../../packages/parsers/cloudformation/src/parser.ts
 var PARSER_ID = "cloudformation";
-var CLOUDFORMATION_PARSER_VERSION = "0.2.0";
+var CLOUDFORMATION_PARSER_VERSION = "0.2.1";
 var TEMPLATE_FILE = /(^|\/)(template|[^/]+\.template)\.json$/;
 var YAML_FILE = /\.ya?ml$/i;
 var YAML_TOP_RESOURCES = /^["']?Resources["']?[ \t]*:/m;
 var YAML_TEMPLATE_HINT = /AWSTemplateFormatVersion|AWS::/;
 var BUILD_OUTPUT_DIR = ".aws-sam";
 var stackKeyOf = (file2) => file2.replace(/\.template\.(json|ya?ml)$/i, "").replace(/\.(json|ya?ml)$/i, "");
-var looksLikeTemplate = (text4) => /"Resources"\s*:/.test(text4);
+var looksLikeTemplate = (text5) => /"Resources"\s*:/.test(text5);
 var stringsOf = (v) => v?.kind === "scalar" && typeof v.value === "string" ? [v.value] : v?.kind === "array" ? v.items.flatMap((i) => stringsOf(i)) : [];
 function isTemplateRoot(root) {
   const resources = getEntry(root, "Resources")?.value;
@@ -29516,12 +29537,12 @@ function isTemplateRoot(root) {
     return type?.kind === "scalar" && typeof type.value === "string" && type.value.startsWith("AWS::");
   });
 }
-function yamlLooksLikeTemplate(text4) {
-  if (!YAML_TOP_RESOURCES.test(text4)) return false;
+function yamlLooksLikeTemplate(text5) {
+  if (!YAML_TOP_RESOURCES.test(text5)) return false;
   try {
-    return isTemplateRoot(parseYamlTemplate(text4));
+    return isTemplateRoot(parseYamlTemplate(text5));
   } catch {
-    return YAML_TEMPLATE_HINT.test(text4);
+    return YAML_TEMPLATE_HINT.test(text5);
   }
 }
 async function findTemplateSources(ctx) {
@@ -29531,14 +29552,14 @@ async function findTemplateSources(ctx) {
   ).sort();
   const found = [];
   for (const file2 of files) {
-    let text4;
+    let text5;
     try {
-      text4 = await ctx.fs.readText(file2);
+      text5 = await ctx.fs.readText(file2);
     } catch {
       continue;
     }
-    const ok = YAML_FILE.test(file2) ? yamlLooksLikeTemplate(text4) : looksLikeTemplate(text4);
-    if (ok) found.push({ file: file2, stackKey: stackKeyOf(file2), text: text4 });
+    const ok = YAML_FILE.test(file2) ? yamlLooksLikeTemplate(text5) : looksLikeTemplate(text5);
+    if (ok) found.push({ file: file2, stackKey: stackKeyOf(file2), text: text5 });
   }
   return found;
 }
@@ -30515,9 +30536,9 @@ var TEST_DIR = /(?:^|\/)__tests__\//;
 function isAnalyzableSource(path) {
   return SOURCE.test(path) && !path.endsWith(".d.ts") && !TEST_FILE.test(path) && !TEST_DIR.test(path);
 }
-function lineStarts(text4) {
+function lineStarts(text5) {
   const starts = [0];
-  for (let i = 0; i < text4.length; i++) if (text4.charCodeAt(i) === 10) starts.push(i + 1);
+  for (let i = 0; i < text5.length; i++) if (text5.charCodeAt(i) === 10) starts.push(i + 1);
   return starts;
 }
 function lineAt(starts, offset) {
@@ -30530,21 +30551,21 @@ function lineAt(starts, offset) {
   }
   return lo + 1;
 }
-function parseModule(file2, text4) {
+function parseModule(file2, text5) {
   let result;
   try {
-    result = parseSync2(file2, text4, { preserveParens: false });
+    result = parseSync2(file2, text5, { preserveParens: false });
   } catch (e) {
     return { ok: false, message: e instanceof Error ? e.message : String(e) };
   }
   const error62 = result.errors.find((e) => e.severity === "Error");
   if (error62) return { ok: false, message: error62.message };
-  const starts = lineStarts(text4);
+  const starts = lineStarts(text5);
   return {
     ok: true,
     module: {
       file: file2,
-      text: text4,
+      text: text5,
       program: result.program,
       lines: (node2) => ({
         startLine: lineAt(starts, node2.start),
@@ -30684,9 +30705,9 @@ function hasSecondStatement(sql) {
   return i >= 0 && bare.slice(i + 1).replace(/[\s;]+/g, "") !== "";
 }
 function sqlKind(arg) {
-  const text4 = leadingText(arg);
-  if (text4 !== void 0 && hasSecondStatement(text4)) return "unknown";
-  const word = text4?.trimStart().split(/[\s(]/, 1)[0]?.toLowerCase();
+  const text5 = leadingText(arg);
+  if (text5 !== void 0 && hasSecondStatement(text5)) return "unknown";
+  const word = text5?.trimStart().split(/[\s(]/, 1)[0]?.toLowerCase();
   if (word && SQL_READ.has(word)) return "read";
   if (word && SQL_WRITE.has(word)) return "write";
   return "unknown";
@@ -30952,7 +30973,7 @@ var IGNORED_CLASSES = {
 
 // ../../packages/parsers/aws-cdk/src/source.ts
 var AWS_CDK_IMPORT = /^[ \t]*import\b[^'";]*?["']aws-cdk-lib(?:\/[^"']*)?["']|\brequire\(\s*["']aws-cdk-lib(?:\/[^"']*)?["']/m;
-var importsAwsCdk = (text4) => AWS_CDK_IMPORT.test(text4);
+var importsAwsCdk = (text5) => AWS_CDK_IMPORT.test(text5);
 var ROOT_MODULE = "aws-cdk-lib";
 function classify(ref) {
   const construct = CONSTRUCTS[ref.module]?.[ref.name];
@@ -30970,7 +30991,7 @@ var awsModule = (key2) => `${ROOT_MODULE}/${key2.replace(/_/g, "-")}`;
 function makeResolver(imports) {
   const byLocal = /* @__PURE__ */ new Map();
   for (const b of imports) if (!b.typeOnly) byLocal.set(b.local, b);
-  function namespace(expr) {
+  function namespace2(expr) {
     const e = unwrapExpression(expr);
     if (e.type === "Identifier") {
       const b = byLocal.get(e.name);
@@ -30980,7 +31001,7 @@ function makeResolver(imports) {
       return void 0;
     }
     if (e.type === "MemberExpression" && !e.computed) {
-      const inner = namespace(e.object);
+      const inner = namespace2(e.object);
       const prop2 = e.property.name;
       if (inner === ROOT_MODULE && prop2?.startsWith("aws_")) return awsModule(prop2);
     }
@@ -30995,7 +31016,7 @@ function makeResolver(imports) {
       return { module: b.source, name: b.imported };
     }
     if (e.type === "MemberExpression" && !e.computed) {
-      const module = namespace(e.object);
+      const module = namespace2(e.object);
       const name2 = e.property.name;
       if (module !== void 0 && name2 !== void 0) return { module, name: name2 };
     }
@@ -31021,8 +31042,8 @@ async function analyzeCdkSource(ctx, options) {
   const unverified = [];
   const seen = /* @__PURE__ */ new Set();
   const parserId = "aws-cdk";
-  const note = (level, code2, file2, message, line2, opts = {}) => {
-    const k = `${code2}\0${file2}\0${line2 ?? ""}\0${message}`;
+  const note = (level, code2, file2, message, line3, opts = {}) => {
+    const k = `${code2}\0${file2}\0${line3 ?? ""}\0${message}`;
     if (seen.has(k)) return;
     seen.add(k);
     diagnostics.push({
@@ -31031,7 +31052,7 @@ async function analyzeCdkSource(ctx, options) {
       message: `${file2}: ${message}`,
       parserId,
       file: file2,
-      ...line2 !== void 0 ? { line: line2 } : {},
+      ...line3 !== void 0 ? { line: line3 } : {},
       ...opts.target !== void 0 ? { target: opts.target } : {}
     });
     if (opts.unverified) unverified.push({ parserId, file: file2, reason: message });
@@ -31040,14 +31061,14 @@ async function analyzeCdkSource(ctx, options) {
   const fileSet = new Set(all);
   const modules = /* @__PURE__ */ new Map();
   for (const file2 of all) {
-    let text4;
+    let text5;
     try {
-      text4 = await ctx.fs.readText(file2);
+      text5 = await ctx.fs.readText(file2);
     } catch {
       continue;
     }
-    if (!importsAwsCdk(text4)) continue;
-    const parsed = parseModule(file2, text4);
+    if (!importsAwsCdk(text5)) continue;
+    const parsed = parseModule(file2, text5);
     if (!parsed.ok) {
       note("error", "cdk-source-syntax", file2, `could not be parsed: ${parsed.message}`, void 0, {
         unverified: true
@@ -31148,7 +31169,7 @@ async function analyzeCdkSource(ctx, options) {
   )) {
     const m = modules.get(stack.file);
     const resolver = resolvers.get(stack.file);
-    const line2 = m.lines(stack.node).startLine;
+    const line3 = m.lines(stack.node).startLine;
     if (options.assemblies.length > 0) {
       const c = coveredBy(stack);
       if (c.covered) {
@@ -31157,7 +31178,7 @@ async function analyzeCdkSource(ctx, options) {
           "cdk-source-covered",
           stack.file,
           `${stack.name} is read from cdk.out (stack ${c.ids.join(", ")}), not from the source`,
-          line2
+          line3
         );
         continue;
       }
@@ -31166,7 +31187,7 @@ async function analyzeCdkSource(ctx, options) {
         "cdk-source-uncovered",
         stack.file,
         `${stack.name} is read from the source, not from cdk.out: ${c.reason}`,
-        line2
+        line3
       );
     }
     readStack(stack, m, resolver);
@@ -31512,9 +31533,9 @@ function stackNamed(file2, local, resolver, stacks, files) {
   const from = resolveRelativeImport(file2, binding.source, files);
   return from ? stacks.get(key(from, binding.imported)) : void 0;
 }
-function isCdkEntry(file2, text4) {
-  if (!importsAwsCdk(text4)) return false;
-  const parsed = parseModule(file2, text4);
+function isCdkEntry(file2, text5) {
+  if (!importsAwsCdk(text5)) return false;
+  const parsed = parseModule(file2, text5);
   if (!parsed.ok) return true;
   const resolver = makeResolver(collectImports(parsed.module));
   for (const cls of classesOf(parsed.module)) {
@@ -31699,8 +31720,8 @@ var Lexer = class {
   pos = 0;
   line = 1;
   lineStart = 0;
-  err(message, line2, col) {
-    return { t: "err", v: message, line: line2, endLine: line2, col };
+  err(message, line3, col) {
+    return { t: "err", v: message, line: line3, endLine: line3, col };
   }
   /** `stopAtBrace`: `${ ... }` の中身。対応する `}` で止まり、それを読み終えた位置に pos を置く。 */
   tokens(stopAtBrace) {
@@ -31720,10 +31741,10 @@ var Lexer = class {
         return out;
       }
       const c = src[this.pos];
-      const line2 = this.line;
+      const line3 = this.line;
       const col = this.pos - this.lineStart + 1;
       if (c === "\n") {
-        out.push({ t: "nl", v: "\n", line: line2, endLine: line2, col });
+        out.push({ t: "nl", v: "\n", line: line3, endLine: line3, col });
         this.pos++;
         this.line++;
         this.lineStart = this.pos;
@@ -31743,7 +31764,7 @@ var Lexer = class {
           }
         }
         this.pos = stop;
-        if (end < 0) out.push(this.err("\u9589\u3058\u3066\u3044\u306A\u3044\u30B3\u30E1\u30F3\u30C8 /* \u304C\u3042\u308A\u307E\u3059", line2, col));
+        if (end < 0) out.push(this.err("\u9589\u3058\u3066\u3044\u306A\u3044\u30B3\u30E1\u30F3\u30C8 /* \u304C\u3042\u308A\u307E\u3059", line3, col));
         continue;
       }
       if (c === "'") {
@@ -31752,27 +31773,27 @@ var Lexer = class {
       }
       if (c >= "0" && c <= "9") {
         const m = NUMBER2.exec(src.slice(this.pos, this.pos + 32));
-        const text4 = m?.[0] ?? c;
-        out.push({ t: "num", v: text4, line: line2, endLine: line2, col });
-        this.pos += text4.length;
+        const text5 = m?.[0] ?? c;
+        out.push({ t: "num", v: text5, line: line3, endLine: line3, col });
+        this.pos += text5.length;
         continue;
       }
       if (ID_START.test(c)) {
         let end = this.pos + 1;
         while (end < src.length && ID_PART.test(src[end])) end++;
-        out.push({ t: "id", v: src.slice(this.pos, end), line: line2, endLine: line2, col });
+        out.push({ t: "id", v: src.slice(this.pos, end), line: line3, endLine: line3, col });
         this.pos = end;
         continue;
       }
       const three = src.slice(this.pos, this.pos + 3);
       if (PUNCT3.has(three)) {
-        out.push({ t: "p", v: three, line: line2, endLine: line2, col });
+        out.push({ t: "p", v: three, line: line3, endLine: line3, col });
         this.pos += 3;
         continue;
       }
       const two = src.slice(this.pos, this.pos + 2);
       if (PUNCT2.has(two)) {
-        out.push({ t: "p", v: two, line: line2, endLine: line2, col });
+        out.push({ t: "p", v: two, line: line3, endLine: line3, col });
         this.pos += 2;
         continue;
       }
@@ -31787,18 +31808,18 @@ var Lexer = class {
             depth--;
           }
         }
-        out.push({ t: "p", v: c, line: line2, endLine: line2, col });
+        out.push({ t: "p", v: c, line: line3, endLine: line3, col });
         this.pos++;
         continue;
       }
-      out.push(this.err("\u8AAD\u3081\u306A\u3044\u6587\u5B57\u3067\u3059", line2, col));
+      out.push(this.err("\u8AAD\u3081\u306A\u3044\u6587\u5B57\u3067\u3059", line3, col));
       this.pos++;
     }
   }
   interpDepth = 0;
   /** `${ }` の中を読んで inner に足す。エラーのトークンがあればそれを返す。 */
-  interpolation(inner, line2, col) {
-    if (this.interpDepth >= MAX_DEPTH3) return this.err("\u88DC\u9593\u306E\u5165\u308C\u5B50\u304C\u6DF1\u3059\u304E\u307E\u3059", line2, col);
+  interpolation(inner, line3, col) {
+    if (this.interpDepth >= MAX_DEPTH3) return this.err("\u88DC\u9593\u306E\u5165\u308C\u5B50\u304C\u6DF1\u3059\u304E\u307E\u3059", line3, col);
     this.interpDepth++;
     const read = this.tokens(true);
     this.interpDepth--;
@@ -31812,7 +31833,7 @@ var Lexer = class {
   /** `'...'`。エスケープと補間 `${ }` を読む。補間の中のトークンは `inner` に残す。 */
   string() {
     const src = this.src;
-    const line2 = this.line;
+    const line3 = this.line;
     const col = this.pos - this.lineStart + 1;
     this.pos++;
     let buf = "";
@@ -31820,7 +31841,7 @@ var Lexer = class {
     const inner = [];
     for (; ; ) {
       if (this.pos >= src.length || src[this.pos] === "\n") {
-        return this.err("\u9589\u3058\u3066\u3044\u306A\u3044\u6587\u5B57\u5217\u3067\u3059", line2, col);
+        return this.err("\u9589\u3058\u3066\u3044\u306A\u3044\u6587\u5B57\u5217\u3067\u3059", line3, col);
       }
       const c = src[this.pos];
       if (c === "'") {
@@ -31849,7 +31870,7 @@ var Lexer = class {
       if (c === "$" && src[this.pos + 1] === "{") {
         interpolated = true;
         this.pos += 2;
-        const bad = this.interpolation(inner, line2, col);
+        const bad = this.interpolation(inner, line3, col);
         if (bad) return bad;
         continue;
       }
@@ -31859,7 +31880,7 @@ var Lexer = class {
     const tok = {
       t: "str",
       v: buf,
-      line: line2,
+      line: line3,
       endLine: this.line,
       col,
       sval: interpolated ? void 0 : buf
@@ -31870,12 +31891,12 @@ var Lexer = class {
   /** `'''...'''`。エスケープも補間もない。開きの直後の改行は含めない。 */
   multiline() {
     const src = this.src;
-    const line2 = this.line;
+    const line3 = this.line;
     const col = this.pos - this.lineStart + 1;
     const end = src.indexOf("'''", this.pos + 3);
     if (end < 0) {
       this.pos = src.length;
-      return this.err("\u9589\u3058\u3066\u3044\u306A\u3044 ''' \u304C\u3042\u308A\u307E\u3059", line2, col);
+      return this.err("\u9589\u3058\u3066\u3044\u306A\u3044 ''' \u304C\u3042\u308A\u307E\u3059", line3, col);
     }
     let body = src.slice(this.pos + 3, end);
     if (body.startsWith("\r\n")) body = body.slice(2);
@@ -31887,13 +31908,13 @@ var Lexer = class {
       }
     }
     this.pos = end + 3;
-    return { t: "str", v: body, line: line2, endLine: this.line, col, sval: body };
+    return { t: "str", v: body, line: line3, endLine: this.line, col, sval: body };
   }
 };
 var BicepParseError = class extends Error {
-  constructor(message, line2, atEof = false) {
+  constructor(message, line3, atEof = false) {
     super(message);
-    this.line = line2;
+    this.line = line3;
     this.atEof = atEof;
   }
   line;
@@ -32451,8 +32472,8 @@ function resync(parser, startIndex) {
     parser.pos++;
   }
 }
-function parseBicep(text4) {
-  const lexer = new Lexer(text4.charCodeAt(0) === 65279 ? text4.slice(1) : text4);
+function parseBicep(text5) {
+  const lexer = new Lexer(text5.charCodeAt(0) === 65279 ? text5.slice(1) : text5);
   const toks = lexer.tokens(false);
   toks.push({ t: "eof", v: "", line: lexer.line, endLine: lexer.line, col: lexer.pos - lexer.lineStart + 1 });
   const parser = new Parser(toks);
@@ -32479,7 +32500,7 @@ function parseBicep(text4) {
 
 // ../../packages/parsers/bicep/src/bicepParser.ts
 var PARSER_ID3 = "bicep";
-var BICEP_PARSER_VERSION = "0.1.0";
+var BICEP_PARSER_VERSION = "0.1.1";
 var isBicepFile = (path) => path.endsWith(".bicep") && !isIgnoredPath(path);
 var compare = (a, b) => a < b ? -1 : a > b ? 1 : 0;
 var unique = (list2) => [...new Set(list2)];
@@ -32507,19 +32528,20 @@ var Analysis = class {
   infos = [];
   /** 要素にしなかった型（ファイル → ラベル → 数）。 */
   unsupported = /* @__PURE__ */ new Map();
-  diag(level, code2, file2, message, line2) {
+  diag(level, code2, file2, message, line3, target2) {
     this.diagnostics.push({
       level,
       code: code2,
       message: `${file2}: ${message}`,
       parserId: PARSER_ID3,
       file: file2,
-      ...line2 !== void 0 ? { line: line2 } : {}
+      ...line3 !== void 0 ? { line: line3 } : {},
+      ...target2 !== void 0 ? { target: target2 } : {}
     });
   }
   /** 一部が読めなかった・要素にできなかった: 診断（warning/error）と unverified に残す。 */
-  gap(level, code2, file2, message, line2) {
-    this.diag(level, code2, file2, message, line2);
+  gap(level, code2, file2, message, line3) {
+    this.diag(level, code2, file2, message, line3);
     this.unverified.push({ parserId: PARSER_ID3, file: file2, reason: message });
   }
   evidence(file2, span) {
@@ -32674,7 +32696,7 @@ var Analysis = class {
     if (literal2 !== void 0) {
       const parts = literal2.toLowerCase().split(",").map((s) => s.trim());
       if (parts.includes("workflowapp")) {
-        this.countUnsupported(d.info.file, `${d.typeDisplay} (kind ${literal2})`, true);
+        this.countUnsupported(d.info.file, d.typeDisplay, `${d.typeDisplay} (kind ${literal2})`, true);
         return void 0;
       }
       return { def, kind: parts[0] === "functionapp" ? "azure-functions" : "app-service" };
@@ -32703,25 +32725,34 @@ var Analysis = class {
     }
     return names.some((n) => n !== void 0 && FUNCTIONS_SETTING_NAMES.has(n));
   }
-  countUnsupported(file2, label, perLabel = false) {
+  countUnsupported(file2, type, label = type, perLabel = false) {
     const key2 = perLabel ? label : label.toLowerCase();
     const m = this.unsupported.get(file2) ?? /* @__PURE__ */ new Map();
     this.unsupported.set(file2, m);
     const prev = m.get(key2);
     if (prev) prev.n++;
-    else m.set(key2, { label, n: 1 });
+    else m.set(key2, { label, type, n: 1 });
   }
-  /** 表にない型の報告（読み飛ばし。読めなかったことにはしない）。 */
+  /**
+   * 表にない型の報告（読み飛ばし。読めなかったことにはしない）。型ごとに 1 件で、target は API バージョンを除いた型
+   * （種類で分けた表示 `Microsoft.Web/sites (kind ...)` も同じ型の 1 件にまとめる）。
+   */
   reportUnsupported() {
     for (const file2 of [...this.unsupported.keys()].sort(compare)) {
       const m = this.unsupported.get(file2);
-      const list2 = [...m.values()].sort((a, b) => compare(a.label, b.label)).map((x) => `${x.label} (${x.n})`).join(", ");
-      this.diag(
-        "info",
-        "resource-type-unsupported",
-        file2,
-        `resource types not interpreted, left out of the graph: ${list2}`
-      );
+      const byType = /* @__PURE__ */ new Map();
+      for (const x of m.values()) byType.set(x.type, [...byType.get(x.type) ?? [], x]);
+      for (const type of [...byType.keys()].sort(compare)) {
+        const list2 = (byType.get(type) ?? []).sort((a, b) => compare(a.label, b.label)).map((x) => `${x.label} (${x.n})`).join(", ");
+        this.diag(
+          "info",
+          "resource-type-unsupported",
+          file2,
+          `resource type not interpreted, left out of the graph: ${list2}`,
+          void 0,
+          type
+        );
+      }
     }
   }
   sorted;
@@ -32733,22 +32764,22 @@ var Analysis = class {
   buildNodes() {
     for (const d of this.decls()) {
       let kind2;
-      let namespace;
+      let namespace2;
       if (d.mode === "module") {
         kind2 = "bicep-module";
-        namespace = "bicep";
+        namespace2 = "bicep";
       } else {
         const c = this.classify(d);
         if (!c) continue;
         d.def = c.def;
         kind2 = c.kind;
-        namespace = "azure";
+        namespace2 = "azure";
       }
       d.kind = kind2;
       const name2 = `${d.info.prefix}/${d.existing ? "existing." : ""}${d.path}`;
       let id;
       try {
-        id = nodeId(namespace, kind2, name2);
+        id = nodeId(namespace2, kind2, name2);
       } catch (e) {
         this.gap(
           "error",
@@ -33043,17 +33074,17 @@ function isControl2(c, multiline = false) {
   if (multiline && (c === "\n" || c === "\r")) return false;
   return code2 < 32 || code2 === 127;
 }
-function parseToml(text4) {
-  const src = text4.charCodeAt(0) === 65279 ? text4.slice(1) : text4;
+function parseToml(text5) {
+  const src = text5.charCodeAt(0) === 65279 ? text5.slice(1) : text5;
   let pos = 0;
-  let line2 = 1;
+  let line3 = 1;
   const fail = (message) => {
-    throw new ConfigSyntaxError(message, line2);
+    throw new ConfigSyntaxError(message, line3);
   };
   const peek = () => src[pos];
   const advance = () => {
     const c = src[pos++];
-    if (c === "\n") line2++;
+    if (c === "\n") line3++;
     return c;
   };
   function skipBlank() {
@@ -33158,7 +33189,7 @@ function parseToml(text4) {
   }
   function value2() {
     skipInline();
-    const startLine = line2;
+    const startLine = line3;
     const c = peek();
     if (c === void 0) return fail("expected a value");
     if (c === "[") return inlineArray();
@@ -33176,10 +33207,10 @@ function parseToml(text4) {
       else if (DATE.test(token)) scalar3 = token;
       else return fail(token === "" ? "expected a value" : `invalid value: ${token}`);
     }
-    return { kind: "scalar", value: scalar3, span: { startLine, endLine: line2 } };
+    return { kind: "scalar", value: scalar3, span: { startLine, endLine: line3 } };
   }
   function inlineArray() {
-    const startLine = line2;
+    const startLine = line3;
     pos++;
     const items2 = [];
     for (; ; ) {
@@ -33193,10 +33224,10 @@ function parseToml(text4) {
       if (peek() === ",") pos++;
       else if (peek() !== "]") fail('expected "," or "]"');
     }
-    return { kind: "array", items: items2, span: { startLine, endLine: line2 } };
+    return { kind: "array", items: items2, span: { startLine, endLine: line3 } };
   }
   function inlineTable() {
-    const startLine = line2;
+    const startLine = line3;
     pos++;
     const table = { kind: "object", entries: [], span: { startLine, endLine: startLine } };
     skipInline();
@@ -33215,11 +33246,11 @@ function parseToml(text4) {
         break;
       } else fail('expected "," or "}"');
     }
-    table.span = { startLine, endLine: line2 };
+    table.span = { startLine, endLine: line3 };
     return table;
   }
   function assign(table, path) {
-    const keyLine = line2;
+    const keyLine = line3;
     skipInline();
     if (peek() !== "=") fail('expected "="');
     pos++;
@@ -33254,7 +33285,7 @@ function parseToml(text4) {
   for (; ; ) {
     skipBlank();
     if (pos >= src.length) break;
-    const headerLine = line2;
+    const headerLine = line3;
     if (src.startsWith("[[", pos)) {
       pos += 2;
       const path = readKeyPath();
@@ -33298,7 +33329,7 @@ function parseToml(text4) {
       fail("unexpected content after the value");
     }
   }
-  root.span = { startLine: 1, endLine: Math.max(line2, 1) };
+  root.span = { startLine: 1, endLine: Math.max(line3, 1) };
   finalize2(root);
   return root;
 }
@@ -33318,7 +33349,7 @@ function finalize2(v) {
 
 // ../../packages/parsers/cloudflare/src/cloudflareParser.ts
 var PARSER_ID4 = "cloudflare";
-var CLOUDFLARE_PARSER_VERSION = "0.3.3";
+var CLOUDFLARE_PARSER_VERSION = "0.3.4";
 var CONFIG_FILE = /(^|\/)wrangler\.(toml|json|jsonc)$/;
 var isConfigFile = (path) => CONFIG_FILE.test(path) && !isIgnoredPath(path);
 var str = (obj, key2) => {
@@ -33539,7 +33570,7 @@ function declsOf(cfg, workerName, skip) {
     if (NOT_BINDING_KEYS.has(e.key)) continue;
     const items2 = e.value.kind === "array" ? e.value.items : [e.value];
     if (items2.some((i) => i.kind === "object" && str(i, "binding") !== void 0)) {
-      skip("binding-unsupported", `${e.key} looks like a binding but is not read yet`, e.span);
+      skip("binding-unsupported", `${e.key} looks like a binding but is not read yet`, e.span, e.key);
     }
   }
   return out;
@@ -33600,23 +33631,24 @@ function assetsOf(root) {
 }
 function analyze(ctx, file2, root) {
   const out = { nodes: [], edges: [], diagnostics: [], unverified: [] };
-  const diag = (level, code2, message, line2) => {
+  const diag = (level, code2, message, line3, target2) => {
     out.diagnostics.push({
       level,
       code: code2,
       message: `${file2}: ${message}`,
       parserId: PARSER_ID4,
       file: file2,
-      ...line2 !== void 0 ? { line: line2 } : {}
+      ...line3 !== void 0 ? { line: line3 } : {},
+      ...target2 !== void 0 ? { target: target2 } : {}
     });
   };
-  const skipFile = (code2, message, line2) => {
-    diag("error", code2, message, line2);
+  const skipFile = (code2, message, line3) => {
+    diag("error", code2, message, line3);
     out.unverified.push({ parserId: PARSER_ID4, file: file2, reason: message });
     return out;
   };
-  const skip = (code2, message, span) => {
-    diag("warning", code2, message, span.startLine);
+  const skip = (code2, message, span, target2) => {
+    diag("warning", code2, message, span.startLine, target2);
     out.unverified.push({ parserId: PARSER_ID4, file: file2, reason: message });
   };
   if (root.kind !== "object") return skipFile("config-invalid", "the top level is not an object");
@@ -33753,7 +33785,7 @@ function analyze(ctx, file2, root) {
   return out;
 }
 async function parseFile(ctx, file2) {
-  const fail = (message, line2) => ({
+  const fail = (message, line3) => ({
     nodes: [],
     edges: [],
     diagnostics: [
@@ -33763,14 +33795,14 @@ async function parseFile(ctx, file2) {
         message: `${file2}: ${message}`,
         parserId: PARSER_ID4,
         file: file2,
-        ...line2 !== void 0 ? { line: line2 } : {}
+        ...line3 !== void 0 ? { line: line3 } : {}
       }
     ],
     unverified: [{ parserId: PARSER_ID4, file: file2, reason: message }]
   });
   try {
-    const text4 = await ctx.fs.readText(file2);
-    const tree = file2.endsWith(".toml") ? parseToml(text4) : parseJsonc(text4);
+    const text5 = await ctx.fs.readText(file2);
+    const tree = file2.endsWith(".toml") ? parseToml(text5) : parseJsonc(text5);
     return analyze(ctx, file2, tree);
   } catch (e) {
     if (e instanceof ConfigSyntaxError) return fail(`${e.message} (line ${e.line})`, e.line);
@@ -34238,7 +34270,7 @@ var HONO_PARSER_ID = "hono";
 var HONO_PARSER_VERSION = "0.3.1";
 var MAX_ENV_DEPTH = 4;
 var HONO_IMPORT = /["']hono(?:\/[^"']*)?["']/;
-var importsHono = (text4) => HONO_IMPORT.test(text4);
+var importsHono = (text5) => HONO_IMPORT.test(text5);
 var messageOf2 = (e) => e instanceof Error ? e.message : String(e);
 var Project = class {
   constructor(files) {
@@ -34339,8 +34371,8 @@ var Project = class {
       out.failures.push(`${flow2.callee}() in ${r.file}: ${scan2.broken}`);
       return;
     }
-    for (const line2 of scan2.opaque) {
-      out.failures.push(`the env is used in ${r.file} line ${line2} in a way that is not followed`);
+    for (const line3 of scan2.opaque) {
+      out.failures.push(`the env is used in ${r.file} line ${line3} in a way that is not followed`);
     }
     for (const u of scan2.usages) out.usages.push({ ...u, file: r.file, passed: true });
     const next = new Set(path).add(key2);
@@ -34408,10 +34440,10 @@ async function analyzeHono(ctx) {
   );
   for (const item of texts) {
     if (!item) continue;
-    const [file2, text4] = item;
-    const parsed = parseModule(file2, text4);
+    const [file2, text5] = item;
+    const parsed = parseModule(file2, text5);
     if (!parsed.ok) {
-      if (!HONO_IMPORT.test(text4)) continue;
+      if (!HONO_IMPORT.test(text5)) continue;
       failFile(file2, "syntax-error", `syntax error: ${parsed.message}`);
       continue;
     }
@@ -34812,7 +34844,7 @@ var honoBindingLinker = {
 
 // ../../packages/parsers/mcp/src/project.ts
 var MCP_IMPORT = /["'](?:@modelcontextprotocol\/(?:sdk|server)(?:\/[^"']*)?|agents\/mcp(?:\/[^"']*)?)["']/;
-var importsMcp = (text4) => MCP_IMPORT.test(text4);
+var importsMcp = (text5) => MCP_IMPORT.test(text5);
 var isFunctionNode = (n) => n.type === "FunctionDeclaration" || n.type === "FunctionExpression" || n.type === "ArrowFunctionExpression";
 var identName3 = (n) => n?.type === "Identifier" ? n.name : void 0;
 var keyName = (key2) => key2?.type === "Identifier" ? key2.name : key2?.type === "Literal" ? String(key2.value) : void 0;
@@ -35331,8 +35363,8 @@ async function analyzeMcp(ctx) {
   const diagnostics = [];
   const unverified = [];
   const noted = /* @__PURE__ */ new Set();
-  const note = (level, code2, file2, message, line2) => {
-    const key2 = `${code2}\0${file2}\0${line2 ?? ""}\0${message}`;
+  const note = (level, code2, file2, message, line3) => {
+    const key2 = `${code2}\0${file2}\0${line3 ?? ""}\0${message}`;
     if (noted.has(key2)) return;
     noted.add(key2);
     diagnostics.push({
@@ -35341,12 +35373,12 @@ async function analyzeMcp(ctx) {
       message: `${file2}: ${message}`,
       parserId: MCP_PARSER_ID,
       file: file2,
-      ...line2 !== void 0 ? { line: line2 } : {}
+      ...line3 !== void 0 ? { line: line3 } : {}
     });
     unverified.push({
       parserId: MCP_PARSER_ID,
       file: file2,
-      reason: line2 !== void 0 ? `${message} (line ${line2})` : message
+      reason: line3 !== void 0 ? `${message} (line ${line3})` : message
     });
   };
   const all = await ctx.fs.listFiles();
@@ -35355,15 +35387,15 @@ async function analyzeMcp(ctx) {
   const targets = [];
   const routeFiles = [];
   for (const file2 of sources) {
-    let text4;
+    let text5;
     try {
-      text4 = await ctx.fs.readText(file2);
+      text5 = await ctx.fs.readText(file2);
     } catch (e) {
       void e;
       continue;
     }
-    const mcp = importsMcp(text4);
-    if (!mcp && !HONO_IMPORT2.test(text4) && !OAUTH_PROVIDER_IMPORT.test(text4)) continue;
+    const mcp = importsMcp(text5);
+    if (!mcp && !HONO_IMPORT2.test(text5) && !OAUTH_PROVIDER_IMPORT.test(text5)) continue;
     const loaded = await project.load(file2);
     if ("error" in loaded) {
       if (mcp) {
@@ -35555,7 +35587,7 @@ async function analyzeMcp(ctx) {
   const expand = (server, model, root, receiver, depth, path) => {
     const { events, badWrapper } = scan(root, receiver);
     for (const ev of events) {
-      const line2 = model.module.lines(ev.call).startLine;
+      const line3 = model.module.lines(ev.call).startLine;
       if (ev.kind === "tool") {
         reached.add(`${model.file}#${ev.call.start}`);
         if (badWrapper) {
@@ -35564,7 +35596,7 @@ async function analyzeMcp(ctx) {
             "tool-wrapped",
             model.file,
             `a tool is registered after registerTool was replaced by a function that does not pass the name on as its first argument; its name is not read`,
-            line2
+            line3
           );
           continue;
         }
@@ -35577,7 +35609,7 @@ async function analyzeMcp(ctx) {
             "tool-name-dynamic",
             model.file,
             `a tool's name is decided at run time, so the tool is not recorded: ${r2.why}`,
-            line2
+            line3
           );
           continue;
         }
@@ -35595,7 +35627,7 @@ async function analyzeMcp(ctx) {
             "server-handed-on",
             model.file,
             `the server is handed to ${calleeName}(), which cannot be followed (${r.why}); the tools it registers are not recorded`,
-            line2
+            line3
           );
         }
         continue;
@@ -35609,7 +35641,7 @@ async function analyzeMcp(ctx) {
           "server-handed-on",
           model.file,
           `the server is handed to ${calleeName}() in a parameter that is not a plain name; the tools it registers are not recorded`,
-          line2
+          line3
         );
         continue;
       }
@@ -35621,7 +35653,7 @@ async function analyzeMcp(ctx) {
           "server-handed-on",
           model.file,
           `${calleeName}() is more than ${MAX_DEPTH4} calls away from the server (too deep); the tools it registers are not recorded`,
-          line2
+          line3
         );
         continue;
       }
@@ -35674,8 +35706,8 @@ async function analyzeMcp(ctx) {
           untraced.add(`${flow2.callee}() in ${r.model.file}: ${scan2.broken}`);
           continue;
         }
-        for (const line2 of scan2.opaque)
-          untraced.add(`the env is used in ${r.model.file} line ${line2} in a way that is not followed`);
+        for (const line3 of scan2.opaque)
+          untraced.add(`the env is used in ${r.model.file} line ${line3} in a way that is not followed`);
         for (const u of scan2.usages) found.push({ ...u, file: r.model.file, passed: true });
         follow(r.model, scan2.flows, depth + 1, new Set(path).add(key2));
       }
@@ -35697,8 +35729,8 @@ async function analyzeMcp(ctx) {
       }
       for (const s of scans) {
         for (const u of s.usages) found.push({ ...u, file: model.file });
-        for (const line2 of s.opaque)
-          untraced.add(`the env is used in ${model.file} line ${line2} in a way that is not followed`);
+        for (const line3 of s.opaque)
+          untraced.add(`the env is used in ${model.file} line ${line3} in a way that is not followed`);
         follow(model, s.flows, 0, /* @__PURE__ */ new Set());
       }
     });
@@ -35800,7 +35832,7 @@ async function analyzeMcp(ctx) {
           file: model.file,
           ...model.module.lines({ start: routeArg2.start, end: handlerArg.end })
         });
-        const line2 = model.module.lines(routeArg2).startLine;
+        const line3 = model.module.lines(routeArg2).startLine;
         for (const part2 of parts) {
           const r = part2 && part2.type !== "SpreadElement" ? project.resolveString(model, part2) : void 0;
           if (!r || !("value" in r) || !r.value.startsWith("/")) {
@@ -35809,7 +35841,7 @@ async function analyzeMcp(ctx) {
               "oauth-api-route-dynamic",
               model.file,
               `the apiRoute of the OAuthProvider is not a path written out as a string, so the route to the MCP server it serves is not recorded${r && "why" in r ? ` (${r.why})` : ""}`,
-              line2
+              line3
             );
             continue;
           }
@@ -35973,7 +36005,7 @@ var NUMBER4 = /^\d+(?:\.\d+)?(?:[eE][+-]?\d+)?/;
 var HEREDOC = /^<<(-?)([A-Za-z_][A-Za-z0-9_]*)[ \t]*\r?\n/;
 var MAX_DEPTH5 = 200;
 var INDENT = /^[ \t]*/;
-var indentOf = (line2) => INDENT.exec(line2)[0].length;
+var indentOf = (line3) => INDENT.exec(line3)[0].length;
 var Lexer2 = class {
   constructor(src) {
     this.src = src;
@@ -35982,8 +36014,8 @@ var Lexer2 = class {
   pos = 0;
   line = 1;
   lineStart = 0;
-  err(message, line2, col) {
-    return { t: "err", v: message, line: line2, endLine: line2, col };
+  err(message, line3, col) {
+    return { t: "err", v: message, line: line3, endLine: line3, col };
   }
   /** `stopAtBrace`: `${ ... }` の中身。対応する `}` で止まり、それを読み終えた位置に pos を置く。 */
   tokens(stopAtBrace) {
@@ -36003,10 +36035,10 @@ var Lexer2 = class {
         return out;
       }
       const c = src[this.pos];
-      const line2 = this.line;
+      const line3 = this.line;
       const col = this.pos - this.lineStart + 1;
       if (c === "\n") {
-        out.push({ t: "nl", v: "\n", line: line2, endLine: line2, col });
+        out.push({ t: "nl", v: "\n", line: line3, endLine: line3, col });
         this.pos++;
         this.line++;
         this.lineStart = this.pos;
@@ -36026,7 +36058,7 @@ var Lexer2 = class {
           }
         }
         this.pos = stop;
-        if (end < 0) out.push(this.err("\u9589\u3058\u3066\u3044\u306A\u3044\u30B3\u30E1\u30F3\u30C8 /* \u304C\u3042\u308A\u307E\u3059", line2, col));
+        if (end < 0) out.push(this.err("\u9589\u3058\u3066\u3044\u306A\u3044\u30B3\u30E1\u30F3\u30C8 /* \u304C\u3042\u308A\u307E\u3059", line3, col));
         continue;
       }
       if (c === '"') {
@@ -36042,21 +36074,21 @@ var Lexer2 = class {
       }
       if (c >= "0" && c <= "9") {
         const m = NUMBER4.exec(src.slice(this.pos, this.pos + 64));
-        const text4 = m?.[0] ?? c;
-        out.push({ t: "num", v: text4, line: line2, endLine: line2, col });
-        this.pos += text4.length;
+        const text5 = m?.[0] ?? c;
+        out.push({ t: "num", v: text5, line: line3, endLine: line3, col });
+        this.pos += text5.length;
         continue;
       }
       if (ID_START2.test(c)) {
         let end = this.pos + 1;
         while (end < src.length && ID_PART2.test(src[end])) end++;
-        out.push({ t: "id", v: src.slice(this.pos, end), line: line2, endLine: line2, col });
+        out.push({ t: "id", v: src.slice(this.pos, end), line: line3, endLine: line3, col });
         this.pos = end;
         continue;
       }
       const two = src.slice(this.pos, this.pos + 2);
       if (PUNCT22.has(two)) {
-        out.push({ t: "p", v: two, line: line2, endLine: line2, col });
+        out.push({ t: "p", v: two, line: line3, endLine: line3, col });
         this.pos += 2;
         continue;
       }
@@ -36071,18 +36103,18 @@ var Lexer2 = class {
             depth--;
           }
         }
-        out.push({ t: "p", v: c, line: line2, endLine: line2, col });
+        out.push({ t: "p", v: c, line: line3, endLine: line3, col });
         this.pos++;
         continue;
       }
-      out.push(this.err("\u8AAD\u3081\u306A\u3044\u6587\u5B57\u3067\u3059", line2, col));
+      out.push(this.err("\u8AAD\u3081\u306A\u3044\u6587\u5B57\u3067\u3059", line3, col));
       this.pos++;
     }
   }
   interpDepth = 0;
   /** `${ }` の中を読んで inner に足す。エラーのトークンがあればそれを返す（走査は新しく読んだ分だけ）。 */
-  interpolation(inner, line2, col) {
-    if (this.interpDepth >= MAX_DEPTH5) return this.err("\u88DC\u9593\u306E\u5165\u308C\u5B50\u304C\u6DF1\u3059\u304E\u307E\u3059", line2, col);
+  interpolation(inner, line3, col) {
+    if (this.interpDepth >= MAX_DEPTH5) return this.err("\u88DC\u9593\u306E\u5165\u308C\u5B50\u304C\u6DF1\u3059\u304E\u307E\u3059", line3, col);
     this.interpDepth++;
     const read = this.tokens(true);
     this.interpDepth--;
@@ -36096,7 +36128,7 @@ var Lexer2 = class {
   /** 文字列リテラル。補間 `${ }` と `%{ }` は中のトークンを `inner` に残す。 */
   string() {
     const src = this.src;
-    const line2 = this.line;
+    const line3 = this.line;
     const col = this.pos - this.lineStart + 1;
     this.pos++;
     let buf = "";
@@ -36104,7 +36136,7 @@ var Lexer2 = class {
     const inner = [];
     for (; ; ) {
       if (this.pos >= src.length || src[this.pos] === "\n") {
-        return this.err("\u9589\u3058\u3066\u3044\u306A\u3044\u6587\u5B57\u5217\u3067\u3059", line2, col);
+        return this.err("\u9589\u3058\u3066\u3044\u306A\u3044\u6587\u5B57\u5217\u3067\u3059", line3, col);
       }
       const c = src[this.pos];
       if (c === '"') {
@@ -36138,7 +36170,7 @@ var Lexer2 = class {
       if ((c === "$" || c === "%") && src[this.pos + 1] === "{") {
         interpolated = true;
         this.pos += 2;
-        const bad = this.interpolation(inner, line2, col);
+        const bad = this.interpolation(inner, line3, col);
         if (bad) return bad;
         continue;
       }
@@ -36148,7 +36180,7 @@ var Lexer2 = class {
     const tok = {
       t: "str",
       v: buf,
-      line: line2,
+      line: line3,
       endLine: this.line,
       col,
       sval: interpolated ? void 0 : buf
@@ -36163,7 +36195,7 @@ var Lexer2 = class {
     if (!m) return void 0;
     const indented = m[1] === "-";
     const marker = m[2];
-    const line2 = this.line;
+    const line3 = this.line;
     const col = this.pos - this.lineStart + 1;
     this.pos += m[0].length;
     this.line++;
@@ -36173,7 +36205,7 @@ var Lexer2 = class {
     let current = "";
     let interpolated = false;
     for (; ; ) {
-      if (this.pos >= src.length) return this.err("\u9589\u3058\u3066\u3044\u306A\u3044\u30D2\u30A2\u30C9\u30AD\u30E5\u30E1\u30F3\u30C8\u3067\u3059", line2, col);
+      if (this.pos >= src.length) return this.err("\u9589\u3058\u3066\u3044\u306A\u3044\u30D2\u30A2\u30C9\u30AD\u30E5\u30E1\u30F3\u30C8\u3067\u3059", line3, col);
       let lineEnd = src.indexOf("\n", this.pos);
       if (lineEnd < 0) lineEnd = src.length;
       if (src.slice(this.pos, lineEnd).trim() === marker) {
@@ -36188,14 +36220,14 @@ var Lexer2 = class {
         } else if ((c === "$" || c === "%") && src[this.pos + 1] === "{") {
           interpolated = true;
           this.pos += 2;
-          const bad = this.interpolation(inner, line2, col);
+          const bad = this.interpolation(inner, line3, col);
           if (bad) return bad;
         } else {
           current += c;
           this.pos++;
         }
       }
-      if (this.pos >= src.length) return this.err("\u9589\u3058\u3066\u3044\u306A\u3044\u30D2\u30A2\u30C9\u30AD\u30E5\u30E1\u30F3\u30C8\u3067\u3059", line2, col);
+      if (this.pos >= src.length) return this.err("\u9589\u3058\u3066\u3044\u306A\u3044\u30D2\u30A2\u30C9\u30AD\u30E5\u30E1\u30F3\u30C8\u3067\u3059", line3, col);
       lines.push(current.replace(/\r$/, ""));
       current = "";
       this.pos++;
@@ -36213,7 +36245,7 @@ var Lexer2 = class {
     const tok = {
       t: "str",
       v: value2,
-      line: line2,
+      line: line3,
       endLine: this.line,
       col,
       sval: interpolated ? void 0 : value2
@@ -36223,9 +36255,9 @@ var Lexer2 = class {
   }
 };
 var HclParseError = class extends Error {
-  constructor(message, line2, atEof = false) {
+  constructor(message, line3, atEof = false) {
     super(message);
-    this.line = line2;
+    this.line = line3;
     this.atEof = atEof;
   }
   line;
@@ -36533,8 +36565,8 @@ function resync2(parser, startIndex) {
     parser.pos++;
   }
 }
-function parseHcl(text4) {
-  const lexer = new Lexer2(text4);
+function parseHcl(text5) {
+  const lexer = new Lexer2(text5);
   const toks = lexer.tokens(false);
   toks.push({ t: "eof", v: "", line: lexer.line, endLine: lexer.line, col: lexer.pos - lexer.lineStart + 1 });
   const parser = new Parser2(toks);
@@ -36937,7 +36969,7 @@ function bindingKindOf(typeOrBlock) {
 
 // ../../packages/parsers/terraform/src/terraformParser.ts
 var PARSER_ID5 = "terraform";
-var TERRAFORM_PARSER_VERSION = "0.2.0";
+var TERRAFORM_PARSER_VERSION = "0.2.1";
 var isTerraformFile = (path) => path.endsWith(".tf") && !isIgnoredPath(path) && !path.split("/").slice(0, -1).includes(".terraform");
 var compare2 = (a, b) => a < b ? -1 : a > b ? 1 : 0;
 var dirOf3 = (file2) => {
@@ -36967,19 +36999,20 @@ var Analysis2 = class {
   /** 型の対応がなかったリソース（ファイル → 型 → 数）。 */
   unmapped = /* @__PURE__ */ new Map();
   unknownProvider = /* @__PURE__ */ new Map();
-  diag(level, code2, file2, message, line2) {
+  diag(level, code2, file2, message, line3, target2) {
     this.diagnostics.push({
       level,
       code: code2,
       message: `${file2}: ${message}`,
       parserId: PARSER_ID5,
       file: file2,
-      ...line2 !== void 0 ? { line: line2 } : {}
+      ...line3 !== void 0 ? { line: line3 } : {},
+      ...target2 !== void 0 ? { target: target2 } : {}
     });
   }
   /** 一部が読めなかった・要素にできなかった: 診断（warning/error）と unverified に残す。 */
-  gap(level, code2, file2, message, line2) {
-    this.diag(level, code2, file2, message, line2);
+  gap(level, code2, file2, message, line3) {
+    this.diag(level, code2, file2, message, line3);
     this.unverified.push({ parserId: PARSER_ID5, file: file2, reason: message });
   }
   evidence(file2, span) {
@@ -37081,12 +37114,16 @@ var Analysis2 = class {
     }
     for (const file2 of [...this.unmapped.keys()].sort(compare2)) {
       const m = this.unmapped.get(file2);
-      this.diag(
-        "info",
-        "resource-type-unsupported",
-        file2,
-        `resource types not interpreted, left out of the graph: ${list2(m)}`
-      );
+      for (const [type, n] of [...m.entries()].sort(([a], [b]) => compare2(a, b))) {
+        this.diag(
+          "info",
+          "resource-type-unsupported",
+          file2,
+          `resource type not interpreted, left out of the graph: ${type} (${n})`,
+          void 0,
+          type
+        );
+      }
     }
   }
   // --- 要素 ---
@@ -37132,11 +37169,11 @@ var Analysis2 = class {
       let name2 = baseOf2.get(d);
       const key2 = `${d.def?.namespace ?? "terraform"}:${d.def?.kind ?? "module"}:${name2}`;
       if (!named && (groupSize.get(key2) ?? 0) > 1) name2 = `${name2}.${d.type}`;
-      const namespace = d.def?.namespace ?? "terraform";
+      const namespace2 = d.def?.namespace ?? "terraform";
       const kind2 = d.def?.kind ?? "module";
       let id;
       try {
-        id = nodeId(namespace, kind2, name2);
+        id = nodeId(namespace2, kind2, name2);
       } catch (e) {
         this.gap(
           "error",
@@ -37184,10 +37221,10 @@ var Analysis2 = class {
     });
   }
   /** 名前だけで指されたもの（別の場所で定義されているかもしれない）。宣言された要素があればそれを使う。 */
-  reference(namespace, kind2, name2, file2, span) {
+  reference(namespace2, kind2, name2, file2, span) {
     let id;
     try {
-      id = nodeId(namespace, kind2, name2);
+      id = nodeId(namespace2, kind2, name2);
     } catch (e) {
       this.gap(
         "error",
@@ -37572,19 +37609,19 @@ function urlOf(arg) {
   if (n.type !== "TemplateLiteral") return { kind: "ignore" };
   const quasis = n.quasis.map((q) => q.value.cooked ?? "");
   if (!(quasis[0] ?? "").startsWith("/") || (quasis[0] ?? "").startsWith("//")) return { kind: "ignore" };
-  let text4 = "";
+  let text5 = "";
   for (let i = 0; i < quasis.length; i++) {
     const quasi = quasis[i];
-    text4 += quasi;
+    text5 += quasi;
     if (i === quasis.length - 1) break;
-    const before = text4 === "" || text4.endsWith("/");
+    const before = text5 === "" || text5.endsWith("/");
     const next = quasis[i + 1];
     const after = next === "" ? i + 1 === quasis.length - 1 : /^[/?#]/.test(next);
-    if (text4.includes("?") || text4.includes("#")) break;
+    if (text5.includes("?") || text5.includes("#")) break;
     if (!before || !after) return { kind: "gap", reason: "the path is built inside a segment" };
-    text4 += PLACEHOLDER;
+    text5 += PLACEHOLDER;
   }
-  return fromPath(text4);
+  return fromPath(text5);
 }
 function fromPath(raw) {
   if (!raw.startsWith("/") || raw.startsWith("//")) return { kind: "ignore" };
@@ -37854,9 +37891,9 @@ function pluginUses(module) {
   });
   return out;
 }
-function lineOfKey(text4, name2) {
+function lineOfKey(text5, name2) {
   const re = new RegExp(`^\\s*"${name2.replace(/[/\\^$.*+?()[\]{}|-]/g, "\\$&")}"\\s*:`);
-  const i = text4.split("\n").findIndex((l) => re.test(l));
+  const i = text5.split("\n").findIndex((l) => re.test(l));
   return i < 0 ? void 0 : i + 1;
 }
 async function readFrontend(ctx, configFile) {
@@ -37922,8 +37959,8 @@ async function readFrontend(ctx, configFile) {
   const ev = (file2, lines) => staticEvidence(ctx, file2, lines.startLine, lines.endLine);
   const evidence = [];
   for (const name3 of ["vite", "react"]) {
-    const line2 = lineOfKey(packageText, name3);
-    if (line2 !== void 0) evidence.push(ev(packageFile, { startLine: line2, endLine: line2 }));
+    const line3 = lineOfKey(packageText, name3);
+    if (line3 !== void 0) evidence.push(ev(packageFile, { startLine: line3, endLine: line3 }));
   }
   if (uses.length > 0) {
     for (const u of uses) evidence.push(ev(configFile, u.lines));
@@ -38007,15 +38044,15 @@ var viteReactParser = {
       sources.map(async (file2) => {
         const project = owner(file2);
         if (!project) return;
-        let text4;
+        let text5;
         try {
-          text4 = await ctx.fs.readText(file2);
+          text5 = await ctx.fs.readText(file2);
         } catch (e) {
           unverified.push({ parserId: VITE_REACT_PARSER_ID, file: file2, reason: `could not read: ${messageOf4(e)}` });
           return;
         }
-        if (!text4.includes("fetch")) return;
-        const parsed = parseModule(file2, text4);
+        if (!text5.includes("fetch")) return;
+        const parsed = parseModule(file2, text5);
         if (!parsed.ok) {
           const reason = `could not parse: ${parsed.message}; its fetch calls are not read`;
           diagnostics.push({
@@ -38420,11 +38457,11 @@ async function entryFiles(ctx) {
   }
   for (const file2 of [...byFile.keys()].sort()) {
     try {
-      const text4 = await ctx.fs.readText(file2);
-      if (importsHono(text4)) {
+      const text5 = await ctx.fs.readText(file2);
+      if (importsHono(text5)) {
         hono.add(file2);
         byFile.delete(file2);
-      } else texts.set(file2, text4);
+      } else texts.set(file2, text5);
     } catch (e) {
       unreadable.set(file2, messageOf5(e));
     }
@@ -38436,19 +38473,19 @@ async function analyzeWorkerFetch(ctx) {
   const edges = [];
   const diagnostics = [];
   const unverified = [];
-  const note = (level, code2, file2, message, line2) => {
+  const note = (level, code2, file2, message, line3) => {
     diagnostics.push({
       level,
       code: code2,
       message: `${file2}: ${message}`,
       parserId: WORKER_FETCH_PARSER_ID,
       file: file2,
-      ...line2 !== void 0 ? { line: line2 } : {}
+      ...line3 !== void 0 ? { line: line3 } : {}
     });
     unverified.push({
       parserId: WORKER_FETCH_PARSER_ID,
       file: file2,
-      reason: line2 !== void 0 ? `${message} (line ${line2})` : message
+      reason: line3 !== void 0 ? `${message} (line ${line3})` : message
     });
   };
   const { byFile, problems, texts, unreadable } = await entryFiles(ctx);
@@ -38756,9 +38793,9 @@ function analysisKeys() {
 
 // ../../packages/parsers/registry/src/yaml.ts
 var YamlSyntaxError = class extends Error {
-  constructor(message, line2) {
-    super(`line ${line2}: ${message}`);
-    this.line = line2;
+  constructor(message, line3) {
+    super(`line ${line3}: ${message}`);
+    this.line = line3;
     this.name = "YamlSyntaxError";
   }
   line;
@@ -38782,9 +38819,9 @@ function stripComment(raw) {
   }
   return raw;
 }
-function toLines(text4) {
+function toLines(text5) {
   const lines = [];
-  text4.split(/\r?\n/).forEach((raw, i) => {
+  text5.split(/\r?\n/).forEach((raw, i) => {
     const no = i + 1;
     const leading = /^[ \t]*/.exec(raw)?.[0] ?? "";
     if (leading.includes("	")) {
@@ -38799,21 +38836,21 @@ function toLines(text4) {
   });
   return lines;
 }
-function readQuoted(text4, no) {
-  const quote = text4[0];
+function readQuoted(text5, no) {
+  const quote = text5[0];
   let out = "";
-  for (let i = 1; i < text4.length; i++) {
-    const ch = text4[i];
+  for (let i = 1; i < text5.length; i++) {
+    const ch = text5[i];
     if (quote === '"' && ch === "\\") {
-      const next = text4[++i];
+      const next = text5[++i];
       if (next === void 0) break;
       out += next === "n" ? "\n" : next === "t" ? "	" : next;
     } else if (ch === quote) {
-      if (quote === "'" && text4[i + 1] === "'") {
+      if (quote === "'" && text5[i + 1] === "'") {
         out += "'";
         i++;
       } else {
-        return { value: out, rest: text4.slice(i + 1) };
+        return { value: out, rest: text5.slice(i + 1) };
       }
     } else {
       out += ch;
@@ -38821,33 +38858,33 @@ function readQuoted(text4, no) {
   }
   throw new YamlSyntaxError("unterminated quoted string", no);
 }
-function plainScalar(text4, no) {
-  if (/^[&*!|>@`%]/.test(text4)) {
-    throw new YamlSyntaxError(`unsupported YAML syntax (${text4[0]}); quote the value if it is plain text`, no);
+function plainScalar(text5, no) {
+  if (/^[&*!|>@`%]/.test(text5)) {
+    throw new YamlSyntaxError(`unsupported YAML syntax (${text5[0]}); quote the value if it is plain text`, no);
   }
-  if (/:(\s|$)/.test(text4)) throw new YamlSyntaxError("unexpected ':' in a value", no);
-  if (/^(true|True|TRUE)$/.test(text4)) return true;
-  if (/^(false|False|FALSE)$/.test(text4)) return false;
-  if (/^(null|Null|NULL|~)$/.test(text4)) return null;
-  if (/^-?\d+$/.test(text4)) return Number(text4);
-  if (/^-?\d+\.\d+$/.test(text4)) return Number(text4);
-  return text4;
+  if (/:(\s|$)/.test(text5)) throw new YamlSyntaxError("unexpected ':' in a value", no);
+  if (/^(true|True|TRUE)$/.test(text5)) return true;
+  if (/^(false|False|FALSE)$/.test(text5)) return false;
+  if (/^(null|Null|NULL|~)$/.test(text5)) return null;
+  if (/^-?\d+$/.test(text5)) return Number(text5);
+  if (/^-?\d+\.\d+$/.test(text5)) return Number(text5);
+  return text5;
 }
 function scalar2(raw, no) {
-  const text4 = raw.trim();
-  if (text4[0] === "'" || text4[0] === '"') {
-    const { value: value2, rest } = readQuoted(text4, no);
+  const text5 = raw.trim();
+  if (text5[0] === "'" || text5[0] === '"') {
+    const { value: value2, rest } = readQuoted(text5, no);
     if (rest.trim() !== "") throw new YamlSyntaxError("unexpected text after a quoted string", no);
     return value2;
   }
-  return plainScalar(text4, no);
+  return plainScalar(text5, no);
 }
 function flow(raw, no) {
-  const text4 = raw.trim();
-  if (text4 === "{}") return /* @__PURE__ */ Object.create(null);
-  if (text4[0] === "{") throw new YamlSyntaxError("flow mappings are not supported (only {})", no);
-  if (!text4.endsWith("]")) throw new YamlSyntaxError("a flow sequence must close with ] on the same line", no);
-  let rest = text4.slice(1, -1).trim();
+  const text5 = raw.trim();
+  if (text5 === "{}") return /* @__PURE__ */ Object.create(null);
+  if (text5[0] === "{") throw new YamlSyntaxError("flow mappings are not supported (only {})", no);
+  if (!text5.endsWith("]")) throw new YamlSyntaxError("a flow sequence must close with ] on the same line", no);
+  let rest = text5.slice(1, -1).trim();
   const items2 = [];
   while (rest !== "") {
     if (rest[0] === ",") throw new YamlSyntaxError("empty item in a flow sequence", no);
@@ -38873,25 +38910,25 @@ function flow(raw, no) {
   return items2;
 }
 function value(raw, no) {
-  const text4 = raw.trim();
-  return text4[0] === "[" || text4[0] === "{" ? flow(text4, no) : scalar2(text4, no);
+  const text5 = raw.trim();
+  return text5[0] === "[" || text5[0] === "{" ? flow(text5, no) : scalar2(text5, no);
 }
-function splitKey(text4, no) {
+function splitKey(text5, no) {
   let key2;
   let after;
-  if (text4[0] === "'" || text4[0] === '"') {
-    const q = readQuoted(text4, no);
+  if (text5[0] === "'" || text5[0] === '"') {
+    const q = readQuoted(text5, no);
     key2 = q.value;
     after = q.rest.trimStart();
     if (after[0] !== ":") throw new YamlSyntaxError("expected 'key: value'", no);
     after = after.slice(1);
   } else {
-    const m = /^([^:\s][^:]*?)\s*:(\s+|$)/.exec(text4);
+    const m = /^([^:\s][^:]*?)\s*:(\s+|$)/.exec(text5);
     if (!m) throw new YamlSyntaxError("expected 'key: value'", no);
     key2 = m[1];
-    after = text4.slice(m[0].length);
+    after = text5.slice(m[0].length);
   }
-  if (after !== "" && !/^\s/.test(after) && text4[0] !== "'" && text4[0] !== '"') after = ` ${after}`;
+  if (after !== "" && !/^\s/.test(after) && text5[0] !== "'" && text5[0] !== '"') after = ` ${after}`;
   return { key: key2, rest: after.trim() };
 }
 var MAX_DEPTH7 = 32;
@@ -38934,17 +38971,17 @@ var Reader = class {
   #mapping(indent) {
     const out = /* @__PURE__ */ Object.create(null);
     while (!this.done) {
-      const line2 = this.peek();
-      if (line2.indent < indent) break;
-      if (line2.indent > indent) throw new YamlSyntaxError("unexpected indentation", line2.no);
-      if (line2.text === "-" || line2.text.startsWith("- ")) {
-        throw new YamlSyntaxError("a list item where a 'key: value' was expected", line2.no);
+      const line3 = this.peek();
+      if (line3.indent < indent) break;
+      if (line3.indent > indent) throw new YamlSyntaxError("unexpected indentation", line3.no);
+      if (line3.text === "-" || line3.text.startsWith("- ")) {
+        throw new YamlSyntaxError("a list item where a 'key: value' was expected", line3.no);
       }
       this.next();
-      const { key: key2, rest } = splitKey(line2.text, line2.no);
-      if (key2 in out) throw new YamlSyntaxError(`duplicate key: ${key2}`, line2.no);
+      const { key: key2, rest } = splitKey(line3.text, line3.no);
+      if (key2 in out) throw new YamlSyntaxError(`duplicate key: ${key2}`, line3.no);
       if (rest !== "") {
-        out[key2] = value(rest, line2.no);
+        out[key2] = value(rest, line3.no);
         continue;
       }
       const follow = this.peek();
@@ -38958,34 +38995,34 @@ var Reader = class {
   #sequence(indent) {
     const out = [];
     while (!this.done) {
-      const line2 = this.peek();
-      if (line2.indent < indent) break;
-      if (line2.indent > indent) throw new YamlSyntaxError("unexpected indentation", line2.no);
-      if (!(line2.text === "-" || line2.text.startsWith("- "))) break;
+      const line3 = this.peek();
+      if (line3.indent < indent) break;
+      if (line3.indent > indent) throw new YamlSyntaxError("unexpected indentation", line3.no);
+      if (!(line3.text === "-" || line3.text.startsWith("- "))) break;
       this.next();
-      const item = line2.text.slice(1).trim();
+      const item = line3.text.slice(1).trim();
       if (item === "" || item === "-" || item.startsWith("- ")) {
-        throw new YamlSyntaxError("nested block items are not supported", line2.no);
+        throw new YamlSyntaxError("nested block items are not supported", line3.no);
       }
       const quoted = item[0] === "'" || item[0] === '"';
       if (!quoted && item[0] !== "[" && /^[^\s:][^:]*:(\s|$)/.test(item)) {
-        throw new YamlSyntaxError("a list of mappings is not supported", line2.no);
+        throw new YamlSyntaxError("a list of mappings is not supported", line3.no);
       }
-      out.push(value(item, line2.no));
+      out.push(value(item, line3.no));
     }
     return out;
   }
 };
-function parseYamlSubset(text4) {
+function parseYamlSubset(text5) {
   try {
-    return parse4(text4);
+    return parse4(text5);
   } catch (e) {
     if (e instanceof YamlSyntaxError) throw e;
     throw new YamlSyntaxError(`cannot be read (${e instanceof Error ? e.message : String(e)})`, 1);
   }
 }
-function parse4(text4) {
-  const lines = toLines(text4);
+function parse4(text5) {
+  const lines = toLines(text5);
   if (lines.length === 0) return /* @__PURE__ */ Object.create(null);
   const reader = new Reader(lines);
   const first = lines[0];
@@ -39000,10 +39037,10 @@ function parse4(text4) {
 
 // ../../packages/parsers/registry/src/config.ts
 var CONFIG_FILE2 = ".sketio.yml";
-function parseSketioYaml(text4) {
+function parseSketioYaml(text5) {
   let raw;
   try {
-    raw = parseYamlSubset(text4);
+    raw = parseYamlSubset(text5);
   } catch (e) {
     return { ok: false, errors: [`${CONFIG_FILE2}: ${e instanceof Error ? e.message : String(e)}`] };
   }
@@ -39099,14 +39136,14 @@ async function technologyHints(path, read, ignorePackages = /* @__PURE__ */ new 
   if (named.length > 0 && !SOURCE2.test(path)) return named;
   if (SOURCE2.test(path)) {
     if (path.endsWith(".d.ts") || TEST_FILE2.test(path) || TEST_DIR2.test(path)) return named;
-    let text4;
+    let text5;
     try {
-      text4 = await read();
+      text5 = await read();
     } catch {
       return named;
     }
     const packages = /* @__PURE__ */ new Set();
-    for (const m of text4.matchAll(IMPORT)) {
+    for (const m of text5.matchAll(IMPORT)) {
       const name2 = packageOf(m[1]);
       if (name2 && !ignorePackages.has(name2)) packages.add(name2);
     }
@@ -39356,6 +39393,7 @@ import { appendFileSync } from "node:fs";
 var NAMESPACES = ["cloudflare", "aws", "application"];
 var KIND_RE = /^[a-z][a-z0-9-]{0,39}$/;
 var NAME_RE = /^[A-Za-z0-9_.\-/@$]{3,100}$/;
+var MAX_ITEMS = 100;
 var kind = external_exports.string().regex(KIND_RE);
 var name = external_exports.string().regex(NAME_RE);
 var line = external_exports.number().int().min(1).max(1e6);
@@ -39407,6 +39445,15 @@ var edgeSchema2 = external_exports.object({
 }).refine((e) => e.id === edgeId(e.source, e.relation, e.target));
 var schema = external_exports.object({ nodes: external_exports.array(nodeSchema2).max(500), edges: external_exports.array(edgeSchema2).max(500) });
 
+// ../../packages/arch-inference/src/chain.ts
+var MAX_CHAIN_REQUESTS = 10;
+function chainStop(files) {
+  if (files.inferred + files.cached > 0) return null;
+  if ((files.noCredits ?? 0) > 0) return "noCredits";
+  if (files.rateLimited > 0) return "rateLimited";
+  return null;
+}
+
 // ../../packages/arch-inference/src/covered.ts
 function filesWithVerifiedNodes(graph) {
   const files = /* @__PURE__ */ new Set();
@@ -39438,10 +39485,15 @@ Rules:
 - Report only what is written in the file. If you are not sure, leave it out. Do not invent resources, lines or names. An empty answer {"nodes":[],"edges":[]} is correct when the file declares nothing.
 - At most 100 nodes and 100 edges. Nothing but the JSON object.`;
 
+// ../../packages/arch-inference/src/infer.ts
+var RETRY_MAX_BYTES = 32 * 1024;
+
 // ../../packages/arch-inference/src/limits.ts
 var MAX_FILE_BYTES = 64 * 1024;
 var MAX_FILES = 20;
 var MAX_TOTAL_BYTES = 256 * 1024;
+var CREDIT_BYTES = 8 * 1024;
+var MAX_FILE_CREDITS = MAX_FILE_BYTES / CREDIT_BYTES;
 var SAFE_PATH_RE = /^(?!\/)[A-Za-z0-9_.\-/@+]{1,300}$/;
 var EXCLUDED_DIRS = /* @__PURE__ */ new Set([
   "node_modules",
@@ -39583,10 +39635,10 @@ function maskBlocks(input3) {
     return true;
   };
   for (let i = 0; i < lines.length; i++) {
-    const line2 = lines[i];
-    const hv = HCL_VARIABLE.exec(line2);
+    const line3 = lines[i];
+    const hv = HCL_VARIABLE.exec(line3);
     if (hv && HCL_SECRET_NAME.test(hv[1])) {
-      let depth = braceDelta(line2);
+      let depth = braceDelta(line3);
       let j = i + 1;
       while (j < lines.length && depth > 0) {
         const l = lines[j];
@@ -39633,7 +39685,7 @@ function maskBlocks(input3) {
       i = j - 1;
       continue;
     }
-    const nm = ENV_NAME.exec(line2);
+    const nm = ENV_NAME.exec(line3);
     if (nm && SECRET_KEY.test(nm[1])) {
       const k = nextNonBlank(lines, i + 1);
       const v = k < lines.length ? ENV_VALUE.exec(lines[k]) : null;
@@ -39641,7 +39693,7 @@ function maskBlocks(input3) {
         if (set2(k, `${v[1]} ${MASK}`)) count++;
       }
     }
-    const kl = KEY_LINE.exec(line2);
+    const kl = KEY_LINE.exec(line3);
     if (kl) {
       const rest = kl[2].trim();
       if (rest === "") {
@@ -39689,7 +39741,7 @@ function maskBlocks(input3) {
         }
       }
     }
-    const ys = YAML_BLOCK_SCALAR.exec(line2);
+    const ys = YAML_BLOCK_SCALAR.exec(line3);
     if (ys && SECRET_KEY.test(ys[2])) {
       const base = ys[1].length;
       let changed = false;
@@ -39708,31 +39760,31 @@ function maskBlocks(input3) {
 }
 function maskSecrets(input3) {
   let count = 0;
-  const hide2 = (re, text5) => text5.replace(re, () => {
+  const hide2 = (re, text6) => text6.replace(re, () => {
     count++;
     return MASK;
   });
-  let text4 = input3.replace(PEM, (m) => {
+  let text5 = input3.replace(PEM, (m) => {
     count++;
     return MASK + newlines(m);
   });
-  const blocks = maskBlocks(text4);
-  text4 = blocks.text;
+  const blocks = maskBlocks(text5);
+  text5 = blocks.text;
   count += blocks.count;
-  for (const re of TOKEN_PATTERNS) text4 = hide2(re, text4);
-  text4 = text4.replace(AUTH_HEADER, (m, head) => {
+  for (const re of TOKEN_PATTERNS) text5 = hide2(re, text5);
+  text5 = text5.replace(AUTH_HEADER, (m, head) => {
     count++;
     return `${head}${MASK}${newlines(m)}`;
   });
-  text4 = text4.replace(BEARER, (m) => {
+  text5 = text5.replace(BEARER, (m) => {
     count++;
     return `Bearer ${MASK}${newlines(m)}`;
   });
-  text4 = text4.replace(CONNECTION, (_m, scheme) => {
+  text5 = text5.replace(CONNECTION, (_m, scheme) => {
     count++;
     return `${scheme}${MASK}@`;
   });
-  text4 = text4.replace(
+  text5 = text5.replace(
     ASSIGNMENT,
     (m, head, esc2, dq, sq, arr, bare) => {
       const value2 = esc2 ?? dq ?? sq ?? arr ?? bare ?? "";
@@ -39746,49 +39798,106 @@ function maskSecrets(input3) {
       return `${head}${quote}${MASK}${quote}`;
     }
   );
-  text4 = text4.replace(XML_ELEMENT, (m, open2, _tag, value2) => {
+  text5 = text5.replace(XML_ELEMENT, (m, open2, _tag, value2) => {
     if (value2.includes(MASK) || value2.trim() === "" || /^\s*[$<]/.test(value2)) return m;
     count++;
     return `${open2}${MASK}${newlines(value2)}`;
   });
-  text4 = text4.replace(SPACE_ASSIGN, (m, head, value2) => {
+  text5 = text5.replace(SPACE_ASSIGN, (m, head, value2) => {
     if (value2.includes(MASK) || SPACE_KEYWORD.test(value2) || /^["']?\$/.test(value2)) return m;
     count++;
     return `${head}${MASK}`;
   });
-  text4 = text4.replace(OPTION_VALUE, (m, head, value2) => {
+  text5 = text5.replace(OPTION_VALUE, (m, head, value2) => {
     if (value2.includes(MASK)) return m;
     count++;
     return `${head}${MASK}`;
   });
-  text4 = text4.replace(USER_PASS, (m, head) => {
+  text5 = text5.replace(USER_PASS, (m, head) => {
     if (m.includes(MASK)) return m;
     count++;
     return `${head}${MASK}`;
   });
-  text4 = text4.split("\n").map(
-    (line2) => DB_CLIENT.test(line2) ? line2.replace(GLUED_PASSWORD, () => {
+  text5 = text5.split("\n").map(
+    (line3) => DB_CLIENT.test(line3) ? line3.replace(GLUED_PASSWORD, () => {
       count++;
       return `-p${MASK}`;
     }).replace(SPACED_PASSWORD, (m, head) => {
       if (m.includes(MASK)) return m;
       count++;
       return `${head}${MASK}`;
-    }) : line2
+    }) : line3
   ).join("\n");
-  text4 = hide2(BASE64_PADDED, text4);
-  text4 = text4.replace(LONG_RUN, (m) => {
+  text5 = hide2(BASE64_PADDED, text5);
+  text5 = text5.replace(LONG_RUN, (m) => {
     if (!/[0-9]/.test(m) || !/[A-Za-z]/.test(m) || entropy(m) < 4) return m;
     count++;
     return MASK;
   });
-  text4 = text4.replace(QUOTED_RANDOM, (m, quote, content) => {
+  text5 = text5.replace(QUOTED_RANDOM, (m, quote, content) => {
     if (!looksRandom(content)) return m;
     count++;
     return `${quote}${MASK}${quote}`;
   });
-  return { text: text4, count };
+  return { text: text5, count };
 }
+
+// ../../packages/arch-inference/src/outputSchema.ts
+var namespace = { type: "string", enum: [...NAMESPACES] };
+var text4 = { type: "string" };
+var line2 = { type: "integer", minimum: 1 };
+var identifiers2 = (min) => ({ type: "array", items: text4, minItems: min, maxItems: 8 });
+var endpoint2 = {
+  type: "object",
+  properties: { namespace, kind: text4, name: text4 },
+  required: ["namespace", "kind", "name"],
+  additionalProperties: false
+};
+var OUTPUT_JSON_SCHEMA = {
+  type: "object",
+  properties: {
+    nodes: {
+      type: "array",
+      maxItems: MAX_ITEMS,
+      items: {
+        type: "object",
+        properties: {
+          namespace,
+          kind: text4,
+          name: text4,
+          file: text4,
+          startLine: line2,
+          endLine: line2,
+          identifiers: identifiers2(1),
+          confidence: { type: "number" }
+        },
+        required: ["namespace", "kind", "name", "file", "startLine", "endLine", "identifiers"],
+        additionalProperties: false
+      }
+    },
+    edges: {
+      type: "array",
+      maxItems: MAX_ITEMS,
+      items: {
+        type: "object",
+        properties: {
+          source: endpoint2,
+          target: endpoint2,
+          relation: { type: "string", enum: [...edgeRelations] },
+          file: text4,
+          startLine: line2,
+          endLine: line2,
+          identifiers: identifiers2(2),
+          confidence: { type: "number" }
+        },
+        required: ["source", "target", "relation", "file", "startLine", "endLine", "identifiers"],
+        additionalProperties: false
+      }
+    }
+  },
+  required: ["nodes", "edges"],
+  additionalProperties: false
+};
 
 // src/candidates.ts
 var IAC_PACKAGE = /^(?:aws-cdk-lib|aws-cdk|@aws-cdk\/.+|constructs|cdktf|@cdktf\/.+|@pulumi\/.+|sst|alchemy|serverless|@serverless\/.+)$/;
@@ -39806,38 +39915,46 @@ async function selectInferenceFiles(coverage, read, graph) {
   const all = [...new Set(coverage.unsupported.filter(isCandidate).map((u) => u.file))];
   const candidates = all.filter((f) => !covered.has(f)).sort((a, b) => tier(a) - tier(b) || compare4(a, b));
   const staticCovered = all.length - candidates.length;
-  const files = [];
+  const groups = [];
+  let group = [];
+  let groupBytes = 0;
   let skipped = 0;
   let masked = 0;
-  let total = 0;
+  let overLimit = 0;
   for (const path of candidates) {
-    if (files.length >= MAX_FILES) {
-      skipped++;
+    if (overLimit > 0) {
+      overLimit++;
       continue;
     }
-    let text4;
+    let text5;
     try {
-      text4 = await read(path);
+      text5 = await read(path);
     } catch {
       skipped++;
       continue;
     }
-    const size = Buffer.byteLength(text4);
-    if (text4 === "" || text4.includes("\0") || size > MAX_FILE_BYTES) {
+    const size = Buffer.byteLength(text5);
+    if (text5 === "" || text5.includes("\0") || size > MAX_FILE_BYTES) {
       skipped++;
       continue;
     }
-    const m = maskSecrets(text4);
+    const m = maskSecrets(text5);
     const bytes = Buffer.byteLength(m.text);
-    if (total + bytes > MAX_TOTAL_BYTES) {
-      skipped++;
-      continue;
+    if (group.length >= MAX_FILES || groupBytes + bytes > MAX_TOTAL_BYTES) {
+      if (groups.length + 1 >= MAX_CHAIN_REQUESTS) {
+        overLimit++;
+        continue;
+      }
+      groups.push(group);
+      group = [];
+      groupBytes = 0;
     }
-    total += bytes;
+    groupBytes += bytes;
     masked += m.count;
-    files.push({ path, content: m.text });
+    group.push({ path, content: m.text });
   }
-  return { files, skipped, masked, staticCovered };
+  if (group.length > 0) groups.push(group);
+  return { files: groups.flat(), groups, skipped, masked, staticCovered, overLimit };
 }
 
 // src/send.ts
@@ -39907,7 +40024,8 @@ async function sendInference(options) {
       body: JSON.stringify({
         files: options.files,
         ...options.snapshotId === null && options.committedAt ? { committedAt: options.committedAt } : {},
-        ...options.comment ? { comment: options.comment } : {}
+        ...options.comment ? { comment: options.comment } : {},
+        ...options.chain ? { chain: options.chain } : {}
       }),
       redirect: "error",
       signal: AbortSignal.timeout(TIMEOUT_MS)
@@ -39932,22 +40050,37 @@ async function sendInference(options) {
     error: typeof code2 === "string" && KNOWN_ERRORS2.has(code2) ? code2 : "unexpected_response"
   };
 }
-function summaryOf(r) {
-  const read = r.files.inferred + r.files.cached;
+var STOP_TEXT = {
+  rateLimited: "the request before read nothing because the repository's daily limit was reached",
+  noCredits: "the request before read nothing because there were not enough credits",
+  failed: "a request failed",
+  oldArch: "this Sketio Arch takes one request per run"
+};
+function summaryOf(t) {
+  const read = t.inferred + t.cached;
   const lines = [
     "",
     "### AI completion",
     "",
-    `Read ${read} file${read === 1 ? "" : "s"} the static parsers could not (${r.files.cached} answered from the cache). Added ${r.added.nodes} elements and ${r.added.edges} relations, all marked inferred; ${r.dropped.ungrounded + r.dropped.invalid} claims the files did not support were dropped.`
+    `Read ${read} file${read === 1 ? "" : "s"} the static parsers could not (${t.cached} answered from the cache), in ${t.requests} request${t.requests === 1 ? "" : "s"}. Added ${t.addedNodes} elements and ${t.addedEdges} relations, all marked inferred; ${t.dropped} claims the files did not support were dropped.`
   ];
-  if (r.files.rateLimited > 0)
-    lines.push("", `${r.files.rateLimited} file(s) were not read: the repository's daily limit was reached.`);
-  if ((r.files.noCredits ?? 0) > 0)
+  if (t.rateLimited > 0)
+    lines.push("", `${t.rateLimited} file(s) were not read: the repository's daily limit was reached.`);
+  if (t.noCredits > 0)
+    lines.push("", `${t.noCredits} file(s) were not read: not enough credits (or they could not be checked).`);
+  if (t.failed > 0) lines.push("", `${t.failed} file(s) could not be read by the model.`);
+  if (t.deferred > 0)
     lines.push(
       "",
-      `${r.files.noCredits} file(s) were not read: not enough credits (or they could not be checked).`
+      `${t.deferred} file(s) were left for the next run: past the per-request limit of Sketio Arch.`
     );
-  if (r.files.failed > 0) lines.push("", `${r.files.failed} file(s) could not be read by the model.`);
+  if (t.notSent > 0 && t.stopped)
+    lines.push("", `${t.notSent} file(s) were not sent: ${STOP_TEXT[t.stopped]}.`);
+  if (t.overLimit > 0)
+    lines.push(
+      "",
+      `${t.overLimit} file(s) were left out: one run sends at most ${MAX_CHAIN_REQUESTS} requests (${MAX_CHAIN_REQUESTS * MAX_FILES} files).`
+    );
   return `${lines.join("\n")}
 `;
 }
@@ -39971,43 +40104,108 @@ async function runInference(io, step) {
       step.read,
       step.artifact.graph ?? void 0
     );
-    if (selection.files.length === 0) return;
+    const groups = selection.groups;
+    if (groups.length === 0) return;
     io.log(
-      `AI completion: sending ${selection.files.length} file(s) the static parsers could not read (${selection.masked} secret-looking value(s) masked, ${selection.skipped} left out, ${selection.staticCovered} already read by the static parsers)`
+      `AI completion: sending ${selection.files.length} file(s) the static parsers could not read, in ${groups.length} request(s) (${selection.masked} secret-looking value(s) masked, ${selection.skipped} left out, ${selection.staticCovered} already read by the static parsers${selection.overLimit > 0 ? `, ${selection.overLimit} past the limit of ${MAX_CHAIN_REQUESTS} requests` : ""})`
     );
-    const result = await sendInference({
-      apiUrl: step.apiUrl,
-      token: step.token,
-      snapshotId: step.snapshotId,
-      ...step.committedAt ? { committedAt: step.committedAt } : {},
-      files: selection.files,
-      ...step.comment ? { comment: step.comment } : {},
-      ...io.fetchFn ? { fetchFn: io.fetchFn } : {}
-    });
-    if (!result.ok) {
-      const why = result.status === 0 ? "could not reach Sketio Arch" : `Sketio Arch answered ${result.status}`;
-      warn(`AI completion was skipped: ${why} (${result.error}). The static analysis was saved.`);
-      return;
+    const t = {
+      requests: 0,
+      inferred: 0,
+      cached: 0,
+      failed: 0,
+      rateLimited: 0,
+      noCredits: 0,
+      deferred: 0,
+      addedNodes: 0,
+      addedEdges: 0,
+      dropped: 0,
+      notSent: 0,
+      stopped: null,
+      overLimit: selection.overLimit
+    };
+    let base = step.snapshotId;
+    let created = null;
+    let charged = false;
+    for (const [i, files] of groups.entries()) {
+      const pending = groups.slice(i + 1).reduce((n, g) => n + g.length, 0);
+      const result = await sendInference({
+        apiUrl: step.apiUrl,
+        token: step.token,
+        snapshotId: base,
+        ...base === null && step.committedAt ? { committedAt: step.committedAt } : {},
+        files,
+        ...step.comment ? { comment: step.comment } : {},
+        chain: {
+          unread: {
+            rateLimited: t.rateLimited,
+            ...charged ? { noCredits: t.noCredits } : {},
+            deferred: t.deferred
+          },
+          pending
+        },
+        ...io.fetchFn ? { fetchFn: io.fetchFn } : {}
+      });
+      if (!result.ok) {
+        const oldArch = i > 0 && result.status === 400;
+        t.notSent = files.length + pending;
+        t.stopped = oldArch ? "oldArch" : "failed";
+        const why = result.status === 0 ? "could not reach Sketio Arch" : `Sketio Arch answered ${result.status}`;
+        if (oldArch)
+          io.log(
+            issue(
+              "notice",
+              `AI completion: this Sketio Arch takes one request per run, so ${t.notSent} file(s) were not sent. What the first request read was saved.`
+            )
+          );
+        else if (i === 0)
+          warn(`AI completion was skipped: ${why} (${result.error}). The static analysis was saved.`);
+        else
+          warn(
+            `AI completion stopped after ${i} request(s): ${why} (${result.error}). ${t.notSent} file(s) were not sent; what was read before was saved.`
+          );
+        break;
+      }
+      const r = result.response;
+      t.requests++;
+      t.inferred += r.files.inferred;
+      t.cached += r.files.cached;
+      t.failed += r.files.failed;
+      t.rateLimited += r.files.rateLimited;
+      if (r.files.noCredits !== void 0) charged = true;
+      t.noCredits += r.files.noCredits ?? 0;
+      t.deferred += r.files.deferred ?? 0;
+      t.addedNodes += r.added.nodes;
+      t.addedEdges += r.added.edges;
+      t.dropped += r.dropped.ungrounded + r.dropped.invalid;
+      io.log(
+        plainLine(
+          `AI completion (request ${i + 1} of ${groups.length}): ${r.added.nodes} elements and ${r.added.edges} relations inferred from ${r.files.inferred + r.files.cached} file(s) (${r.files.cached} from cache), ${r.dropped.ungrounded + r.dropped.invalid} unsupported claim(s) dropped`
+        )
+      );
+      if (r.outcome !== "unchanged" && r.snapshotId) created = r.snapshotId;
+      if (r.snapshotId) base = r.snapshotId;
+      const stop = chainStop(r.files);
+      if (stop) {
+        t.notSent = pending;
+        t.stopped = pending > 0 ? stop : null;
+        break;
+      }
     }
-    const r = result.response;
-    io.log(
-      plainLine(
-        `AI completion: ${r.added.nodes} elements and ${r.added.edges} relations inferred from ${r.files.inferred + r.files.cached} file(s) (${r.files.cached} from cache), ${r.dropped.ungrounded + r.dropped.invalid} unsupported claim(s) dropped`
-      )
-    );
-    if (r.files.rateLimited > 0)
+    if (t.rateLimited > 0)
+      warn(`${t.rateLimited} file(s) were not read: the repository's daily limit of AI reads was reached.`);
+    if (t.noCredits > 0)
       warn(
-        `${r.files.rateLimited} file(s) were not read: the repository's daily limit of AI reads was reached.`
+        `${t.noCredits} file(s) were not read: not enough credits for AI completion (or they could not be checked).`
       );
-    if ((r.files.noCredits ?? 0) > 0)
-      warn(
-        `${r.files.noCredits} file(s) were not read: not enough credits for AI completion (or they could not be checked).`
-      );
-    if (r.files.failed > 0) warn(`${r.files.failed} file(s) could not be read by the model.`);
-    if (io.env.GITHUB_OUTPUT && r.outcome !== "unchanged" && r.snapshotId)
-      appendFileSync(io.env.GITHUB_OUTPUT, `inference-snapshot-id=${oneLine(r.snapshotId)}
+    if (t.failed > 0) warn(`${t.failed} file(s) could not be read by the model.`);
+    if (t.notSent > 0 && (t.stopped === "rateLimited" || t.stopped === "noCredits"))
+      warn(`${t.notSent} file(s) were not sent: ${STOP_TEXT[t.stopped]}.`);
+    if (t.requests === 0) return;
+    if (io.env.GITHUB_OUTPUT && created)
+      appendFileSync(io.env.GITHUB_OUTPUT, `inference-snapshot-id=${oneLine(created)}
 `);
-    if (io.env.GITHUB_STEP_SUMMARY) appendFileSync(io.env.GITHUB_STEP_SUMMARY, summaryOf(r));
+    if (io.env.GITHUB_STEP_SUMMARY) appendFileSync(io.env.GITHUB_STEP_SUMMARY, summaryOf(t));
   } catch {
     warn("AI completion was skipped because of an unexpected error. The static analysis was saved.");
   }
@@ -40315,19 +40513,19 @@ var readOptional = (path) => {
   }
 };
 async function loadConfig(fs, path) {
-  let text4;
+  let text5;
   try {
-    text4 = await fs.readText(path);
+    text5 = await fs.readText(path);
   } catch (e) {
     if (e.code === "ENOENT" && path === DEFAULT_CONFIG)
       return { ok: true, config: {} };
     return { ok: false, errors: [`${path}: cannot be read: ${e instanceof Error ? e.message : String(e)}`] };
   }
-  const parsed = parseSketioYaml(text4);
+  const parsed = parseSketioYaml(text5);
   return parsed.ok ? parsed : { ok: false, errors: parsed.errors.map((m) => m.includes(path) ? m : `${path}: ${m}`) };
 }
 async function runAction(io) {
-  const log = (line2) => io.stdout(`${line2}
+  const log = (line3) => io.stdout(`${line3}
 `);
   const fail = (...messages) => {
     for (const m of messages) log(issue("error", m));
@@ -40408,7 +40606,7 @@ status=${artifact.status}
 
 // src/index.ts
 try {
-  process.exitCode = await runAction({ env: process.env, stdout: (text4) => process.stdout.write(text4) });
+  process.exitCode = await runAction({ env: process.env, stdout: (text5) => process.stdout.write(text5) });
 } catch (e) {
   process.stdout.write(`${issue("error", e instanceof Error ? e.message : String(e))}
 `);
