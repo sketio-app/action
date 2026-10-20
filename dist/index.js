@@ -27469,20 +27469,20 @@ var TYPE_NAMES_EN = {
   ai: "Workers AI",
   "analytics-engine": "Analytics Engine dataset",
   assets: "Static assets",
-  stream: "Stream",
-  images: "Images",
+  stream: "Cloudflare Stream",
+  images: "Cloudflare Images",
   media: "Media Transformations",
   browser: "Browser Run",
   "version-metadata": "Version metadata",
   workflow: "Workflow",
-  "email-sending": "Email Sending",
-  "dispatch-namespace": "Dispatch namespace",
-  "pipelines-stream": "Basin Pipelines stream",
+  "email-sending": "Email Service",
+  "dispatch-namespace": "Workers for Platforms",
+  "pipelines-stream": "Basin Pipelines",
   "mtls-certificate": "mTLS certificate",
-  "secrets-store-secret": "Secrets Store secret",
-  "rate-limiting": "Rate Limiting configuration",
-  "ai-search-namespace": "AI Search namespace",
-  "ai-search": "AI Search instance",
+  "secrets-store-secret": "Secrets Store",
+  "rate-limiting": "Rate Limiting",
+  "ai-search-namespace": "AI Search",
+  "ai-search": "AI Search",
   "analytics-sql": "Analytics SQL",
   route: "Route",
   "hono-app": "Hono app",
@@ -27496,10 +27496,10 @@ var TYPE_NAMES_EN = {
   "worker-route": "Workers route",
   "custom-domain": "Custom Domain",
   zone: "Zone",
-  "pages-project": "Pages project",
-  tunnel: "Tunnel",
-  hyperdrive: "Hyperdrive configuration",
-  vectorize: "Vectorize index",
+  "pages-project": "Cloudflare Pages",
+  tunnel: "Cloudflare Tunnel",
+  hyperdrive: "Hyperdrive",
+  vectorize: "Vectorize",
   module: "Terraform module",
   "bicep-module": "Bicep module",
   lambda: "AWS Lambda",
@@ -27581,20 +27581,20 @@ var TYPE_NAMES_JA = {
   ai: "Workers AI",
   "analytics-engine": "Analytics Engine \u30C7\u30FC\u30BF\u30BB\u30C3\u30C8",
   assets: "\u9759\u7684\u30A2\u30BB\u30C3\u30C8",
-  stream: "Stream",
-  images: "Images",
+  stream: "Cloudflare Stream",
+  images: "Cloudflare Images",
   media: "Media Transformations",
   browser: "Browser Run",
-  "version-metadata": "\u30D0\u30FC\u30B8\u30E7\u30F3\u30E1\u30BF\u30C7\u30FC\u30BF",
+  "version-metadata": "Version metadata",
   workflow: "Workflow",
-  "email-sending": "Email Sending",
-  "dispatch-namespace": "Dispatch \u30CD\u30FC\u30E0\u30B9\u30DA\u30FC\u30B9",
-  "pipelines-stream": "Basin Pipelines \u30B9\u30C8\u30EA\u30FC\u30E0",
+  "email-sending": "Email Service",
+  "dispatch-namespace": "Workers for Platforms",
+  "pipelines-stream": "Basin Pipelines",
   "mtls-certificate": "mTLS \u8A3C\u660E\u66F8",
-  "secrets-store-secret": "Secrets Store \u30B7\u30FC\u30AF\u30EC\u30C3\u30C8",
-  "rate-limiting": "Rate Limiting \u8A2D\u5B9A",
-  "ai-search-namespace": "AI Search \u30CD\u30FC\u30E0\u30B9\u30DA\u30FC\u30B9",
-  "ai-search": "AI Search \u30A4\u30F3\u30B9\u30BF\u30F3\u30B9",
+  "secrets-store-secret": "Secrets Store",
+  "rate-limiting": "Rate Limiting",
+  "ai-search-namespace": "AI Search",
+  "ai-search": "AI Search",
   "analytics-sql": "Analytics SQL",
   route: "\u30EB\u30FC\u30C8",
   "hono-app": "Hono \u30A2\u30D7\u30EA",
@@ -27608,10 +27608,10 @@ var TYPE_NAMES_JA = {
   "worker-route": "Workers \u30EB\u30FC\u30C8",
   "custom-domain": "\u30AB\u30B9\u30BF\u30E0\u30C9\u30E1\u30A4\u30F3",
   zone: "\u30BE\u30FC\u30F3",
-  "pages-project": "Pages \u30D7\u30ED\u30B8\u30A7\u30AF\u30C8",
-  tunnel: "\u30C8\u30F3\u30CD\u30EB",
-  hyperdrive: "Hyperdrive \u8A2D\u5B9A",
-  vectorize: "Vectorize \u30A4\u30F3\u30C7\u30C3\u30AF\u30B9",
+  "pages-project": "Cloudflare Pages",
+  tunnel: "Cloudflare Tunnel",
+  hyperdrive: "Hyperdrive",
+  vectorize: "Vectorize",
   module: "Terraform \u30E2\u30B8\u30E5\u30FC\u30EB",
   "bicep-module": "Bicep \u30E2\u30B8\u30E5\u30FC\u30EB",
   lambda: "AWS Lambda",
@@ -28057,6 +28057,43 @@ function cloudIconOfNode(node2) {
   return cloudIconOf(node2.id.split(":")[0], node2.type);
 }
 
+// ../../packages/architecture-layout/src/attachedRoles.ts
+var COMPUTE = /* @__PURE__ */ new Set([
+  "lambda",
+  "ecs",
+  "eks",
+  "ec2",
+  "app-runner",
+  "batch",
+  "elastic-beanstalk"
+]);
+var isAwsRole = (n) => n.type === "iam" && n.id.startsWith("aws:");
+function attachedRoles(view) {
+  const byId = new Map(view.nodes.map((n) => [n.id, n]));
+  const out = /* @__PURE__ */ new Set();
+  for (const role of [...view.nodes].filter(isAwsRole).sort((a, b) => a.id < b.id ? -1 : 1)) {
+    const users = /* @__PURE__ */ new Set();
+    let alone = true;
+    for (const e of view.edges) {
+      if (e.source === e.target) continue;
+      if (e.source === role.id && byId.has(e.target)) alone = false;
+      if (e.target === role.id && byId.has(e.source)) users.add(e.source);
+    }
+    const [user] = users;
+    if (alone && users.size === 1 && COMPUTE.has(byId.get(user)?.type ?? "")) out.add(role.id);
+  }
+  return out;
+}
+function withoutAttachedRoles(view) {
+  const hidden = attachedRoles(view);
+  if (hidden.size === 0) return view;
+  return {
+    ...view,
+    nodes: view.nodes.filter((n) => !hidden.has(n.id)),
+    edges: view.edges.filter((e) => !hidden.has(e.source) && !hidden.has(e.target))
+  };
+}
+
 // ../../packages/architecture-layout/src/edgeGrade.ts
 var MINOR = /* @__PURE__ */ new Set(["DEPENDS_ON", "DEPLOYED_ON", "EXPOSES"]);
 function edgeGrade(e) {
@@ -28401,7 +28438,8 @@ function frameTitle(f) {
       return text(f.name);
   }
 }
-function renderViewMermaid(view, settings = {}, opts = {}) {
+function renderViewMermaid(sent, settings = {}, opts = {}) {
+  const view = withoutAttachedRoles(sent);
   const nodes = view.nodes;
   const index = /* @__PURE__ */ new Map();
   nodes.forEach((n, i) => {
@@ -32791,6 +32829,21 @@ async function analyzeCdkSource(ctx, options) {
       }
       return out;
     };
+    const bindVariables2 = (owner, vars) => {
+      const refs = [];
+      for (const v of vars) {
+        addEdge(owner, "BINDS_TO", v.target, m, v.node);
+        if (v.name !== "" && !refs.some((r) => r.name === v.name && r.resource === v.target.id)) {
+          refs.push({ name: v.name, resource: v.target.id });
+        }
+      }
+      const n = nodes.get(owner.id);
+      if (n && refs.length > 0) {
+        n.properties.environmentReferences = refs.sort(
+          (x, y) => x.name < y.name ? -1 : x.name > y.name ? 1 : x.resource < y.resource ? -1 : 1
+        );
+      }
+    };
     const addContainer = (expr) => {
       const callee = unwrapExpression(expr.callee);
       if (callee.type !== "MemberExpression" || callee.computed) return false;
@@ -33131,9 +33184,7 @@ async function analyzeCdkSource(ctx, options) {
       const made = { id, kind: def.kindName, ref };
       if (["lambda", "ecs", "elb", "rds", "aurora"].includes(def.kindName)) placeInVpc2(made, props, stmt);
       if (def.kindName === "lambda") {
-        for (const v of readEnv(constructId, "environment", prop(props, "environment"))) {
-          addEdge(made, "BINDS_TO", v.target, m, v.node);
-        }
+        bindVariables2(made, readEnv(constructId, "environment", prop(props, "environment")));
       }
       if (def.kindName === "ecs" && made.ref.name !== "Cluster") {
         const task = prop(props, "taskDefinition");
@@ -33267,21 +33318,7 @@ async function analyzeCdkSource(ctx, options) {
         } else untracked(stmt);
       }
     }
-    for (const { service, task } of serviceTasks) {
-      const refs = [];
-      for (const v of taskDefs.get(task) ?? []) {
-        addEdge(service, "BINDS_TO", v.target, m, v.node);
-        if (v.name !== "" && !refs.some((r) => r.name === v.name && r.resource === v.target.id)) {
-          refs.push({ name: v.name, resource: v.target.id });
-        }
-      }
-      const n = nodes.get(service.id);
-      if (n && refs.length > 0) {
-        n.properties.environmentReferences = refs.sort(
-          (x, y) => x.name < y.name ? -1 : x.name > y.name ? 1 : x.resource < y.resource ? -1 : 1
-        );
-      }
-    }
+    for (const { service, task } of serviceTasks) bindVariables2(service, taskDefs.get(task) ?? []);
   }
   return {
     nodes: [...nodes.values()],
@@ -33335,7 +33372,7 @@ function isCdkEntry(file2, text6) {
 
 // ../../packages/parsers/aws-cdk/src/awsCdkParser.ts
 var PARSER_ID2 = "aws-cdk";
-var AWS_CDK_PARSER_VERSION = "0.4.0";
+var AWS_CDK_PARSER_VERSION = "0.5.0";
 function rootOf(assembly, all) {
   let current = assembly;
   for (let guard = 0; guard < all.length; guard++) {
@@ -35278,6 +35315,18 @@ var SIMPLE_BINDINGS = [
   { key: "ratelimits", kind: "rate-limiting", bindingKey: "name" },
   { key: "ai_search_namespaces", kind: "ai-search-namespace", nameKey: "namespace" },
   { key: "ai_search", kind: "ai-search", nameKey: "instance_name" }
+];
+var CLOUDFLARE_NODE_TYPES = [
+  "worker",
+  "assets",
+  "d1",
+  "r2",
+  "kv",
+  "durable-object",
+  "queue",
+  "ai",
+  "analytics-engine",
+  ...SIMPLE_BINDINGS.map((b) => b.kind)
 ];
 var NOT_BINDING_KEYS = /* @__PURE__ */ new Set([
   "d1_databases",
@@ -37890,6 +37939,455 @@ var mcpParser = {
   parse: analyzeMcp
 };
 
+// ../../packages/parsers/terraform/src/resourceTypes.ts
+function literalOf(block, name2) {
+  const e = block.attributes.find((a) => a.name === name2)?.value;
+  return e ? literalValue(e) : void 0;
+}
+function literalValue(e) {
+  if (e.kind === "string") return e.value;
+  if (e.kind === "number" || e.kind === "bool") return e.value;
+  return void 0;
+}
+var text4 = (b, name2) => {
+  const v = literalOf(b, name2);
+  return typeof v === "string" && v !== "" ? v : void 0;
+};
+var num2 = (b, name2) => {
+  const v = literalOf(b, name2);
+  return typeof v === "number" ? v : void 0;
+};
+var flag2 = (b, name2) => {
+  const v = literalOf(b, name2);
+  return typeof v === "boolean" ? v : void 0;
+};
+function pick2(entries) {
+  const out = {};
+  for (const [k, v] of Object.entries(entries)) if (v !== void 0) out[k] = v;
+  return out;
+}
+var cf = (kind2, nameKeys, identity, extra = {}) => ({ namespace: "cloudflare", kind: kind2, nameKeys, identity, ...extra });
+var aws = (kind2, nameKeys, describe3, role) => ({
+  namespace: "aws",
+  kind: kind2,
+  nameKeys,
+  identity: "label",
+  ...describe3 ? { describe: describe3 } : {},
+  ...role ? { role } : {}
+});
+var azure = (kind2, nameKeys = ["name"], describe3, role) => ({
+  namespace: "azure",
+  kind: kind2,
+  nameKeys,
+  identity: "label",
+  ...describe3 ? { describe: describe3 } : {},
+  ...role ? { role } : {}
+});
+var describeWorker = (b) => pick2({ compatibilityDate: text4(b, "compatibility_date"), mainModule: text4(b, "main_module") });
+var describeTable2 = (b) => pick2({ billingMode: text4(b, "billing_mode"), hashKey: text4(b, "hash_key"), rangeKey: text4(b, "range_key") });
+var TYPES3 = {
+  // --- Cloudflare provider（v4 と v5 の両方の名前） ---
+  cloudflare_workers_script: cf("worker", ["script_name", "name"], "name", {
+    role: "worker",
+    describe: describeWorker
+  }),
+  cloudflare_worker_script: cf("worker", ["name", "script_name"], "name", {
+    role: "worker",
+    describe: describeWorker
+  }),
+  cloudflare_worker: cf("worker", ["name", "script_name"], "name", {
+    role: "worker",
+    describe: describeWorker
+  }),
+  cloudflare_worker_version: cf("worker", [], "name", { role: "worker-version" }),
+  cloudflare_workers_route: cf("worker-route", ["pattern"], "label", {
+    role: "exposes-worker",
+    describe: (b) => pick2({ pattern: text4(b, "pattern") })
+  }),
+  cloudflare_worker_route: cf("worker-route", ["pattern"], "label", {
+    role: "exposes-worker",
+    describe: (b) => pick2({ pattern: text4(b, "pattern") })
+  }),
+  cloudflare_workers_custom_domain: cf("custom-domain", ["hostname"], "label", {
+    role: "exposes-worker",
+    describe: (b) => pick2({ hostname: text4(b, "hostname") })
+  }),
+  cloudflare_worker_domain: cf("custom-domain", ["hostname"], "label", {
+    role: "exposes-worker",
+    describe: (b) => pick2({ hostname: text4(b, "hostname") })
+  }),
+  cloudflare_d1_database: cf("d1", ["name"], "name"),
+  cloudflare_r2_bucket: cf("r2", ["name"], "name"),
+  cloudflare_workers_kv_namespace: cf("kv", ["title"], "name"),
+  cloudflare_queue: cf("queue", ["queue_name", "name"], "name"),
+  cloudflare_zone: cf("zone", ["name", "zone"], "name"),
+  cloudflare_dns_record: cf("dns-record", ["name"], "label", {
+    describe: (b) => pick2({ recordType: text4(b, "type"), recordName: text4(b, "name") })
+  }),
+  cloudflare_record: cf("dns-record", ["name"], "label", {
+    describe: (b) => pick2({ recordType: text4(b, "type"), recordName: text4(b, "name") })
+  }),
+  cloudflare_zero_trust_access_application: cf("access-application", ["name"], "label", {
+    describe: (b) => pick2({ domain: text4(b, "domain"), applicationType: text4(b, "type") })
+  }),
+  cloudflare_access_application: cf("access-application", ["name"], "label", {
+    describe: (b) => pick2({ domain: text4(b, "domain"), applicationType: text4(b, "type") })
+  }),
+  cloudflare_zero_trust_access_policy: cf("access-policy", ["name"], "label"),
+  cloudflare_access_policy: cf("access-policy", ["name"], "label"),
+  cloudflare_zero_trust_access_ai_controls_mcp_server: cf("mcp-server", ["name"], "label", {
+    describe: (b) => pick2({ hostname: text4(b, "hostname") })
+  }),
+  cloudflare_zero_trust_access_ai_controls_mcp_portal: cf("mcp-portal", ["name"], "label", {
+    describe: (b) => pick2({ hostname: text4(b, "hostname") })
+  }),
+  cloudflare_pages_project: cf("pages-project", ["name"], "name"),
+  cloudflare_zero_trust_tunnel_cloudflared: cf("tunnel", ["name"], "label"),
+  cloudflare_tunnel: cf("tunnel", ["name"], "label"),
+  cloudflare_hyperdrive_config: cf("hyperdrive", ["name"], "label"),
+  cloudflare_vectorize_index: cf("vectorize", ["name"], "name"),
+  // --- AWS provider ---
+  aws_lambda_function: aws(
+    "lambda",
+    ["function_name"],
+    (b) => pick2({
+      runtime: text4(b, "runtime"),
+      handler: text4(b, "handler"),
+      memorySize: num2(b, "memory_size"),
+      timeout: num2(b, "timeout"),
+      packageType: text4(b, "package_type")
+    }),
+    "lambda"
+  ),
+  aws_s3_bucket: aws("s3", ["bucket"]),
+  aws_dynamodb_table: aws("dynamodb", ["name"], describeTable2),
+  aws_sqs_queue: aws("sqs", ["name"], (b) => pick2({ fifo: flag2(b, "fifo_queue") })),
+  aws_sns_topic: aws("sns", ["name"], (b) => pick2({ fifo: flag2(b, "fifo_topic") })),
+  aws_cloudwatch_event_rule: aws(
+    "eventbridge",
+    ["name"],
+    (b) => pick2({ scheduleExpression: text4(b, "schedule_expression") })
+  ),
+  aws_apigatewayv2_api: aws(
+    "api-gateway",
+    ["name"],
+    (b) => pick2({ apiVersion: "v2", protocolType: text4(b, "protocol_type") })
+  ),
+  aws_api_gateway_rest_api: aws("api-gateway", ["name"], () => ({ apiVersion: "v1" })),
+  aws_db_instance: aws(
+    "rds",
+    ["identifier"],
+    (b) => pick2({ engine: text4(b, "engine"), instanceClass: text4(b, "instance_class") })
+  ),
+  aws_rds_cluster: aws("aurora", ["cluster_identifier"], (b) => pick2({ engine: text4(b, "engine") })),
+  aws_ecs_cluster: aws("ecs", ["name"]),
+  aws_ecs_service: aws("ecs", ["name"], (b) => pick2({ launchType: text4(b, "launch_type") })),
+  aws_eks_cluster: aws("eks", ["name"]),
+  aws_ecr_repository: aws("ecr", ["name"]),
+  aws_instance: aws("ec2", [], (b) => pick2({ instanceType: text4(b, "instance_type") })),
+  aws_cloudfront_distribution: aws("cloudfront", ["comment"]),
+  aws_route53_zone: aws("route53", ["name"]),
+  aws_lb: aws("elb", ["name"], (b) => pick2({ loadBalancerType: text4(b, "load_balancer_type") })),
+  aws_alb: aws("elb", ["name"], (b) => pick2({ loadBalancerType: text4(b, "load_balancer_type") })),
+  aws_sfn_state_machine: aws("step-functions", ["name"]),
+  aws_kinesis_stream: aws("kinesis", ["name"]),
+  aws_appsync_graphql_api: aws("appsync", ["name"]),
+  aws_cognito_user_pool: aws("cognito", ["name"]),
+  aws_elasticache_cluster: aws("elasticache", ["cluster_id"]),
+  aws_elasticache_replication_group: aws("elasticache", ["replication_group_id"]),
+  aws_opensearch_domain: aws("opensearch", ["domain_name"]),
+  aws_secretsmanager_secret: aws("secrets-manager", ["name"]),
+  aws_kms_key: aws("kms", []),
+  aws_efs_file_system: aws("efs", []),
+  aws_apprunner_service: aws("app-runner", ["service_name"]),
+  aws_amplify_app: aws("amplify", ["name"]),
+  aws_iam_role: aws("iam", ["name"]),
+  aws_vpc: aws("vpc", []),
+  aws_redshift_cluster: aws("redshift", ["cluster_identifier"]),
+  aws_docdb_cluster: aws("documentdb", ["cluster_identifier"]),
+  aws_neptune_cluster: aws("neptune", ["cluster_identifier"]),
+  aws_msk_cluster: aws("msk", ["cluster_name"]),
+  aws_mq_broker: aws("mq", ["broker_name"]),
+  aws_athena_workgroup: aws("athena", ["name"]),
+  aws_glue_job: aws("glue", ["name"]),
+  aws_wafv2_web_acl: aws("waf", ["name"]),
+  aws_codepipeline: aws("codepipeline", ["name"]),
+  aws_codebuild_project: aws("codebuild", ["name"]),
+  aws_batch_job_queue: aws("batch", ["name"]),
+  aws_sagemaker_endpoint: aws("sagemaker", ["name"]),
+  aws_ebs_volume: aws("ebs", []),
+  aws_cloudformation_stack: aws("cloudformation", ["name"]),
+  aws_elastic_beanstalk_application: aws("elastic-beanstalk", ["name"]),
+  aws_cloudwatch_metric_alarm: aws("cloudwatch", ["alarm_name"]),
+  // --- Azure（azurerm）provider。id は AWS と同じくディレクトリとラベルで決める（`name` は表示名） ---
+  azurerm_resource_group: azure("resource-group", ["name"], (b) => pick2({ location: text4(b, "location") })),
+  azurerm_linux_function_app: azure("azure-functions", ["name"], void 0, "azure-app"),
+  azurerm_windows_function_app: azure("azure-functions", ["name"], void 0, "azure-app"),
+  azurerm_function_app_flex_consumption: azure("azure-functions", ["name"], void 0, "azure-app"),
+  azurerm_function_app: azure("azure-functions", ["name"], void 0, "azure-app"),
+  azurerm_linux_web_app: azure("app-service", ["name"], void 0, "azure-app"),
+  azurerm_windows_web_app: azure("app-service", ["name"], void 0, "azure-app"),
+  azurerm_app_service: azure("app-service", ["name"], void 0, "azure-app"),
+  azurerm_service_plan: azure(
+    "app-service-plan",
+    ["name"],
+    (b) => pick2({ osType: text4(b, "os_type"), skuName: text4(b, "sku_name") })
+  ),
+  azurerm_app_service_plan: azure("app-service-plan", ["name"]),
+  azurerm_static_web_app: azure("static-web-apps", ["name"], void 0, "azure-app"),
+  azurerm_container_app: azure("container-apps", ["name"], void 0, "azure-app"),
+  azurerm_kubernetes_cluster: azure("aks"),
+  azurerm_storage_account: azure(
+    "storage-account",
+    ["name"],
+    (b) => pick2({
+      accountTier: text4(b, "account_tier"),
+      replicationType: text4(b, "account_replication_type"),
+      accountKind: text4(b, "account_kind")
+    })
+  ),
+  azurerm_cosmosdb_account: azure("cosmos-db", ["name"], (b) => pick2({ kind: text4(b, "kind") })),
+  azurerm_mssql_server: azure("sql-server"),
+  azurerm_mssql_database: azure("sql-database", ["name"], (b) => pick2({ skuName: text4(b, "sku_name") })),
+  azurerm_redis_cache: azure("cache-for-redis", ["name"], (b) => pick2({ skuName: text4(b, "sku_name") })),
+  azurerm_managed_redis: azure("managed-redis", ["name"], (b) => pick2({ skuName: text4(b, "sku_name") })),
+  azurerm_key_vault: azure("key-vault", ["name"], (b) => pick2({ skuName: text4(b, "sku_name") })),
+  azurerm_servicebus_namespace: azure("service-bus", ["name"], (b) => pick2({ sku: text4(b, "sku") })),
+  azurerm_eventhub_namespace: azure("event-hubs", ["name"], (b) => pick2({ sku: text4(b, "sku") })),
+  azurerm_api_management: azure("api-management", ["name"], (b) => pick2({ skuName: text4(b, "sku_name") })),
+  // VNet は VPC と同じく枠になる（properties.vpc から指される）。サブネットは AWS と同じく付属物（VIA でたどるだけ）
+  azurerm_virtual_network: azure("virtual-network"),
+  azurerm_cdn_frontdoor_profile: azure("front-door", ["name"], (b) => pick2({ skuName: text4(b, "sku_name") })),
+  azurerm_frontdoor: azure("front-door"),
+  azurerm_application_insights: azure(
+    "application-insights",
+    ["name"],
+    (b) => pick2({ applicationType: text4(b, "application_type") })
+  ),
+  azurerm_log_analytics_workspace: azure("log-analytics", ["name"], (b) => pick2({ sku: text4(b, "sku") }))
+};
+var SUPPORTING_PREFIXES2 = [
+  "aws_iam_",
+  "aws_lambda_",
+  "aws_api_gateway_",
+  "aws_apigatewayv2_",
+  "aws_cloudwatch_log_",
+  "aws_sqs_queue_",
+  "aws_sns_topic_",
+  "aws_s3_bucket_",
+  "aws_s3_object",
+  "aws_security_group",
+  "aws_vpc_",
+  "aws_subnet",
+  "aws_db_subnet_group",
+  "aws_route_table",
+  "aws_route53_record",
+  "aws_internet_gateway",
+  "aws_nat_gateway",
+  "aws_eip",
+  "aws_ecs_task_definition",
+  "aws_lb_",
+  "aws_alb_",
+  "aws_cloudfront_",
+  "aws_dynamodb_",
+  "aws_ssm_",
+  "aws_kms_",
+  "aws_wafv2_",
+  // Azure: 子リソース・権限・ネットワークの部品・監視の設定など（要素の構成の一部）
+  "azurerm_storage_",
+  "azurerm_key_vault_",
+  "azurerm_cosmosdb_",
+  "azurerm_mssql_",
+  "azurerm_servicebus_",
+  "azurerm_eventhub",
+  "azurerm_role_",
+  "azurerm_user_assigned_identity",
+  "azurerm_monitor_",
+  "azurerm_network_",
+  "azurerm_private_",
+  "azurerm_subnet",
+  "azurerm_virtual_network_",
+  "azurerm_app_service_",
+  "azurerm_linux_web_app_",
+  "azurerm_windows_web_app_",
+  "azurerm_linux_function_app_",
+  "azurerm_windows_function_app_",
+  "azurerm_function_app_",
+  "azurerm_static_web_app_",
+  "azurerm_container_app_",
+  "azurerm_kubernetes_cluster_",
+  "azurerm_redis_",
+  "azurerm_api_management_",
+  "azurerm_cdn_frontdoor_",
+  "azurerm_application_insights_",
+  "azurerm_log_analytics_",
+  "azurerm_resource_group_",
+  "azurerm_dns_",
+  "azurerm_public_ip",
+  "azurerm_management_lock"
+];
+var NOT_SUPPORTING = /* @__PURE__ */ new Set([
+  "azurerm_mssql_managed_instance",
+  "azurerm_redis_enterprise_cluster"
+]);
+var isSupportingType = (type) => SUPPORTING_PREFIXES2.some((p) => type.startsWith(p)) && !Object.hasOwn(TYPES3, type) && !NOT_SUPPORTING.has(type);
+var GLUE = {
+  cloudflare_queue_consumer: {
+    source: { attrs: ["script_name", "script_id", "worker"] },
+    target: { attrs: ["queue_id", "queue_name", "queue"] },
+    relation: "CONSUMES_FROM",
+    literalSource: { namespace: "cloudflare", kind: "worker" }
+  },
+  aws_lambda_event_source_mapping: {
+    source: { attrs: ["function_name"] },
+    target: { attrs: ["event_source_arn"] },
+    relation: "CONSUMES_FROM"
+  },
+  aws_sns_topic_subscription: {
+    source: { attrs: ["endpoint"] },
+    target: { attrs: ["topic_arn"] },
+    relation: "CONSUMES_FROM"
+  },
+  aws_s3_bucket_notification: {
+    source: { except: ["bucket"] },
+    target: { attrs: ["bucket"] },
+    relation: "CONSUMES_FROM"
+  },
+  aws_api_gateway_integration: {
+    source: { attrs: ["rest_api_id"] },
+    target: { attrs: ["uri"] },
+    relation: "CALLS"
+  },
+  aws_apigatewayv2_integration: {
+    source: { attrs: ["api_id"] },
+    target: { attrs: ["integration_uri"] },
+    relation: "CALLS"
+  },
+  // 主体（マネージド ID を持つ実行環境）が、スコープのリソースを使えるようにする。リソース グループがスコープなら辺にしない。
+  azurerm_role_assignment: {
+    source: { attrs: ["principal_id"] },
+    target: { attrs: ["scope"] },
+    relation: "BINDS_TO"
+  },
+  aws_cloudwatch_event_target: {
+    source: { attrs: ["arn"] },
+    target: { attrs: ["rule"] },
+    relation: "CONSUMES_FROM"
+  }
+};
+var VIA = {
+  aws_subnet: ["vpc_id"],
+  aws_db_subnet_group: ["subnet_ids"],
+  aws_lb_listener: ["load_balancer_arn"],
+  aws_alb_listener: ["load_balancer_arn"],
+  aws_s3_bucket_website_configuration: ["bucket"],
+  azurerm_subnet: ["virtual_network_name"]
+};
+var VPC_ENTRIES2 = {
+  aws_lambda_function: ["vpc_config.subnet_ids"],
+  aws_ecs_service: ["network_configuration.subnets"],
+  aws_lb: ["subnets", "subnet_mapping.subnet_id"],
+  aws_alb: ["subnets", "subnet_mapping.subnet_id"],
+  aws_db_instance: ["db_subnet_group_name"],
+  aws_rds_cluster: ["db_subnet_group_name"],
+  // Azure: VNet 統合（リージョン VNet 統合）と、AKS のノード プール
+  azurerm_linux_function_app: ["virtual_network_subnet_id"],
+  azurerm_windows_function_app: ["virtual_network_subnet_id"],
+  azurerm_function_app_flex_consumption: ["virtual_network_subnet_id"],
+  azurerm_linux_web_app: ["virtual_network_subnet_id"],
+  azurerm_windows_web_app: ["virtual_network_subnet_id"],
+  azurerm_kubernetes_cluster: ["default_node_pool.vnet_subnet_id"]
+};
+var VPC_LINKS2 = {
+  azurerm_app_service_virtual_network_swift_connection: { owner: ["app_service_id"], subnets: ["subnet_id"] },
+  azurerm_private_endpoint: {
+    owner: ["private_service_connection.private_connection_resource_id"],
+    subnets: ["subnet_id"]
+  }
+};
+var listener = (type) => ({
+  type,
+  side: "source",
+  via: ["default_action.target_group_arn", "default_action.forward.target_group.arn"],
+  endpoint: ["load_balancer_arn"]
+});
+var listenerRule = (type) => ({
+  type,
+  side: "source",
+  via: ["action.target_group_arn", "action.forward.target_group.arn"],
+  endpoint: ["listener_arn"]
+});
+var attachment = (type) => ({
+  type,
+  side: "target",
+  via: ["target_group_arn"],
+  endpoint: ["target_id"]
+});
+var JUNCTIONS = [
+  // ALB / NLB → ECS service・Lambda・EC2（target group で結ぶ）
+  {
+    junction: ["aws_lb_target_group", "aws_alb_target_group"],
+    relation: "CALLS",
+    members: [
+      listener("aws_lb_listener"),
+      listener("aws_alb_listener"),
+      listenerRule("aws_lb_listener_rule"),
+      listenerRule("aws_alb_listener_rule"),
+      { type: "aws_ecs_service", side: "target", via: ["load_balancer.target_group_arn"] },
+      attachment("aws_lb_target_group_attachment"),
+      attachment("aws_alb_target_group_attachment")
+    ]
+  }
+];
+var CLOUDFRONT_ORIGIN_RELATIONS = {
+  s3: "READS_FROM",
+  elb: "CALLS",
+  "api-gateway": "CALLS"
+};
+var UTILITY_PROVIDERS = /* @__PURE__ */ new Set([
+  "random",
+  "null",
+  "local",
+  "tls",
+  "time",
+  "archive",
+  "external",
+  "http",
+  "template",
+  "terraform",
+  "cloudinit",
+  "dns"
+]);
+var KNOWN_PROVIDERS = /* @__PURE__ */ new Set(["aws", "azurerm", "cloudflare"]);
+var providerOf = (type) => type.split("_")[0];
+var BINDING_KINDS = {
+  d1: {},
+  kv: {},
+  r2: { literal: { attrs: ["bucket_name"], namespace: "cloudflare", kind: "r2" } },
+  service: { literal: { attrs: ["service"], namespace: "cloudflare", kind: "worker" } },
+  queue: { literal: { attrs: ["queue_name", "queue"], namespace: "cloudflare", kind: "queue" } }
+};
+var BINDING_ALIASES = {
+  d1: "d1",
+  d1_database: "d1",
+  kv_namespace: "kv",
+  r2_bucket: "r2",
+  service: "service",
+  queue: "queue"
+};
+function bindingKindOf(typeOrBlock) {
+  if (!typeOrBlock) return void 0;
+  return BINDING_ALIASES[typeOrBlock.replace(/_binding$/, "")];
+}
+var CLOUDFLARE_KINDS = [
+  .../* @__PURE__ */ new Set([
+    ...Object.values(TYPES3).filter((d) => d.namespace === "cloudflare" && d.role !== "worker-version").map((d) => d.kind),
+    ...Object.values(BINDING_KINDS).flatMap(
+      (b) => b.literal?.namespace === "cloudflare" ? [b.literal.kind] : []
+    )
+  ])
+].sort();
+
 // ../../packages/parsers/terraform/src/hcl.ts
 var PUNCT22 = /* @__PURE__ */ new Set(["==", "!=", "<=", ">=", "&&", "||", "=>"]);
 var PUNCT12 = new Set("{}[]().,:?=!<>+-*/%&|^~;".split(""));
@@ -38524,450 +39022,86 @@ function parseHcl(text6) {
   return { blocks, errors };
 }
 
-// ../../packages/parsers/terraform/src/resourceTypes.ts
-function literalOf(block, name2) {
-  const e = block.attributes.find((a) => a.name === name2)?.value;
-  return e ? literalValue(e) : void 0;
-}
-function literalValue(e) {
-  if (e.kind === "string") return e.value;
-  if (e.kind === "number" || e.kind === "bool") return e.value;
-  return void 0;
-}
-var text4 = (b, name2) => {
-  const v = literalOf(b, name2);
-  return typeof v === "string" && v !== "" ? v : void 0;
-};
-var num2 = (b, name2) => {
-  const v = literalOf(b, name2);
-  return typeof v === "number" ? v : void 0;
-};
-var flag2 = (b, name2) => {
-  const v = literalOf(b, name2);
-  return typeof v === "boolean" ? v : void 0;
-};
-function pick2(entries) {
-  const out = {};
-  for (const [k, v] of Object.entries(entries)) if (v !== void 0) out[k] = v;
-  return out;
-}
-var cf = (kind2, nameKeys, identity, extra = {}) => ({ namespace: "cloudflare", kind: kind2, nameKeys, identity, ...extra });
-var aws = (kind2, nameKeys, describe3, role) => ({
-  namespace: "aws",
-  kind: kind2,
-  nameKeys,
-  identity: "label",
-  ...describe3 ? { describe: describe3 } : {},
-  ...role ? { role } : {}
-});
-var azure = (kind2, nameKeys = ["name"], describe3, role) => ({
-  namespace: "azure",
-  kind: kind2,
-  nameKeys,
-  identity: "label",
-  ...describe3 ? { describe: describe3 } : {},
-  ...role ? { role } : {}
-});
-var describeWorker = (b) => pick2({ compatibilityDate: text4(b, "compatibility_date"), mainModule: text4(b, "main_module") });
-var describeTable2 = (b) => pick2({ billingMode: text4(b, "billing_mode"), hashKey: text4(b, "hash_key"), rangeKey: text4(b, "range_key") });
-var TYPES3 = {
-  // --- Cloudflare provider（v4 と v5 の両方の名前） ---
-  cloudflare_workers_script: cf("worker", ["script_name", "name"], "name", {
-    role: "worker",
-    describe: describeWorker
-  }),
-  cloudflare_worker_script: cf("worker", ["name", "script_name"], "name", {
-    role: "worker",
-    describe: describeWorker
-  }),
-  cloudflare_worker: cf("worker", ["name", "script_name"], "name", {
-    role: "worker",
-    describe: describeWorker
-  }),
-  cloudflare_worker_version: cf("worker", [], "name", { role: "worker-version" }),
-  cloudflare_workers_route: cf("worker-route", ["pattern"], "label", {
-    role: "exposes-worker",
-    describe: (b) => pick2({ pattern: text4(b, "pattern") })
-  }),
-  cloudflare_worker_route: cf("worker-route", ["pattern"], "label", {
-    role: "exposes-worker",
-    describe: (b) => pick2({ pattern: text4(b, "pattern") })
-  }),
-  cloudflare_workers_custom_domain: cf("custom-domain", ["hostname"], "label", {
-    role: "exposes-worker",
-    describe: (b) => pick2({ hostname: text4(b, "hostname") })
-  }),
-  cloudflare_worker_domain: cf("custom-domain", ["hostname"], "label", {
-    role: "exposes-worker",
-    describe: (b) => pick2({ hostname: text4(b, "hostname") })
-  }),
-  cloudflare_d1_database: cf("d1", ["name"], "name"),
-  cloudflare_r2_bucket: cf("r2", ["name"], "name"),
-  cloudflare_workers_kv_namespace: cf("kv", ["title"], "name"),
-  cloudflare_queue: cf("queue", ["queue_name", "name"], "name"),
-  cloudflare_zone: cf("zone", ["name", "zone"], "name"),
-  cloudflare_dns_record: cf("dns-record", ["name"], "label", {
-    describe: (b) => pick2({ recordType: text4(b, "type"), recordName: text4(b, "name") })
-  }),
-  cloudflare_record: cf("dns-record", ["name"], "label", {
-    describe: (b) => pick2({ recordType: text4(b, "type"), recordName: text4(b, "name") })
-  }),
-  cloudflare_zero_trust_access_application: cf("access-application", ["name"], "label", {
-    describe: (b) => pick2({ domain: text4(b, "domain"), applicationType: text4(b, "type") })
-  }),
-  cloudflare_access_application: cf("access-application", ["name"], "label", {
-    describe: (b) => pick2({ domain: text4(b, "domain"), applicationType: text4(b, "type") })
-  }),
-  cloudflare_zero_trust_access_policy: cf("access-policy", ["name"], "label"),
-  cloudflare_access_policy: cf("access-policy", ["name"], "label"),
-  cloudflare_zero_trust_access_ai_controls_mcp_server: cf("mcp-server", ["name"], "label", {
-    describe: (b) => pick2({ hostname: text4(b, "hostname") })
-  }),
-  cloudflare_zero_trust_access_ai_controls_mcp_portal: cf("mcp-portal", ["name"], "label", {
-    describe: (b) => pick2({ hostname: text4(b, "hostname") })
-  }),
-  cloudflare_pages_project: cf("pages-project", ["name"], "name"),
-  cloudflare_zero_trust_tunnel_cloudflared: cf("tunnel", ["name"], "label"),
-  cloudflare_tunnel: cf("tunnel", ["name"], "label"),
-  cloudflare_hyperdrive_config: cf("hyperdrive", ["name"], "label"),
-  cloudflare_vectorize_index: cf("vectorize", ["name"], "name"),
-  // --- AWS provider ---
-  aws_lambda_function: aws(
-    "lambda",
-    ["function_name"],
-    (b) => pick2({
-      runtime: text4(b, "runtime"),
-      handler: text4(b, "handler"),
-      memorySize: num2(b, "memory_size"),
-      timeout: num2(b, "timeout"),
-      packageType: text4(b, "package_type")
-    }),
-    "lambda"
-  ),
-  aws_s3_bucket: aws("s3", ["bucket"]),
-  aws_dynamodb_table: aws("dynamodb", ["name"], describeTable2),
-  aws_sqs_queue: aws("sqs", ["name"], (b) => pick2({ fifo: flag2(b, "fifo_queue") })),
-  aws_sns_topic: aws("sns", ["name"], (b) => pick2({ fifo: flag2(b, "fifo_topic") })),
-  aws_cloudwatch_event_rule: aws(
-    "eventbridge",
-    ["name"],
-    (b) => pick2({ scheduleExpression: text4(b, "schedule_expression") })
-  ),
-  aws_apigatewayv2_api: aws(
-    "api-gateway",
-    ["name"],
-    (b) => pick2({ apiVersion: "v2", protocolType: text4(b, "protocol_type") })
-  ),
-  aws_api_gateway_rest_api: aws("api-gateway", ["name"], () => ({ apiVersion: "v1" })),
-  aws_db_instance: aws(
-    "rds",
-    ["identifier"],
-    (b) => pick2({ engine: text4(b, "engine"), instanceClass: text4(b, "instance_class") })
-  ),
-  aws_rds_cluster: aws("aurora", ["cluster_identifier"], (b) => pick2({ engine: text4(b, "engine") })),
-  aws_ecs_cluster: aws("ecs", ["name"]),
-  aws_ecs_service: aws("ecs", ["name"], (b) => pick2({ launchType: text4(b, "launch_type") })),
-  aws_eks_cluster: aws("eks", ["name"]),
-  aws_ecr_repository: aws("ecr", ["name"]),
-  aws_instance: aws("ec2", [], (b) => pick2({ instanceType: text4(b, "instance_type") })),
-  aws_cloudfront_distribution: aws("cloudfront", ["comment"]),
-  aws_route53_zone: aws("route53", ["name"]),
-  aws_lb: aws("elb", ["name"], (b) => pick2({ loadBalancerType: text4(b, "load_balancer_type") })),
-  aws_alb: aws("elb", ["name"], (b) => pick2({ loadBalancerType: text4(b, "load_balancer_type") })),
-  aws_sfn_state_machine: aws("step-functions", ["name"]),
-  aws_kinesis_stream: aws("kinesis", ["name"]),
-  aws_appsync_graphql_api: aws("appsync", ["name"]),
-  aws_cognito_user_pool: aws("cognito", ["name"]),
-  aws_elasticache_cluster: aws("elasticache", ["cluster_id"]),
-  aws_elasticache_replication_group: aws("elasticache", ["replication_group_id"]),
-  aws_opensearch_domain: aws("opensearch", ["domain_name"]),
-  aws_secretsmanager_secret: aws("secrets-manager", ["name"]),
-  aws_kms_key: aws("kms", []),
-  aws_efs_file_system: aws("efs", []),
-  aws_apprunner_service: aws("app-runner", ["service_name"]),
-  aws_amplify_app: aws("amplify", ["name"]),
-  aws_iam_role: aws("iam", ["name"]),
-  aws_vpc: aws("vpc", []),
-  aws_redshift_cluster: aws("redshift", ["cluster_identifier"]),
-  aws_docdb_cluster: aws("documentdb", ["cluster_identifier"]),
-  aws_neptune_cluster: aws("neptune", ["cluster_identifier"]),
-  aws_msk_cluster: aws("msk", ["cluster_name"]),
-  aws_mq_broker: aws("mq", ["broker_name"]),
-  aws_athena_workgroup: aws("athena", ["name"]),
-  aws_glue_job: aws("glue", ["name"]),
-  aws_wafv2_web_acl: aws("waf", ["name"]),
-  aws_codepipeline: aws("codepipeline", ["name"]),
-  aws_codebuild_project: aws("codebuild", ["name"]),
-  aws_batch_job_queue: aws("batch", ["name"]),
-  aws_sagemaker_endpoint: aws("sagemaker", ["name"]),
-  aws_ebs_volume: aws("ebs", []),
-  aws_cloudformation_stack: aws("cloudformation", ["name"]),
-  aws_elastic_beanstalk_application: aws("elastic-beanstalk", ["name"]),
-  aws_cloudwatch_metric_alarm: aws("cloudwatch", ["alarm_name"]),
-  // --- Azure（azurerm）provider。id は AWS と同じくディレクトリとラベルで決める（`name` は表示名） ---
-  azurerm_resource_group: azure("resource-group", ["name"], (b) => pick2({ location: text4(b, "location") })),
-  azurerm_linux_function_app: azure("azure-functions", ["name"], void 0, "azure-app"),
-  azurerm_windows_function_app: azure("azure-functions", ["name"], void 0, "azure-app"),
-  azurerm_function_app_flex_consumption: azure("azure-functions", ["name"], void 0, "azure-app"),
-  azurerm_function_app: azure("azure-functions", ["name"], void 0, "azure-app"),
-  azurerm_linux_web_app: azure("app-service", ["name"], void 0, "azure-app"),
-  azurerm_windows_web_app: azure("app-service", ["name"], void 0, "azure-app"),
-  azurerm_app_service: azure("app-service", ["name"], void 0, "azure-app"),
-  azurerm_service_plan: azure(
-    "app-service-plan",
-    ["name"],
-    (b) => pick2({ osType: text4(b, "os_type"), skuName: text4(b, "sku_name") })
-  ),
-  azurerm_app_service_plan: azure("app-service-plan", ["name"]),
-  azurerm_static_web_app: azure("static-web-apps", ["name"], void 0, "azure-app"),
-  azurerm_container_app: azure("container-apps", ["name"], void 0, "azure-app"),
-  azurerm_kubernetes_cluster: azure("aks"),
-  azurerm_storage_account: azure(
-    "storage-account",
-    ["name"],
-    (b) => pick2({
-      accountTier: text4(b, "account_tier"),
-      replicationType: text4(b, "account_replication_type"),
-      accountKind: text4(b, "account_kind")
-    })
-  ),
-  azurerm_cosmosdb_account: azure("cosmos-db", ["name"], (b) => pick2({ kind: text4(b, "kind") })),
-  azurerm_mssql_server: azure("sql-server"),
-  azurerm_mssql_database: azure("sql-database", ["name"], (b) => pick2({ skuName: text4(b, "sku_name") })),
-  azurerm_redis_cache: azure("cache-for-redis", ["name"], (b) => pick2({ skuName: text4(b, "sku_name") })),
-  azurerm_managed_redis: azure("managed-redis", ["name"], (b) => pick2({ skuName: text4(b, "sku_name") })),
-  azurerm_key_vault: azure("key-vault", ["name"], (b) => pick2({ skuName: text4(b, "sku_name") })),
-  azurerm_servicebus_namespace: azure("service-bus", ["name"], (b) => pick2({ sku: text4(b, "sku") })),
-  azurerm_eventhub_namespace: azure("event-hubs", ["name"], (b) => pick2({ sku: text4(b, "sku") })),
-  azurerm_api_management: azure("api-management", ["name"], (b) => pick2({ skuName: text4(b, "sku_name") })),
-  // VNet は VPC と同じく枠になる（properties.vpc から指される）。サブネットは AWS と同じく付属物（VIA でたどるだけ）
-  azurerm_virtual_network: azure("virtual-network"),
-  azurerm_cdn_frontdoor_profile: azure("front-door", ["name"], (b) => pick2({ skuName: text4(b, "sku_name") })),
-  azurerm_frontdoor: azure("front-door"),
-  azurerm_application_insights: azure(
-    "application-insights",
-    ["name"],
-    (b) => pick2({ applicationType: text4(b, "application_type") })
-  ),
-  azurerm_log_analytics_workspace: azure("log-analytics", ["name"], (b) => pick2({ sku: text4(b, "sku") }))
-};
-var SUPPORTING_PREFIXES2 = [
-  "aws_iam_",
-  "aws_lambda_",
-  "aws_api_gateway_",
-  "aws_apigatewayv2_",
-  "aws_cloudwatch_log_",
-  "aws_sqs_queue_",
-  "aws_sns_topic_",
-  "aws_s3_bucket_",
-  "aws_s3_object",
-  "aws_security_group",
-  "aws_vpc_",
-  "aws_subnet",
-  "aws_db_subnet_group",
-  "aws_route_table",
-  "aws_route53_record",
-  "aws_internet_gateway",
-  "aws_nat_gateway",
-  "aws_eip",
-  "aws_ecs_task_definition",
-  "aws_lb_",
-  "aws_alb_",
-  "aws_cloudfront_",
-  "aws_dynamodb_",
-  "aws_ssm_",
-  "aws_kms_",
-  "aws_wafv2_",
-  // Azure: 子リソース・権限・ネットワークの部品・監視の設定など（要素の構成の一部）
-  "azurerm_storage_",
-  "azurerm_key_vault_",
-  "azurerm_cosmosdb_",
-  "azurerm_mssql_",
-  "azurerm_servicebus_",
-  "azurerm_eventhub",
-  "azurerm_role_",
-  "azurerm_user_assigned_identity",
-  "azurerm_monitor_",
-  "azurerm_network_",
-  "azurerm_private_",
-  "azurerm_subnet",
-  "azurerm_virtual_network_",
-  "azurerm_app_service_",
-  "azurerm_linux_web_app_",
-  "azurerm_windows_web_app_",
-  "azurerm_linux_function_app_",
-  "azurerm_windows_function_app_",
-  "azurerm_function_app_",
-  "azurerm_static_web_app_",
-  "azurerm_container_app_",
-  "azurerm_kubernetes_cluster_",
-  "azurerm_redis_",
-  "azurerm_api_management_",
-  "azurerm_cdn_frontdoor_",
-  "azurerm_application_insights_",
-  "azurerm_log_analytics_",
-  "azurerm_resource_group_",
-  "azurerm_dns_",
-  "azurerm_public_ip",
-  "azurerm_management_lock"
-];
-var NOT_SUPPORTING = /* @__PURE__ */ new Set([
-  "azurerm_mssql_managed_instance",
-  "azurerm_redis_enterprise_cluster"
-]);
-var isSupportingType = (type) => SUPPORTING_PREFIXES2.some((p) => type.startsWith(p)) && !Object.hasOwn(TYPES3, type) && !NOT_SUPPORTING.has(type);
-var GLUE = {
-  cloudflare_queue_consumer: {
-    source: { attrs: ["script_name", "script_id", "worker"] },
-    target: { attrs: ["queue_id", "queue_name", "queue"] },
-    relation: "CONSUMES_FROM",
-    literalSource: { namespace: "cloudflare", kind: "worker" }
+// ../../packages/parsers/terraform/src/iamActions.ts
+var ACTIONS = {
+  dynamodb: {
+    getitem: "read",
+    batchgetitem: "read",
+    query: "read",
+    scan: "read",
+    conditioncheckitem: "read",
+    describetable: "read",
+    getrecords: "read",
+    getsharditerator: "read",
+    describestream: "read",
+    liststreams: "read",
+    partiqlselect: "read",
+    putitem: "write",
+    updateitem: "write",
+    deleteitem: "write",
+    batchwriteitem: "write",
+    partiqlinsert: "write",
+    partiqlupdate: "write",
+    partiqldelete: "write"
   },
-  aws_lambda_event_source_mapping: {
-    source: { attrs: ["function_name"] },
-    target: { attrs: ["event_source_arn"] },
-    relation: "CONSUMES_FROM"
+  s3: {
+    getobject: "read",
+    getobjectversion: "read",
+    getobjectattributes: "read",
+    getobjecttagging: "read",
+    getbucketlocation: "read",
+    listbucket: "read",
+    listbucketversions: "read",
+    putobject: "write",
+    putobjectacl: "write",
+    putobjecttagging: "write",
+    abortmultipartupload: "write",
+    deleteobject: "delete",
+    deleteobjectversion: "delete"
   },
-  aws_sns_topic_subscription: {
-    source: { attrs: ["endpoint"] },
-    target: { attrs: ["topic_arn"] },
-    relation: "CONSUMES_FROM"
+  sqs: {
+    sendmessage: "send",
+    sendmessagebatch: "send",
+    receivemessage: "consume",
+    deletemessage: "consume",
+    deletemessagebatch: "consume",
+    changemessagevisibility: "consume",
+    changemessagevisibilitybatch: "consume",
+    getqueueattributes: "read",
+    getqueueurl: "read"
   },
-  aws_s3_bucket_notification: {
-    source: { except: ["bucket"] },
-    target: { attrs: ["bucket"] },
-    relation: "CONSUMES_FROM"
+  sns: {
+    publish: "publish",
+    publishbatch: "publish"
   },
-  aws_api_gateway_integration: {
-    source: { attrs: ["rest_api_id"] },
-    target: { attrs: ["uri"] },
-    relation: "CALLS"
-  },
-  aws_apigatewayv2_integration: {
-    source: { attrs: ["api_id"] },
-    target: { attrs: ["integration_uri"] },
-    relation: "CALLS"
-  },
-  // 主体（マネージド ID を持つ実行環境）が、スコープのリソースを使えるようにする。リソース グループがスコープなら辺にしない。
-  azurerm_role_assignment: {
-    source: { attrs: ["principal_id"] },
-    target: { attrs: ["scope"] },
-    relation: "BINDS_TO"
-  },
-  aws_cloudwatch_event_target: {
-    source: { attrs: ["arn"] },
-    target: { attrs: ["rule"] },
-    relation: "CONSUMES_FROM"
+  lambda: {
+    invokefunction: "invoke",
+    invokeasync: "invoke",
+    invokefunctionurl: "invoke"
   }
 };
-var VIA = {
-  aws_subnet: ["vpc_id"],
-  aws_db_subnet_group: ["subnet_ids"],
-  aws_lb_listener: ["load_balancer_arn"],
-  aws_alb_listener: ["load_balancer_arn"],
-  aws_s3_bucket_website_configuration: ["bucket"],
-  azurerm_subnet: ["virtual_network_name"]
-};
-var VPC_ENTRIES2 = {
-  aws_lambda_function: ["vpc_config.subnet_ids"],
-  aws_ecs_service: ["network_configuration.subnets"],
-  aws_lb: ["subnets", "subnet_mapping.subnet_id"],
-  aws_alb: ["subnets", "subnet_mapping.subnet_id"],
-  aws_db_instance: ["db_subnet_group_name"],
-  aws_rds_cluster: ["db_subnet_group_name"],
-  // Azure: VNet 統合（リージョン VNet 統合）と、AKS のノード プール
-  azurerm_linux_function_app: ["virtual_network_subnet_id"],
-  azurerm_windows_function_app: ["virtual_network_subnet_id"],
-  azurerm_function_app_flex_consumption: ["virtual_network_subnet_id"],
-  azurerm_linux_web_app: ["virtual_network_subnet_id"],
-  azurerm_windows_web_app: ["virtual_network_subnet_id"],
-  azurerm_kubernetes_cluster: ["default_node_pool.vnet_subnet_id"]
-};
-var VPC_LINKS2 = {
-  azurerm_app_service_virtual_network_swift_connection: { owner: ["app_service_id"], subnets: ["subnet_id"] },
-  azurerm_private_endpoint: {
-    owner: ["private_service_connection.private_connection_resource_id"],
-    subnets: ["subnet_id"]
-  }
-};
-var listener = (type) => ({
-  type,
-  side: "source",
-  via: ["default_action.target_group_arn", "default_action.forward.target_group.arn"],
-  endpoint: ["load_balancer_arn"]
-});
-var listenerRule = (type) => ({
-  type,
-  side: "source",
-  via: ["action.target_group_arn", "action.forward.target_group.arn"],
-  endpoint: ["listener_arn"]
-});
-var attachment = (type) => ({
-  type,
-  side: "target",
-  via: ["target_group_arn"],
-  endpoint: ["target_id"]
-});
-var JUNCTIONS = [
-  // ALB / NLB → ECS service・Lambda・EC2（target group で結ぶ）
-  {
-    junction: ["aws_lb_target_group", "aws_alb_target_group"],
-    relation: "CALLS",
-    members: [
-      listener("aws_lb_listener"),
-      listener("aws_alb_listener"),
-      listenerRule("aws_lb_listener_rule"),
-      listenerRule("aws_alb_listener_rule"),
-      { type: "aws_ecs_service", side: "target", via: ["load_balancer.target_group_arn"] },
-      attachment("aws_lb_target_group_attachment"),
-      attachment("aws_alb_target_group_attachment")
-    ]
-  }
-];
-var CLOUDFRONT_ORIGIN_RELATIONS = {
-  s3: "READS_FROM",
-  elb: "CALLS",
-  "api-gateway": "CALLS"
-};
-var UTILITY_PROVIDERS = /* @__PURE__ */ new Set([
-  "random",
-  "null",
-  "local",
-  "tls",
-  "time",
-  "archive",
-  "external",
-  "http",
-  "template",
-  "terraform",
-  "cloudinit",
-  "dns"
-]);
-var KNOWN_PROVIDERS = /* @__PURE__ */ new Set(["aws", "azurerm", "cloudflare"]);
-var providerOf = (type) => type.split("_")[0];
-var BINDING_KINDS = {
-  d1: {},
-  kv: {},
-  r2: { literal: { attrs: ["bucket_name"], namespace: "cloudflare", kind: "r2" } },
-  service: { literal: { attrs: ["service"], namespace: "cloudflare", kind: "worker" } },
-  queue: { literal: { attrs: ["queue_name", "queue"], namespace: "cloudflare", kind: "queue" } }
-};
-var BINDING_ALIASES = {
-  d1: "d1",
-  d1_database: "d1",
-  kv_namespace: "kv",
-  r2_bucket: "r2",
-  service: "service",
-  queue: "queue"
-};
-function bindingKindOf(typeOrBlock) {
-  if (!typeOrBlock) return void 0;
-  return BINDING_ALIASES[typeOrBlock.replace(/_binding$/, "")];
+function iamPermissionOf(action) {
+  const a = action.trim().toLowerCase();
+  if (a === "*") return "full";
+  const i = a.indexOf(":");
+  if (i <= 0) return void 0;
+  const service = a.slice(0, i);
+  const name2 = a.slice(i + 1);
+  const table = Object.hasOwn(ACTIONS, service) ? ACTIONS[service] : void 0;
+  if (name2 === "*") return "full";
+  if (!table || name2 === "") return void 0;
+  if (!name2.includes("*")) return Object.hasOwn(table, name2) ? table[name2] : void 0;
+  if (name2.indexOf("*") !== name2.length - 1) return void 0;
+  const prefix = name2.slice(0, -1);
+  const found = new Set(
+    Object.entries(table).filter(([k]) => k.startsWith(prefix)).map(([, p]) => p)
+  );
+  return found.size === 1 ? [...found][0] : void 0;
 }
 
 // ../../packages/parsers/terraform/src/terraformParser.ts
 var PARSER_ID5 = "terraform";
-var TERRAFORM_PARSER_VERSION = "0.5.0";
+var TERRAFORM_PARSER_VERSION = "0.6.0";
 var isTerraformFile = (path) => path.endsWith(".tf") && !isIgnoredPath(path) && !path.split("/").slice(0, -1).includes(".terraform");
 var compare5 = (a, b) => a < b ? -1 : a > b ? 1 : 0;
 var dirOf3 = (file2) => {
@@ -39365,6 +39499,13 @@ var Analysis2 = class {
     if (prev) {
       if (!prev.evidence.some((e) => sameSpan2(e, evidence))) prev.evidence.push(evidence);
       if (!options.inferred) prev.verification = "verified";
+      if (options.permission !== void 0) {
+        const merged = /* @__PURE__ */ new Set([
+          ...String(prev.properties?.permission ?? "").split(",").filter(Boolean),
+          ...options.permission.split(",")
+        ]);
+        prev.properties = { ...prev.properties, permission: [...merged].sort().join(",") };
+      }
       if (options.binding !== void 0) {
         const properties = prev.properties ?? {};
         const list2 = properties.bindings ?? [];
@@ -39380,6 +39521,7 @@ var Analysis2 = class {
       target: target2,
       relation,
       ...options.binding !== void 0 ? { properties: { bindings: [options.binding] } } : {},
+      ...options.permission !== void 0 ? { properties: { permission: options.permission } } : {},
       evidence: [evidence],
       verification: options.inferred ? "inferred" : "verified"
     });
@@ -39411,7 +39553,131 @@ var Analysis2 = class {
     }
     for (const decls of [...this.decls.entries()].sort(([a], [b]) => compare5(a, b)).map(([, m]) => m)) {
       for (const rule of JUNCTIONS) this.junctionEdges([...decls.values()].sort(byLocation2), rule);
+      this.iamEdges([...decls.values()].sort(byLocation2));
     }
+  }
+  // --- IAM の権限 ---
+  /** 読んだ policy document（宣言ごとに 1 回だけ読み、診断も 1 回だけ出す）。 */
+  statements = /* @__PURE__ */ new Map();
+  /**
+   * 計算の資源（`ROLE_ATTRS`）が使うロールに付いたポリシーの statement から、計算の資源 → Resource の資源の
+   * DEPENDS_ON に `properties.permission`（SAM の Policies・CDK の grant と同じ）。ロールに付けるのは
+   * `aws_iam_role_policy`（`role` と `policy`）と、`aws_iam_role_policy_attachment`（`role` と `policy_arn` → `aws_iam_policy` の `policy`）。
+   * `policy` は `data.aws_iam_policy_document.x.json` だけを読む。同じディレクトリの中だけ。
+   */
+  iamEdges(decls) {
+    const attached = /* @__PURE__ */ new Map();
+    const attach = (holder, roleAttr, doc, via) => {
+      if (!doc) return;
+      for (const role of this.declsAt(holder, roleAttr, "aws_iam_role"))
+        attached.set(role, [...attached.get(role) ?? [], { doc, via }]);
+    };
+    for (const d of decls) {
+      if (d.mode !== "resource") continue;
+      if (d.type === "aws_iam_role_policy") attach(d, "role", this.policyDocument(d), [d]);
+      else if (d.type === "aws_iam_role_policy_attachment") {
+        for (const policy of this.declsAt(d, "policy_arn", "aws_iam_policy"))
+          attach(d, "role", this.policyDocument(policy), [d, policy]);
+      }
+    }
+    if (attached.size === 0) return;
+    for (const c of decls) {
+      const attrs = c.mode === "resource" ? ROLE_ATTRS[c.type] : void 0;
+      if (!attrs || c.id === void 0 || !this.nodes.has(c.id)) continue;
+      for (const role of unique2(attrs.flatMap((a) => this.declsAt(c, a, "aws_iam_role")))) {
+        for (const { doc, via } of attached.get(role) ?? []) {
+          for (const st of this.statementsOf(doc)) {
+            for (const t of st.targets) {
+              this.addEdge(c.id, "DEPENDS_ON", t.id, doc.file, st.span, {
+                inferred: [c, role, doc, t, ...via].some((x) => x.conditional),
+                permission: st.permissions.join(",")
+              });
+            }
+          }
+        }
+      }
+    }
+  }
+  /** 属性の参照が指す、同じディレクトリの `type` の宣言。 */
+  declsAt(d, attr, type) {
+    const refs = d.block.attributes.filter((a) => a.name === attr).flatMap((a) => a.value.refs);
+    return unique2(
+      this.resolveAll(refs, d.dir).map((l) => l.decl).filter((x) => x.mode === "resource" && x.type === type)
+    );
+  }
+  /** `policy = data.aws_iam_policy_document.x.json` の document。ほかの書き方（jsonencode・文字列の JSON）は info の診断。 */
+  policyDocument(holder) {
+    const attr = holder.block.attributes.find((a) => a.name === "policy");
+    if (!attr) return void 0;
+    const ref = attr.value.kind === "ref" && attr.value.refs.length === 1 ? attr.value.refs[0] : void 0;
+    const doc = ref ? this.resolve(ref, holder.dir)[0]?.decl : void 0;
+    if (doc?.mode === "data" && doc.type === "aws_iam_policy_document") return doc;
+    this.diag(
+      "info",
+      "iam-policy-unread",
+      holder.file,
+      `${holder.address}: policy is not data.aws_iam_policy_document.<name>.json; the permissions in it are not read`,
+      attr.span.startLine,
+      holder.address
+    );
+    return void 0;
+  }
+  /**
+   * document の Allow の statement: 分けられた権限（iamActions.ts）と、Resource が指す同じディレクトリの要素。
+   * Resource が `"*"`・リテラルの ARN・変数・別のディレクトリのもの・要素にならないものは線にせず info の診断
+   * `iam-resource-unresolved`（推測で結ばない）。分けられない Action は `iam-action-unclassified`（target は Action）。
+   */
+  statementsOf(doc) {
+    const cached2 = this.statements.get(doc);
+    if (cached2) return cached2;
+    const out = [];
+    const info = (code2, message, line3, target2 = doc.address) => this.diag("info", code2, doc.file, `${doc.address}: ${message}`, line3, target2);
+    for (const b of doc.block.blocks) {
+      if (b.type === "dynamic") {
+        info("iam-policy-unread", "a dynamic statement is not read", b.span.startLine);
+        continue;
+      }
+      if (b.type !== "statement") continue;
+      const effect = b.attributes.find((a) => a.name === "effect");
+      if (effect && literalValue(effect.value) !== "Allow") continue;
+      if (b.attributes.some((a) => a.name === "not_actions" || a.name === "not_resources")) {
+        info("iam-policy-unread", "not_actions / not_resources are not read", b.span.startLine);
+        continue;
+      }
+      const permissions = /* @__PURE__ */ new Set();
+      const actions = b.attributes.find((a) => a.name === "actions");
+      for (const item of actions?.value.kind === "array" ? actions.value.items : actions ? [actions.value] : []) {
+        const v = literalValue(item);
+        const p = typeof v === "string" ? iamPermissionOf(v) : void 0;
+        if (p !== void 0) permissions.add(p);
+        else
+          info(
+            "iam-action-unclassified",
+            typeof v === "string" ? `action ${v} is not classified` : "an action that is not a string is not read",
+            item.span.startLine,
+            typeof v === "string" ? v : doc.address
+          );
+      }
+      const targets = [];
+      const resources = b.attributes.find((a) => a.name === "resources");
+      const items2 = resources?.value.kind === "array" ? resources.value.items : resources ? [resources.value] : [];
+      for (const item of items2) {
+        const found = item.refs.length === 1 && (item.kind === "ref" || item.kind === "string") ? this.nodesOf(this.resolveAll(item.refs, doc.dir)) : [];
+        if (found.length === 0) {
+          info(
+            "iam-resource-unresolved",
+            'a resource that is not a resource of this directory ("*", a literal ARN, a variable, another module) is not drawn',
+            item.span.startLine
+          );
+          continue;
+        }
+        for (const t of found) if (!targets.includes(t)) targets.push(t);
+      }
+      if (permissions.size > 0 && targets.length > 0)
+        out.push({ permissions: [...permissions].sort(), targets, span: b.span });
+    }
+    this.statements.set(doc, out);
+    return out;
   }
   /** 結び目（target group）を介した関係。送る側 × 受ける側を、同じ結び目を指すものどうしで結ぶ。 */
   junctionEdges(decls, rule) {
@@ -39854,6 +40120,9 @@ var AZURE_STORAGE_ATTRS = /* @__PURE__ */ new Set([
   "storage_account_id",
   "storage_container_endpoint"
 ]);
+var ROLE_ATTRS = {
+  aws_lambda_function: ["role"]
+};
 var byLocation2 = (a, b) => compare5(a.file, b.file) || a.block.span.startLine - b.block.span.startLine;
 var terraformParser = {
   id: PARSER_ID5,
