@@ -27499,6 +27499,8 @@ var TYPE_NAMES_EN = {
   "pages-project": "Cloudflare Pages",
   tunnel: "Cloudflare Tunnel",
   hyperdrive: "Hyperdrive",
+  "ai-gateway": "Cloudflare AI Gateway",
+  logpush: "Cloudflare Logpush",
   vectorize: "Vectorize",
   module: "Terraform module",
   "bicep-module": "Bicep module",
@@ -27611,6 +27613,8 @@ var TYPE_NAMES_JA = {
   "pages-project": "Cloudflare Pages",
   tunnel: "Cloudflare Tunnel",
   hyperdrive: "Hyperdrive",
+  "ai-gateway": "Cloudflare AI Gateway",
+  logpush: "Cloudflare Logpush",
   vectorize: "Vectorize",
   module: "Terraform \u30E2\u30B8\u30E5\u30FC\u30EB",
   "bicep-module": "Bicep \u30E2\u30B8\u30E5\u30FC\u30EB",
@@ -32364,6 +32368,10 @@ var CONSTRUCTS = {
     HttpApi: { kind: "api-gateway", nameProp: "apiName" },
     WebSocketApi: { kind: "api-gateway", nameProp: "apiName" }
   },
+  // Amazon Cognito / AWS Secrets Manager: the same service ids as packages/modes/aws and the Terraform parser's
+  // aws_cognito_user_pool / aws_secretsmanager_secret.
+  "aws-cdk-lib/aws-cognito": { UserPool: { kind: "cognito", nameProp: "userPoolName" } },
+  "aws-cdk-lib/aws-secretsmanager": { Secret: { kind: "secrets-manager", nameProp: "secretName" } },
   "aws-cdk-lib/aws-cloudfront": { Distribution: { kind: "cloudfront", nameProp: "comment" } },
   "aws-cdk-lib/aws-elasticloadbalancingv2": {
     // The same property names as the CloudFormation and Terraform parsers' load balancers.
@@ -32422,6 +32430,9 @@ var INTEGRATIONS = {
   },
   "aws-cdk-lib/aws-apigateway": { LambdaIntegration: { handlerArg: 0 } }
 };
+var HTTP_ROUTES = {
+  "aws-cdk-lib/aws-apigatewayv2": { HttpRoute: { apiProp: "httpApi" } }
+};
 var EVENT_SOURCES = {
   "aws-cdk-lib/aws-lambda-event-sources": {
     SqsEventSource: { sourceArg: 0, kinds: ["sqs"] },
@@ -32456,6 +32467,10 @@ var IGNORED_CLASSES = {
   // How a service, a load balancer or a VPC is wired (the supporting types of the CloudFormation parser).
   "aws-cdk-lib/aws-ecs": /* @__PURE__ */ new Set(["FargateTaskDefinition", "Ec2TaskDefinition", "TaskDefinition"]),
   "aws-cdk-lib/aws-ec2": /* @__PURE__ */ new Set(["SecurityGroup"]),
+  // Attachments of a user pool (a client, the look of the managed login): read, but not boxes of their own.
+  "aws-cdk-lib/aws-cognito": /* @__PURE__ */ new Set(["UserPoolClient", "CfnManagedLoginBranding"]),
+  // A route of an HttpApi is not a box; the integration it names is read as an edge from its API (HTTP_ROUTES).
+  "aws-cdk-lib/aws-apigatewayv2": /* @__PURE__ */ new Set(["HttpRoute"]),
   "aws-cdk-lib/aws-rds": /* @__PURE__ */ new Set(["SubnetGroup", "ParameterGroup", "OptionGroup"]),
   "aws-cdk-lib/aws-elasticloadbalancingv2": /* @__PURE__ */ new Set([
     "ApplicationTargetGroup",
@@ -33092,6 +33107,14 @@ async function analyzeCdkSource(ctx, options) {
       if (!ref) return void 0;
       const def = classify(ref);
       const args = call2.arguments;
+      const route = HTTP_ROUTES[ref.module]?.[ref.name];
+      if (route && isThis(args[0]) && args[2]) {
+        const props2 = unwrapExpression(args[2]);
+        const api = constructOf(prop(props2, route.apiProp));
+        const integration = prop(props2, "integration");
+        if (api?.kind === "api-gateway" && integration) apiCalls(api, integration, stmt);
+        return void 0;
+      }
       if (def.kind === "ignored" || def.kind === "integration" || def.kind === "eventSource" || def.kind === "lbTarget") {
         return void 0;
       }
@@ -33372,7 +33395,7 @@ function isCdkEntry(file2, text6) {
 
 // ../../packages/parsers/aws-cdk/src/awsCdkParser.ts
 var PARSER_ID2 = "aws-cdk";
-var AWS_CDK_PARSER_VERSION = "0.5.0";
+var AWS_CDK_PARSER_VERSION = "0.6.0";
 function rootOf(assembly, all) {
   let current = assembly;
   for (let guard = 0; guard < all.length; guard++) {
@@ -38046,6 +38069,12 @@ var TYPES3 = {
   cloudflare_tunnel: cf("tunnel", ["name"], "label"),
   cloudflare_hyperdrive_config: cf("hyperdrive", ["name"], "label"),
   cloudflare_vectorize_index: cf("vectorize", ["name"], "name"),
+  // v5 の AI Gateway は、ゲートウェイの名前が `id`
+  cloudflare_ai_gateway: cf("ai-gateway", ["id", "name"], "label"),
+  // destination_conf は送り先の認証情報を含みうるので、properties には載せない（送り先は logpushEdges が読む）
+  cloudflare_logpush_job: cf("logpush", ["name"], "label", {
+    describe: (b) => pick2({ dataset: text4(b, "dataset") })
+  }),
   // --- AWS provider ---
   aws_lambda_function: aws(
     "lambda",
@@ -38224,7 +38253,10 @@ var SUPPORTING_PREFIXES2 = [
   "azurerm_resource_group_",
   "azurerm_dns_",
   "azurerm_public_ip",
-  "azurerm_management_lock"
+  "azurerm_management_lock",
+  // Cloudflare: R2 バケットの設定と、API トークン（資格情報。構成図の要素にしない）
+  "cloudflare_r2_bucket_lifecycle",
+  "cloudflare_api_token"
 ];
 var NOT_SUPPORTING = /* @__PURE__ */ new Set([
   "azurerm_mssql_managed_instance",
@@ -39101,7 +39133,7 @@ function iamPermissionOf(action) {
 
 // ../../packages/parsers/terraform/src/terraformParser.ts
 var PARSER_ID5 = "terraform";
-var TERRAFORM_PARSER_VERSION = "0.6.0";
+var TERRAFORM_PARSER_VERSION = "0.7.0";
 var isTerraformFile = (path) => path.endsWith(".tf") && !isIgnoredPath(path) && !path.split("/").slice(0, -1).includes(".terraform");
 var compare5 = (a, b) => a < b ? -1 : a > b ? 1 : 0;
 var dirOf3 = (file2) => {
@@ -39721,6 +39753,7 @@ var Analysis2 = class {
     else if (role === "lambda") this.environmentEdges(d, consumed);
     else if (role === "azure-app") this.azureAppEdges(d, consumed);
     if (d.def?.kind === "mcp-portal") this.portalEdges(d);
+    if (d.def?.namespace === "cloudflare" && d.def.kind === "logpush") this.logpushEdges(d);
     if (d.def?.namespace === "aws" && d.def.kind === "cloudfront") this.originEdges(d, consumed);
     if (d.mode === "resource" && d.type === "aws_ecs_service") this.ecsTaskEdges(d);
     if (d.mode === "resource" && (VPC_ENTRIES2[d.type] || this.vpcLinks.has(d.id)))
@@ -39765,6 +39798,23 @@ var Analysis2 = class {
           });
         }
       }
+    }
+  }
+  /**
+   * Logpush のジョブの `destination_conf` が `r2://<バケット名>/...` の文字列リテラルで、同じディレクトリに同じ名前の
+   * R2 バケットがあるとき、ジョブからバケットへ WRITES_TO。参照を含む書き方（`${cloudflare_r2_bucket.x.name}`）は
+   * 参照の規則（DEPENDS_ON）に任せ、読めない書き方・見つからないバケットでは線を張らない。名前の一致なので inferred。
+   */
+  logpushEdges(d) {
+    const attr = d.block.attributes.find((a) => a.name === "destination_conf");
+    const conf = attr ? literalValue(attr.value) : void 0;
+    const bucket = typeof conf === "string" ? /^r2:\/\/([^/?]+)/.exec(conf)?.[1] : void 0;
+    if (!attr || !bucket) return;
+    for (const x of this.decls.get(d.dir)?.values() ?? []) {
+      if (x.def?.namespace !== "cloudflare" || x.def.kind !== "r2" || x.id === void 0 || !this.nodes.has(x.id))
+        continue;
+      if (literalOf(x.block, "name") !== bucket) continue;
+      this.addEdge(d.id, "WRITES_TO", x.id, d.file, attr.span, { inferred: true });
     }
   }
   // --- Cloudflare: Worker のバインディング ---
