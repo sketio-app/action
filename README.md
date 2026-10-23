@@ -21,7 +21,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 2   # mode: diff reads the pull request's head commit (a parent of the merge commit)
-      - uses: sketio-app/action@6f3889147007cc25b935f37194569b2080dfdcf9 # v1.10.0
+      - uses: sketio-app/action@ee2ece31b82c193f9985fe2c0482fe787f9f9f32 # v1.11.0
         with:
           mode: ${{ github.event_name == 'pull_request' && 'diff' || 'sync' }}
           api-url: https://arch.sketio.app
@@ -33,7 +33,7 @@ Pin the Action to a commit, as above. A tag can be moved, so pinning to the comm
 
 ```yaml
       - uses: actions/checkout@v4
-      - uses: sketio-app/action@6f3889147007cc25b935f37194569b2080dfdcf9 # v1.10.0
+      - uses: sketio-app/action@ee2ece31b82c193f9985fe2c0482fe787f9f9f32 # v1.11.0
 ```
 
 ## Modes
@@ -85,7 +85,7 @@ date (the commit is left out):
 ```yaml
       - uses: actions/checkout@v4
       - id: arch
-        uses: sketio-app/action@6f3889147007cc25b935f37194569b2080dfdcf9 # v1.10.0
+        uses: sketio-app/action@ee2ece31b82c193f9985fe2c0482fe787f9f9f32 # v1.11.0
         with:
           diagram-view: infrastructure   # or application, deployment, overview
       # Your own step. This one replaces what is between two markers in README.md:
@@ -152,7 +152,7 @@ do not send pull requests here.
 Architecture Artifact（JSON）として書き出す Action です。`mode: sync` / `mode: diff` では Artifact を
 [Sketio Arch](https://arch.sketio.app) に送ります。
 
-使い方は上の例のとおりです（`uses: sketio-app/action@6f3889147007cc25b935f37194569b2080dfdcf9 # v1.10.0`）。タグは動かせるので、コミットハッシュで固定すると、同じコードしか動きません。Dependabot（`package-ecosystem: github-actions`）でハッシュとコメントの版を自動で上げられます。手軽に試すだけなら `sketio-app/action@v1`（動くメジャータグ）でも動きます。
+使い方は上の例のとおりです（`uses: sketio-app/action@ee2ece31b82c193f9985fe2c0482fe787f9f9f32 # v1.11.0`）。タグは動かせるので、コミットハッシュで固定すると、同じコードしか動きません。Dependabot（`package-ecosystem: github-actions`）でハッシュとコメントの版を自動で上げられます。手軽に試すだけなら `sketio-app/action@v1`（動くメジャータグ）でも動きます。
 
 | mode | 動く場面 | すること |
 | --- | --- | --- |
@@ -205,7 +205,7 @@ Action はテキストを出すだけです。ファイルに書く、コミッ�
 ```yaml
       - uses: actions/checkout@v4
       - id: arch
-        uses: sketio-app/action@6f3889147007cc25b935f37194569b2080dfdcf9 # v1.10.0
+        uses: sketio-app/action@ee2ece31b82c193f9985fe2c0482fe787f9f9f32 # v1.11.0
         with:
           diagram-view: infrastructure   # or application, deployment, overview
       # Your own step. This one replaces what is between two markers in README.md:
